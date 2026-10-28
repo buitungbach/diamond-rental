@@ -765,12 +765,12 @@ window.openPay = function() {
     renderQr("orderQr", Number(existing.total_vnd), existing.code);
     return;
   }
-  const quote = quote();
+  const priceQuote = quote();
   openBox(`<h2>${t("pm_t")}</h2><p>${esc(getG(ck.id)?.name || "")} · ${ck.sessions.length} ${t("sess")} · ${ck.hours} ${t("hrs")}</p>
-    <h2 style="margin:10px 0">${fmt(quote.total)}</h2>
+    <h2 style="margin:10px 0">${fmt(priceQuote.total)}</h2>
     <p class="notice">${esc(t("pay_create_info"))}</p>
     <div class="err" id="bookingErr"></div>
-    <button class="btn" id="payB" onclick="confirmPay()">${t("confirm_pay")} · ${fmt(quote.total)}</button>`);
+    <button class="btn" id="payB" onclick="confirmPay()">${t("confirm_pay")} · ${fmt(priceQuote.total)}</button>`);
 };
 
 window.confirmPay = async function() {
