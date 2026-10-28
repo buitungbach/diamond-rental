@@ -50,6 +50,7 @@ Object.assign(T, {
 });
 
 const sbConfig = window.DIAMOND_SUPABASE_CONFIG || {};
+const authRedirectUrl = "https://buitungbach.github.io/diamond-rental/";
 const sb = window.supabase?.createClient && sbConfig.url && sbConfig.anonKey
   ? window.supabase.createClient(sbConfig.url, sbConfig.anonKey, {
     auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },
@@ -333,6 +334,7 @@ async function accountAction(mode) {
         password,
         options: {
           data: { full_name: name, date_of_birth: dob, phone, role },
+          emailRedirectTo: authRedirectUrl,
         },
       });
       if (error) throw error;
@@ -379,7 +381,11 @@ window.resendConfirmationEmail = async function() {
     button.textContent = t("processing");
   }
   if (errorEl) errorEl.textContent = "";
-  const { error } = await sb.auth.resend({ type: "signup", email });
+  const { error } = await sb.auth.resend({
+    type: "signup",
+    email,
+    options: { emailRedirectTo: authRedirectUrl },
+  });
   if (error) {
     console.error("Could not resend confirmation email", error.message);
     const message = String(error.message || "").toLowerCase();

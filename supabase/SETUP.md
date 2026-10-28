@@ -10,8 +10,12 @@ hosting location.
    For manual Agribank transfers, also run `supabase/manual-payment.sql`.
 2. Put the project URL and **anon/public** key in `supabase-config.js`.
    Never put the service-role key in that file or in the HTML.
-3. Configure Auth email confirmation and the allowed site/redirect URLs for
-   the existing website URL. New accounts must be at least 18 years old.
+3. In **Authentication → URL Configuration**, set **Site URL** to
+   `https://buitungbach.github.io/diamond-rental/` and add that exact URL
+   under **Redirect URLs**. Do not leave `http://localhost:3000` as the Site
+   URL for production. The website explicitly sends signup and resend links
+   back to its stable GitHub Pages URL. New accounts must be at least 18 years
+   old.
 4. To enable AI chat, create an API key in the OpenAI API dashboard and add
    it as `OPENAI_API_KEY` under Supabase **Edge Function Secrets**. ChatGPT
    subscriptions do not include API credits; OpenAI API usage is billed
