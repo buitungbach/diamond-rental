@@ -12,9 +12,13 @@ hosting location.
    Never put the service-role key in that file or in the HTML.
 3. Configure Auth email confirmation and the allowed site/redirect URLs for
    the existing website URL. New accounts must be at least 18 years old.
-4. To enable AI chat, add `OPENAI_API_KEY` under Supabase **Edge Function
-   Secrets**. Payment confirmation for Agribank transfers is manual and does
-   not require a payment-provider API key.
+4. To enable AI chat, create an API key in the OpenAI API dashboard and add
+   it as `OPENAI_API_KEY` under Supabase **Edge Function Secrets**. ChatGPT
+   subscriptions do not include API credits; OpenAI API usage is billed
+   separately. Set a usage budget in the OpenAI dashboard. Never put this key
+   in the website, repository, SQL, or a chat message. Payment confirmation
+   for Agribank transfers is manual and does not require a payment-provider
+   API key.
 
    ```text
    supabase secrets set OPENAI_API_KEY=...
@@ -83,15 +87,40 @@ Do not advertise automatic payment verification while this manual process is
 in use. The optional SePay webhook requires a supported Agribank connection,
 its own HMAC secret, and separate end-to-end testing before it can be enabled.
 
-## AI personas
+## Adding AI characters and chat automatically
 
-Renter accounts created through the site are human profiles. The five seeded
-anime profiles are fictional AI personas for online chat only; they cannot be
-booked for an in-person meeting. Other operator-managed fictional AI personas
-can be added after signing in with the promoted admin account and using
-**Add profile (+)**. Set an `OPENAI_API_KEY` Supabase secret and deploy
-`ai-chat-reply` to enable replies. AI personas must be clearly disclosed as
-fictional.
+1. In the OpenAI API dashboard, create an API key for a project with API
+   billing enabled. ChatGPT Plus/Pro is separate from API billing.
+2. In the Supabase dashboard, open the Diamond Rental project, then **Edge
+   Functions → Secrets → Add new secret**. Set the name to exactly
+   `OPENAI_API_KEY` and paste the key as its value. Do not include quotes or
+   whitespace. Save it as a secret; do not send the key to anyone.
+3. If `ai-chat-reply` has not already been deployed, from PowerShell in the
+   project folder run:
+
+   ```powershell
+   npx.cmd supabase functions deploy ai-chat-reply --project-ref tsojexeevcsizazservy
+   ```
+
+   Adding or rotating a secret does not require editing the website or
+   redeploying its Pages URL.
+4. Sign in to the website with the admin account, open **Account → Add profile
+   (+)**, enter the character name, tier, tags, short bio, and personality
+   instructions, then save. The create operation stores the public profile and
+   its private AI prompt together in Supabase. The existing chat Edge Function
+   loads the correct prompt by the booked character's profile ID, so every
+   character added this way is automatically connected to chat; no per-character
+   code, SQL, or Edge Function is needed.
+5. To chat, a customer books that character's online AI chat experience and
+   pays by Agribank transfer. An administrator must verify the funds before
+   chat is unlocked. Each character must be clearly labeled as fictional and
+   cannot offer in-person meetings.
+
+The five built-in anime characters are seeded by `supabase/anime-ai-catalog.sql`
+and remain inactive until the OpenAI secret is configured. To activate those
+five after setting the key, run the activation SQL from step 5 in the
+Supabase SQL Editor. New characters created from the admin account are
+connected automatically by the site.
 
 ## GitHub Pages preview
 

@@ -8,6 +8,8 @@ Object.assign(T, {
   acct_underage: ["Bạn phải đủ 18 tuổi để đăng ký.", "You must be at least 18 to register.", "登録には18歳以上である必要があります。"],
   acct_email_confirm: ["Đã gửi yêu cầu đổi email. Hãy xác nhận email mới theo hướng dẫn của Supabase.", "Email change requested. Confirm the new address using Supabase's email.", "メール変更をリクエストしました。Supabaseからのメールで新しいアドレスを確認してください。"],
   acct_admin_note: ["Tài khoản quản trị chỉ dùng để quản lý hồ sơ AI.", "Admin accounts are limited to managing AI profiles.", "管理者アカウントはAIプロフィール管理専用です。"],
+  ai_persona_setup: ["Hồ sơ và hướng dẫn nhập vai sẽ được lưu cùng nhau trên Supabase. Khi OPENAI_API_KEY đã được cấu hình, nhân vật tự dùng hệ thống chat AI hiện có; không cần sửa mã hoặc thêm Edge Function riêng cho từng nhân vật.", "The profile and persona instructions are saved together in Supabase. Once OPENAI_API_KEY is configured, the character automatically uses the existing AI chat system; no code changes or per-character Edge Function are needed.", "プロフィールとペルソナ指示はSupabaseに一緒に保存されます。OPENAI_API_KEYの設定後、キャラクターは既存のAIチャットを自動的に使用し、キャラクターごとのコード変更やEdge Functionは不要です。"],
+  ai_persona_prompt_hint: ["Ví dụ: tính cách, cách xưng hô, sở thích, bối cảnh, cách phản hồi; luôn nói rõ đây là AI hư cấu và không hẹn gặp ngoài đời.", "Example: personality, speaking style, interests, background, response style; always disclose this is fictional AI and never arrange in-person meetings.", "例：性格、話し方、好み、背景、応答方法。架空のAIであることを明示し、対面を約束しないでください。"],
   profile_preview: ["Hồ sơ mẫu · chưa nhận đặt lịch", "Sample profile · not available to book", "サンプルプロフィール・予約不可"],
   ai_badge: ["Nhân vật AI · hư cấu", "Fictional AI character", "架空のAIキャラクター"],
   ai_book: ["Đặt lịch chat AI", "Book AI chat", "AIチャットを予約"],
@@ -424,14 +426,14 @@ function openAdd() {
   const existing = isAdmin ? null : S.custom.find((profile) => profile.ownerId === account.id);
   newImg = "";
   openBox(`<h2>${t(existing ? "acct_edit_profile" : "nc_title")}</h2>
-    <p class="muted">${t(isAdmin ? "chat_ai" : "acct_renter_note")}</p>
+    <p class="muted">${t(isAdmin ? "ai_persona_setup" : "acct_renter_note")}</p>
     ${isAdmin ? `<label class="field">${t("acct_name")}<input id="ncName" maxlength="80"></label>` : `<label class="field">${t("acct_name")}<input value="${esc(account.name)}" readonly></label>`}
     <label class="field">${t("nc_sec")}<select id="ncSec">${SEC_ORDER.map((key) => `<option value="${key}" ${existing?.section === key ? "selected" : ""}>${t("sec_" + key)} · ${fmt(SECTIONS[key].price)}</option>`).join("")}</select></label>
     <label class="field">${t("nc_tags")}<input id="ncTags" maxlength="80" value="${esc(existing?.tags.join(", ") || "")}"></label>
     <label class="field">${t("nc_bio")}<textarea id="ncBio" maxlength="1000">${esc(existing?.profile?.[0]?.[1] || "")}</textarea></label>
     <div class="row" style="margin-bottom:10px"><button class="btn ghost sm" onclick="fileImg(700,u=>{newImg=u;$('ncPrev').style.backgroundImage='url('+u+')'})">${t("photo")}</button>
       <div class="av" id="ncPrev" style="${existing ? bg(existing) : ""}"></div></div>
-    ${isAdmin ? `<label class="field">Hướng dẫn tính cách cho AI<textarea id="personaPrompt" maxlength="4000" required></textarea></label>` : ""}
+    ${isAdmin ? `<label class="field">Hướng dẫn tính cách cho AI<textarea id="personaPrompt" maxlength="4000" placeholder="${esc(t("ai_persona_prompt_hint"))}" required></textarea></label>` : ""}
     <div class="err" id="ncErr"></div>
     <button class="btn" onclick="saveChar()">${isAdmin ? "Tạo nhân vật AI" : t(existing ? "acct_save_profile" : "nc_save")}</button>`);
 }
