@@ -7,7 +7,9 @@ hosting location.
 ## Supabase
 
 1. Create a Supabase project and run `supabase/schema.sql` in its SQL Editor.
-   For manual Agribank transfers, also run `supabase/manual-payment.sql`.
+   For an existing installation, run `supabase/pricing-vnd.sql` after applying
+   the original schema to update server-side booking prices. For manual
+   Agribank transfers, also run `supabase/manual-payment.sql`.
 2. Put the project URL and **anon/public** key in `supabase-config.js`.
    Never put the service-role key in that file or in the HTML.
 3. In **Authentication → URL Configuration**, set **Site URL** to
@@ -59,6 +61,16 @@ hosting location.
    key in the site.
 
 ## Agribank QR and manual payment confirmation
+
+All tier prices are VND for a two-hour session: Platinum 20,000, Gold 15,000,
+Silver 10,000, and Special 7,000. Longer sessions and multiple sessions scale
+from that base. Service add-ons are percentages of the same base: movie 5%,
+walk 10%, dinner 15%, photo 20%, and family/friends 40%. The checkout creates
+the booking first and then displays its amount- and booking-specific QR. This
+is a manual bank transfer, not an automatic card charge; the order stays
+pending until an administrator verifies the incoming transfer. Pending orders
+created before applying `pricing-vnd.sql` keep their old amount: do not pay
+those orders; create a fresh booking after the migration.
 
 Only active renter profiles stored in Supabase accept bookings. The five
 built-in anime profiles can be enabled using `supabase/anime-ai-catalog.sql`

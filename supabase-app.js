@@ -26,6 +26,8 @@ Object.assign(T, {
   pay_transfer_note: ["Nội dung chuyển khoản", "Transfer description", "振込内容"],
   pay_transfer_hint: ["Chuyển khoản đúng số tiền và giữ nguyên nội dung. Quản trị viên sẽ đối chiếu sao kê Agribank trước khi xác nhận; không gửi ảnh biên lai thay cho tiền đã vào tài khoản.", "Transfer the exact amount and keep the payment description unchanged. An administrator will verify the Agribank statement before confirming; a receipt image does not replace funds received.", "正確な金額を振り込み、振込内容を変更しないでください。管理者が入金明細を確認してから確定します。振込画面の画像だけでは確認できません。"],
   pay_wait: ["Đang chờ quản trị viên đối chiếu tiền vào tài khoản. Chat chỉ mở sau khi xác nhận.", "Waiting for an administrator to verify the funds in the bank account. Chat unlocks only after confirmation.", "口座への入金確認を管理者が行っています。確認後にチャットを利用できます。"],
+  pay_create_info: ["Nhấn nút bên dưới để tạo đơn; mã QR chuyển khoản Agribank sẽ hiện sau khi đơn được lưu. Quản trị viên đối chiếu giao dịch thủ công, website không tự động trừ tiền.", "Create the booking below to display its Agribank transfer QR. An administrator verifies the transfer manually; the website does not charge your account automatically.", "下のボタンで予約を作成するとAgribank振込用QRが表示されます。入金は管理者が手動確認し、サイトが自動で引き落とすことはありません。"],
+  pay_pricing_mismatch: ["Bảng giá trên máy chủ chưa được cập nhật. Đơn này đã được tạo nhưng vui lòng không chuyển tiền; chạy supabase/pricing-vnd.sql rồi tạo đơn mới.", "Server pricing is out of date. This booking was created, but do not transfer money; apply supabase/pricing-vnd.sql and create a new booking.", "サーバーの料金が未更新です。この予約は作成されましたが、送金しないでください。supabase/pricing-vnd.sqlを適用して新しい予約を作成してください。"],
   manual_payment_title: ["Đối soát chuyển khoản", "Manual bank transfer review", "銀行振込の手動確認"],
   manual_payment_notice: ["Chỉ xác nhận sau khi tiền thực sự vào Agribank. Đối chiếu đúng số tiền và mã giao dịch trong sao kê; không dựa vào ảnh biên lai của khách.", "Confirm only after funds have arrived in Agribank. Match the exact amount and transaction reference in the bank statement; do not rely on a customer receipt image.", "Agribankへの実際の入金後にのみ確定してください。明細の金額と取引番号を照合し、顧客の振込画像だけを根拠にしないでください。"],
   manual_payment_reference: ["Mã giao dịch trong sao kê Agribank", "Transaction reference from the Agribank statement", "Agribank明細の取引番号"],
@@ -184,7 +186,7 @@ async function loadBookingRows() {
       method: "qr",
       status: row.status === "completed" ? "done" : row.status,
       created: row.created_at,
-      total: row.total_jpy,
+      total: row.total_vnd,
       totalVnd: row.total_vnd,
       renterName: renter?.display_name || getG(row.renter_profile_id)?.name || "",
       renterOwnerId: renter?.owner_id || null,
@@ -754,7 +756,7 @@ window.openPay = function() {
   const quote = quote();
   openBox(`<h2>${t("pm_t")}</h2><p>${esc(getG(ck.id)?.name || "")} · ${ck.sessions.length} ${t("sess")} · ${ck.hours} ${t("hrs")}</p>
     <h2 style="margin:10px 0">${fmt(quote.total)}</h2>
-    <p class="notice">QR VietQR về tài khoản Agribank. Đơn sẽ được quản trị viên đối chiếu thủ công trong sao kê trước khi mở chat.</p>
+    <p class="notice">${esc(t("pay_create_info"))}</p>
     <div class="err" id="bookingErr"></div>
     <button class="btn" id="payB" onclick="confirmPay()">${t("confirm_pay")} · ${fmt(quote.total)}</button>`);
 };
@@ -763,33 +765,44 @@ window.confirmPay = async function() {
   const button = $("payB");
   const account = activeAccount();
   const profile = getG(ck?.id);
-  if (!sb || !backendReady || !account || account.role !== "customer" || !profile || !ck) {
+  if (!button || !sb || !backendReady || !account || account.role !== "customer" || !profile || !ck) {
     showError("bookingErr", t("acct_access_denied"));
     return;
   }
   button.disabled = true;
   button.textContent = t("processing");
-  const { data, error } = await sb.rpc("create_booking", {
-    p_renter_profile_id: profile.id,
-    p_service_id: profile.profileType === "ai" ? "cafe" : ck.svc,
-    p_hours: ck.hours,
-    p_package_id: ck.pkg,
-    p_sessions: ck.sessions.map((session) => ({ d: session.d, t: session.t })),
-    p_meeting_place: [ck.place.trim(), ck.addr.trim()].filter(Boolean).join(" - "),
-    p_note: ck.note.trim(),
-    p_coupon: ck.coupon || "",
-  });
-  if (error) {
+  try {
+    const { data, error } = await sb.rpc("create_booking", {
+      p_renter_profile_id: profile.id,
+      p_service_id: profile.profileType === "ai" ? "cafe" : ck.svc,
+      p_hours: ck.hours,
+      p_package_id: ck.pkg,
+      p_sessions: ck.sessions.map((session) => ({ d: session.d, t: session.t })),
+      p_meeting_place: [ck.place.trim(), ck.addr.trim()].filter(Boolean).join(" - "),
+      p_note: ck.note.trim(),
+      p_coupon: ck.coupon || "",
+    });
+    if (error) throw error;
+    const booking = Array.isArray(data) ? data[0] : data;
+    if (!booking?.code || !Number.isFinite(Number(booking.total_vnd))) {
+      throw new Error("Booking was saved without valid payment details.");
+    }
+    if (Number(booking.total_vnd) !== Math.round(quote().total)) {
+      showError("bookingErr", `${t("pay_pricing_mismatch")} (${booking.code})`);
+      button.disabled = false;
+      button.textContent = `${t("confirm_pay")} · ${fmt(quote().total)}`;
+      return;
+    }
+    ck.remoteBooking = booking;
+    ck.remoteBooking.renterName = profile.name;
+    closeBox();
+    openPay();
+  } catch (error) {
     console.error("Could not create booking", error.message);
     showError("bookingErr", error.message || t("pay_booking_failed"));
     button.disabled = false;
     button.textContent = `${t("confirm_pay")} · ${fmt(quote().total)}`;
-    return;
   }
-  ck.remoteBooking = data;
-  ck.remoteBooking.renterName = profile.name;
-  closeBox();
-  openPay();
 };
 
 function mapRemoteOrder(code) {

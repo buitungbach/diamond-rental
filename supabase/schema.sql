@@ -212,10 +212,15 @@ create table if not exists public.bookings (
   total_jpy integer not null check (total_jpy >= 0),
   total_vnd bigint not null check (total_vnd >= 0),
   transfer_reference text not null unique,
-  currency_rate integer not null default 170,
+  currency_rate integer not null default 1,
   created_at timestamptz not null default now(),
   paid_at timestamptz
 );
+
+comment on column public.bookings.total_jpy is
+  'Legacy compatibility column; new bookings use total_vnd and store 0 here.';
+comment on column public.bookings.currency_rate is
+  'Legacy compatibility column; new bookings use VND and store 1 here.';
 
 create table if not exists public.payment_transactions (
   transaction_id text primary key,
@@ -354,14 +359,13 @@ declare
   v_role text;
   v_renter public.renter_profiles%rowtype;
   v_package_count integer;
-  v_service_fee integer;
-  v_base_jpy integer;
-  v_subtotal_jpy integer;
-  v_total_jpy integer;
+  v_service_fee_vnd integer;
+  v_base_vnd integer;
+  v_subtotal_vnd integer;
   v_total_vnd bigint;
   v_vip_discount integer := 0;
   v_coupon_discount integer := 0;
-  v_paid_jpy bigint;
+  v_paid_vnd bigint;
   v_code text := 'DM' || upper(substr(replace(gen_random_uuid()::text, '-', ''), 1, 10));
   v_booking public.bookings%rowtype;
 begin
@@ -408,33 +412,33 @@ begin
     raise exception 'Meeting place is required';
   end if;
 
-  v_service_fee := case p_service_id
-    when 'cafe' then 0 when 'movie' then 1000 when 'walk' then 2000
-    when 'dinner' then 3000 when 'photo' then 4000 when 'family' then 8000 end;
-  v_base_jpy := case v_renter.section
-    when 'platinum' then 20000 when 'gold' then 14000
-    when 'silver' then 9000 else 7000 end * p_hours / 2;
-  v_subtotal_jpy := (v_base_jpy + v_service_fee) * v_package_count;
-  v_total_jpy := v_subtotal_jpy - round(v_subtotal_jpy * case p_package_id when 'pk2' then 6 when 'pk3' then 10 else 0 end / 100.0);
+  v_base_vnd := case v_renter.section
+    when 'platinum' then 20000 when 'gold' then 15000
+    when 'silver' then 10000 else 7000 end * p_hours / 2;
+  v_service_fee_vnd := round(v_base_vnd * case p_service_id
+    when 'cafe' then 0 when 'movie' then 5 when 'walk' then 10
+    when 'dinner' then 15 when 'photo' then 20 when 'family' then 40 end / 100.0);
+  v_subtotal_vnd := (v_base_vnd + v_service_fee_vnd) * v_package_count;
+  v_total_vnd := v_subtotal_vnd
+    - round(v_subtotal_vnd * case p_package_id when 'pk2' then 6 when 'pk3' then 10 else 0 end / 100.0);
 
-  select coalesce(sum(total_jpy), 0) into v_paid_jpy
+  select coalesce(sum(total_vnd), 0) into v_paid_vnd
   from public.bookings where customer_id = v_customer_id and status in ('paid', 'completed');
   v_vip_discount := case
-    when v_paid_jpy >= 150000 then 8 when v_paid_jpy >= 80000 then 5
-    when v_paid_jpy >= 30000 then 3 else 0 end;
-  v_total_jpy := v_total_jpy - round(v_total_jpy * v_vip_discount / 100.0);
+    when v_paid_vnd >= 150000 then 8 when v_paid_vnd >= 80000 then 5
+    when v_paid_vnd >= 30000 then 3 else 0 end;
+  v_total_vnd := v_total_vnd - round(v_total_vnd * v_vip_discount / 100.0);
 
   if upper(trim(coalesce(p_coupon, ''))) = 'DIAMOND10' then
-    v_coupon_discount := round(v_total_jpy * 10 / 100.0);
+    v_coupon_discount := round(v_total_vnd * 10 / 100.0);
   elsif upper(trim(coalesce(p_coupon, ''))) = 'KAZUYA' then
-    v_coupon_discount := round(v_total_jpy * 5 / 100.0);
+    v_coupon_discount := round(v_total_vnd * 5 / 100.0);
   elsif upper(trim(coalesce(p_coupon, ''))) = 'WELCOME' then
-    v_coupon_discount := least(v_total_jpy, 1000);
+    v_coupon_discount := least(v_total_vnd, 1000);
   elsif trim(coalesce(p_coupon, '')) <> '' then
     raise exception 'Invalid coupon';
   end if;
-  v_total_jpy := greatest(v_total_jpy - v_coupon_discount, 0);
-  v_total_vnd := round(v_total_jpy * 170.0);
+  v_total_vnd := greatest(v_total_vnd - v_coupon_discount, 0);
 
   insert into public.bookings (
     code, customer_id, renter_profile_id, service_id, hours, package_id,
@@ -442,7 +446,7 @@ begin
   ) values (
     v_code, v_customer_id, p_renter_profile_id, p_service_id, p_hours, p_package_id,
     p_sessions, trim(p_meeting_place), left(coalesce(p_note, ''), 1000), upper(trim(coalesce(p_coupon, ''))),
-    v_total_jpy, v_total_vnd, v_code
+    0, v_total_vnd, v_code
   ) returning * into v_booking;
 
   return v_booking;
