@@ -9,10 +9,13 @@ Object.assign(T, {
   acct_email_confirm: ["Đã gửi yêu cầu đổi email. Hãy xác nhận email mới theo hướng dẫn của Supabase.", "Email change requested. Confirm the new address using Supabase's email.", "メール変更をリクエストしました。Supabaseからのメールで新しいアドレスを確認してください。"],
   acct_admin_note: ["Tài khoản quản trị chỉ dùng để quản lý hồ sơ AI.", "Admin accounts are limited to managing AI profiles.", "管理者アカウントはAIプロフィール管理専用です。"],
   ai_persona_setup: ["Hồ sơ và hướng dẫn nhập vai sẽ được lưu cùng nhau trên Supabase. Khi OPENAI_API_KEY đã được cấu hình, nhân vật tự dùng hệ thống chat AI hiện có; không cần sửa mã hoặc thêm Edge Function riêng cho từng nhân vật.", "The profile and persona instructions are saved together in Supabase. Once OPENAI_API_KEY is configured, the character automatically uses the existing AI chat system; no code changes or per-character Edge Function are needed.", "プロフィールとペルソナ指示はSupabaseに一緒に保存されます。OPENAI_API_KEYの設定後、キャラクターは既存のAIチャットを自動的に使用し、キャラクターごとのコード変更やEdge Functionは不要です。"],
+  admin_add_character: ["+ Thêm nhân vật AI", "+ Add AI character", "+ AIキャラクターを追加"],
+  renter_add_profile: ["+ Tạo hồ sơ của tôi", "+ Create my profile", "+ 自分のプロフィールを作成"],
+  renter_edit_profile: ["Sửa hồ sơ của tôi", "Edit my profile", "自分のプロフィールを編集"],
   ai_persona_prompt_hint: ["Ví dụ: tính cách, cách xưng hô, sở thích, bối cảnh, cách phản hồi; luôn nói rõ đây là AI hư cấu và không hẹn gặp ngoài đời.", "Example: personality, speaking style, interests, background, response style; always disclose this is fictional AI and never arrange in-person meetings.", "例：性格、話し方、好み、背景、応答方法。架空のAIであることを明示し、対面を約束しないでください。"],
   profile_preview: ["Hồ sơ mẫu · chưa nhận đặt lịch", "Sample profile · not available to book", "サンプルプロフィール・予約不可"],
   ai_badge: ["Nhân vật AI · hư cấu", "Fictional AI character", "架空のAIキャラクター"],
-  ai_book: ["Đặt lịch chat AI", "Book AI chat", "AIチャットを予約"],
+  ai_book: ["Thuê ngay", "Book now", "今すぐ予約"],
   ai_booking_notice: ["Đây là nhân vật AI hư cấu. Lịch đặt chỉ dành cho trải nghiệm chat trực tuyến; không có cuộc gặp ngoài đời. Tin nhắn được gửi tới OpenAI để tạo câu trả lời, vui lòng không gửi thông tin nhạy cảm.", "This is a fictional AI character. Bookings are for online chat only; no in-person meeting is available. Messages are sent to OpenAI to generate replies; do not share sensitive information.", "架空のAIキャラクターです。予約はオンラインチャット体験のみで、対面はありません。返信生成のためメッセージはOpenAIに送信されます。機密情報を送らないでください。"],
   ck_agree: ["Tôi đủ 18 tuổi và hiểu đây là nhân vật AI hư cấu; dịch vụ chỉ chat trực tuyến, không có cuộc gặp ngoài đời.", "I am 18 or older and understand this is a fictional AI character for online chat only, with no in-person meeting.", "私は18歳以上で、架空のAIキャラクターとのオンラインチャットのみであり、対面はないことを理解しています。"],
   pay_transfer_note: ["Nội dung chuyển khoản", "Transfer description", "振込内容"],
@@ -82,6 +85,15 @@ window.save = function() {
 function activeAccount() {
   return remoteAccount;
 }
+
+window.profileAddButtonHtml = function() {
+  const account = activeAccount();
+  if (!account || !["admin", "renter"].includes(account.role)) return "";
+  const label = account.role === "admin" ? t("admin_add_character")
+    : S.custom.some((profile) => profile.ownerId === account.id) ? t("renter_edit_profile")
+      : t("renter_add_profile");
+  return `<button class="btn sm ghost" onclick="openAdd()">${label}</button>`;
+};
 
 function authNotice() {
   return `<p class="notice">${esc(sb ? "Thông tin cá nhân được lưu trong tài khoản trực tuyến của bạn." : t("acct_config_required"))}</p>`;

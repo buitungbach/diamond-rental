@@ -202,7 +202,7 @@ all:["Tất cả","All","すべて"],fav_only:["Yêu thích","Favorites","お気
 sort_sec:["Theo hạng","By tier","ランク順"],sort_rating:["Đánh giá cao","Top rated","評価順"],sort_pa:["Giá thấp đến cao","Price: low to high","価格が安い順"],sort_pd:["Giá cao đến thấp","Price: high to low","価格が高い順"],
 maxp:["Giá tối đa","Max price","上限価格"],any_tag:["Mọi tag","Any tag","全タグ"],
 add_char:["Thêm hồ sơ bạn gái thuê (+)","Add renter profile (+)","レンタルプロフィールを追加 (+)"],rent:["Thuê ngay","Book now","予約する"],photo:["Đổi ảnh","Change photo","写真変更"],
-profile_preview:["Hồ sơ mẫu · chưa nhận đặt lịch","Sample profile · not available to book","サンプルプロフィール・予約不可"],ai_badge:["Nhân vật AI · hư cấu","Fictional AI character","架空のAIキャラクター"],ai_book:["Đặt lịch chat AI","Book AI chat","AIチャットを予約"],ai_booking_notice:["Đây là nhân vật AI hư cấu. Lịch đặt chỉ dành cho trải nghiệm chat trực tuyến; không có cuộc gặp ngoài đời. Tin nhắn được gửi tới OpenAI để tạo câu trả lời, vui lòng không gửi thông tin nhạy cảm.","This is a fictional AI character. Bookings are for online chat only; no in-person meeting is available. Messages are sent to OpenAI to generate replies; do not share sensitive information.","架空のAIキャラクターです。予約はオンラインチャット体験のみで、対面はありません。返信生成のためメッセージはOpenAIに送信されます。機密情報を送らないでください。"],
+profile_preview:["Hồ sơ mẫu · chưa nhận đặt lịch","Sample profile · not available to book","サンプルプロフィール・予約不可"],ai_badge:["Nhân vật AI · hư cấu","Fictional AI character","架空のAIキャラクター"],ai_book:["Thuê ngay","Book now","今すぐ予約"],ai_booking_notice:["Đây là nhân vật AI hư cấu. Lịch đặt chỉ dành cho trải nghiệm chat trực tuyến; không có cuộc gặp ngoài đời. Tin nhắn được gửi tới OpenAI để tạo câu trả lời, vui lòng không gửi thông tin nhạy cảm.","This is a fictional AI character. Bookings are for online chat only; no in-person meeting is available. Messages are sent to OpenAI to generate replies; do not share sensitive information.","架空のAIキャラクターです。予約はオンラインチャット体験のみで、対面はありません。返信生成のためメッセージはOpenAIに送信されます。機密情報を送らないでください。"],
 per2h:["/ 2 giờ","/ 2 h","/ 2時間"],hrs:["giờ","h","時間"],revn:["đánh giá","reviews","件"],noresult:["Không có kết quả phù hợp.","No matches found.","該当なし。"],
 nextfree:["Rảnh gần nhất","Next free","次の空き"],nofree:["Chưa có lịch trống","No open slots soon","空きなし"],
 sec_platinum:["Platinum","Platinum","プラチナ"],sec_gold:["Gold","Gold","ゴールド"],sec_silver:["Silver","Silver","シルバー"],sec_special:["Special","Special","スペシャル"],
@@ -413,7 +413,7 @@ function renderList(){
     <div class="notice">${t("notice")}</div>${remindHtml()}
     <div class="tb">
       <div class="tb-row"><input class="inp" id="fq" type="search" placeholder="${esc(t("search_ph"))}" value="${esc(F.q)}" oninput="F.q=this.value;renderResults()">
-        <button class="btn sm ghost" onclick="openAdd()">${t("add_char")}</button></div>
+        ${window.profileAddButtonHtml ? window.profileAddButtonHtml() : ""}</div>
       <div class="tb-row" id="chips"></div>
       <div class="tb-row">
         <select class="inp" id="fmax" aria-label="${esc(t("maxp"))}" onchange="F.max=this.value;renderResults()"><option value="all">${t("maxp")}: ${t("all")}</option>${[9000,14000,20000].map(v=>`<option value="${v}" ${String(F.max)===String(v)?"selected":""}>≤ ${fmt(v)}</option>`).join("")}</select>
