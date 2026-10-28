@@ -24,7 +24,18 @@ hosting location.
    `SUPABASE_SERVICE_ROLE_KEY` to Edge Functions. Do not copy the service-role
    key into the website.
 5. Link the Supabase CLI to this project and deploy `ai-chat-reply` if using
-   AI profiles. The existing `sepay-webhook` function is an optional,
+   AI profiles. After setting `OPENAI_API_KEY`, run
+   `supabase/anime-ai-catalog.sql` in the SQL Editor. The seeded profiles stay
+   inactive until you verify the secret is configured and run:
+
+   ```sql
+   update public.renter_profiles
+   set is_active = true
+   where catalog_key in ('chizuru', 'ruka', 'sumi', 'mini', 'mami')
+     and persona_mode = 'ai';
+   ```
+
+   The existing `sepay-webhook` function is an optional,
    separate integration; it is not used for manual bank-transfer confirmation.
    Keep the website URL in Auth's site and redirect URL settings.
 6. To enable the operator tools, create a normal account, then promote that
@@ -41,11 +52,12 @@ hosting location.
 
 ## Agribank QR and manual payment confirmation
 
-The built-in illustrative profiles remain visible when Supabase is connected,
-but are labeled as samples and cannot be booked. Only active renter profiles
-stored in Supabase accept bookings. The list grows when renter accounts
-publish profiles through their Account page or an administrator adds an AI
-persona.
+Only active renter profiles stored in Supabase accept bookings. The five
+built-in anime profiles can be enabled using `supabase/anime-ai-catalog.sql`
+and the activation SQL above after the AI key is configured. Those profiles
+accept online AI chat bookings only; the database prevents assigning them an
+in-person meeting service. Human renter profiles remain available through
+their own accounts and continue using the existing meeting-service flow.
 
 The checkout QR is generated in the browser from the Agribank account in the
 provided QR image (BIN `970405`, account `6440205910363`, beneficiary
@@ -73,11 +85,12 @@ its own HMAC secret, and separate end-to-end testing before it can be enabled.
 
 ## AI personas
 
-Renter accounts created through the site are human profiles. To add an
-operator-managed fictional AI persona, sign in with the promoted admin account
-and use **Add profile (+)**. Enter the character's personality instructions.
-They are stored separately from public profile data. Set an OpenAI API key as
-a Supabase secret to enable replies. AI personas must be clearly disclosed as
+Renter accounts created through the site are human profiles. The five seeded
+anime profiles are fictional AI personas for online chat only; they cannot be
+booked for an in-person meeting. Other operator-managed fictional AI personas
+can be added after signing in with the promoted admin account and using
+**Add profile (+)**. Set an `OPENAI_API_KEY` Supabase secret and deploy
+`ai-chat-reply` to enable replies. AI personas must be clearly disclosed as
 fictional.
 
 ## GitHub Pages preview

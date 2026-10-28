@@ -9,6 +9,10 @@ Object.assign(T, {
   acct_email_confirm: ["Đã gửi yêu cầu đổi email. Hãy xác nhận email mới theo hướng dẫn của Supabase.", "Email change requested. Confirm the new address using Supabase's email.", "メール変更をリクエストしました。Supabaseからのメールで新しいアドレスを確認してください。"],
   acct_admin_note: ["Tài khoản quản trị chỉ dùng để quản lý hồ sơ AI.", "Admin accounts are limited to managing AI profiles.", "管理者アカウントはAIプロフィール管理専用です。"],
   profile_preview: ["Hồ sơ mẫu · chưa nhận đặt lịch", "Sample profile · not available to book", "サンプルプロフィール・予約不可"],
+  ai_badge: ["Nhân vật AI · hư cấu", "Fictional AI character", "架空のAIキャラクター"],
+  ai_book: ["Đặt lịch chat AI", "Book AI chat", "AIチャットを予約"],
+  ai_booking_notice: ["Đây là nhân vật AI hư cấu. Lịch đặt chỉ dành cho trải nghiệm chat trực tuyến; không có cuộc gặp ngoài đời. Tin nhắn được gửi tới OpenAI để tạo câu trả lời, vui lòng không gửi thông tin nhạy cảm.", "This is a fictional AI character. Bookings are for online chat only; no in-person meeting is available. Messages are sent to OpenAI to generate replies; do not share sensitive information.", "架空のAIキャラクターです。予約はオンラインチャット体験のみで、対面はありません。返信生成のためメッセージはOpenAIに送信されます。機密情報を送らないでください。"],
+  ck_agree: ["Tôi đủ 18 tuổi và hiểu đây là nhân vật AI hư cấu; dịch vụ chỉ chat trực tuyến, không có cuộc gặp ngoài đời.", "I am 18 or older and understand this is a fictional AI character for online chat only, with no in-person meeting.", "私は18歳以上で、架空のAIキャラクターとのオンラインチャットのみであり、対面はないことを理解しています。"],
   pay_transfer_note: ["Nội dung chuyển khoản", "Transfer description", "振込内容"],
   pay_transfer_hint: ["Chuyển khoản đúng số tiền và giữ nguyên nội dung. Quản trị viên sẽ đối chiếu sao kê Agribank trước khi xác nhận; không gửi ảnh biên lai thay cho tiền đã vào tài khoản.", "Transfer the exact amount and keep the payment description unchanged. An administrator will verify the Agribank statement before confirming; a receipt image does not replace funds received.", "正確な金額を振り込み、振込内容を変更しないでください。管理者が入金明細を確認してから確定します。振込画面の画像だけでは確認できません。"],
   pay_wait: ["Đang chờ quản trị viên đối chiếu tiền vào tài khoản. Chat chỉ mở sau khi xác nhận.", "Waiting for an administrator to verify the funds in the bank account. Chat unlocks only after confirmation.", "口座への入金確認を管理者が行っています。確認後にチャットを利用できます。"],
@@ -22,6 +26,7 @@ Object.assign(T, {
   pay_booking_failed: ["Không tạo được đơn. Vui lòng thử lại.", "Could not create the booking. Please try again.", "予約を作成できませんでした。もう一度お試しください。"],
   acct_access_denied: ["Tài khoản này không có quyền thực hiện thao tác.", "This account is not allowed to perform this action.", "このアカウントには操作権限がありません。"],
   chat_paid_only: ["Chat chỉ mở sau khi quản trị viên xác nhận đã nhận đủ tiền.", "Chat opens after an administrator confirms full payment.", "管理者が全額入金を確認した後にチャットを利用できます。"],
+  demo: ["Chuyển khoản Agribank đang được quản trị viên đối chiếu thủ công; đơn và chat chỉ được mở sau khi xác nhận nhận đủ tiền.", "Agribank transfers are verified manually; bookings and chat unlock only after the funds are confirmed.", "Agribankへの振込は手動で確認されます。全額入金の確認後に予約とチャットが有効になります。"],
   chat_failed: ["Không tải được cuộc trò chuyện.", "Could not load the conversation.", "会話を読み込めませんでした。"],
   chat_send_failed: ["Không gửi được tin nhắn.", "Could not send the message.", "メッセージを送信できませんでした。"],
   chat_ai: ["Bạn đang trò chuyện với nhân vật AI hư cấu. Tin nhắn được gửi tới OpenAI để tạo câu trả lời; không gửi thông tin nhạy cảm.", "You are chatting with a fictional AI persona. Messages are sent to OpenAI to generate replies; do not share sensitive information.", "架空のAIキャラクターとの会話です。返信生成のためメッセージはOpenAIに送信されます。機密情報を送らないでください。"],
@@ -31,7 +36,7 @@ Object.assign(T, {
   chat_placeholder: ["Nhập tin nhắn", "Type a message", "メッセージを入力"],
   chat_send: ["Gửi", "Send", "送信"],
   chat_human: ["Tin nhắn được lưu trực tuyến và chỉ hai bên trong đơn thuê có thể truy cập.", "Messages are stored online and accessible only to the booking participants.", "メッセージはオンラインに保存され、予約の参加者のみが閲覧できます。"],
-  notice: ["Hãy chỉ đặt lịch với người trưởng thành. Hồ sơ do người dùng tự khai báo; hãy xác minh thông tin và thống nhất điều kiện gặp trước khi thanh toán.", "Only book with adults. Profiles are self-reported; verify details and agree on meeting arrangements before paying.", "成人のみ予約できます。プロフィールは自己申告です。支払い前に情報を確認し、待ち合わせ条件を合意してください。"],
+  notice: ["Nhân vật AI là hư cấu và chỉ có trải nghiệm chat trực tuyến, không gặp ngoài đời. Hồ sơ người thật do người dùng tự khai báo; hãy xác minh tuổi, thông tin và điều kiện gặp trước khi thanh toán.", "AI characters are fictional and available for online chat only, with no in-person meetings. Human profiles are self-reported; verify age, details, and meeting arrangements before paying.", "AIキャラクターは架空で、オンラインチャットのみ利用でき、対面はありません。人間のプロフィールは自己申告です。支払い前に年齢、情報、待ち合わせ条件を確認してください。"],
 });
 
 const sbConfig = window.DIAMOND_SUPABASE_CONFIG || {};
@@ -100,6 +105,7 @@ function rowToRenter(row) {
     story: [],
     custom: true,
     profileType: row.persona_mode === "ai" ? "ai" : "real",
+    catalogKey: row.catalog_key || null,
     ownerId: row.owner_id,
     avatarUrl: row.avatar_url,
   };
@@ -126,7 +132,7 @@ async function loadRenterProfiles() {
 async function loadBookingRows() {
   if (!sb || !remoteAccount) return [];
   const { data, error } = await sb.from("bookings")
-    .select("*, renter_profiles(id,owner_id,display_name,section,persona_mode)")
+    .select("*, renter_profiles(id,owner_id,display_name,section,persona_mode,catalog_key)")
     .order("created_at", { ascending: false });
   if (error) throw error;
 
@@ -142,7 +148,7 @@ async function loadBookingRows() {
       invoiceNumber: row.invoice_number,
       id: row.renter_profile_id,
       svc: row.service_id,
-      svcName: row.service_id,
+      svcName: SVC.find((service) => service.id === row.service_id)?.n[0] || row.service_id,
       hours: row.hours,
       pkg: row.package_id,
       sessions: Array.isArray(row.sessions) ? row.sessions : [],
@@ -608,11 +614,13 @@ window.startCk = function(id) {
     go("account");
     return;
   }
-  if (!S.custom.some((profile) => profile.id === id)) {
+  const selected = getG(id);
+  const backendProfile = S.custom.find((profile) => profile.id === id || profile.id === selected?.backendId);
+  if (!backendProfile) {
     toast("Chỉ nhận đặt lịch với hồ sơ đã kết nối backend.");
     return;
   }
-  coreStartCk(id);
+  coreStartCk(backendProfile.id);
   ck.name = account.name;
   ck.phone = account.phone;
   ck.email = account.email;
@@ -694,7 +702,7 @@ window.confirmPay = async function() {
   button.textContent = t("processing");
   const { data, error } = await sb.rpc("create_booking", {
     p_renter_profile_id: profile.id,
-    p_service_id: ck.svc,
+    p_service_id: profile.profileType === "ai" ? "cafe" : ck.svc,
     p_hours: ck.hours,
     p_package_id: ck.pkg,
     p_sessions: ck.sessions.map((session) => ({ d: session.d, t: session.t })),

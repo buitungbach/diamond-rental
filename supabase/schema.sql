@@ -128,6 +128,7 @@ $$;
 
 create table if not exists public.renter_profiles (
   id uuid primary key default gen_random_uuid(),
+  catalog_key text,
   owner_id uuid unique references public.profiles(id) on delete cascade,
   display_name text not null,
   section text not null check (section in ('platinum', 'gold', 'silver', 'special')),
