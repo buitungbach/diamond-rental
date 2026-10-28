@@ -37,6 +37,8 @@ Object.assign(T, {
   pay_qr_failed: ["Không tạo được QR. Kiểm tra thư viện QR rồi thử lại.", "Could not render the QR. Check the QR library and try again.", "QRを表示できません。QRライブラリを確認してください。"],
   pay_booking_failed: ["Không tạo được đơn. Vui lòng thử lại.", "Could not create the booking. Please try again.", "予約を作成できませんでした。もう一度お試しください。"],
   acct_access_denied: ["Tài khoản này không có quyền thực hiện thao tác.", "This account is not allowed to perform this action.", "このアカウントには操作権限がありません。"],
+  acct_login_to_book: ["Vui lòng đăng nhập tài khoản khách hàng trước khi đặt lịch.", "Sign in with a customer account before booking.", "予約するには顧客アカウントでログインしてください。"],
+  acct_customer_only: ["Tài khoản quản trị/bạn gái thuê không thể tạo đơn. Hãy đăng xuất và đăng nhập bằng tài khoản khách hàng để đặt lịch.", "Admin and renter accounts cannot create bookings. Sign out and use a customer account to book.", "管理者・レンタル相手アカウントでは予約できません。ログアウトして顧客アカウントで予約してください。"],
   chat_paid_only: ["Chat chỉ mở sau khi quản trị viên xác nhận đã nhận đủ tiền.", "Chat opens after an administrator confirms full payment.", "管理者が全額入金を確認した後にチャットを利用できます。"],
   demo: ["Chuyển khoản Agribank đang được quản trị viên đối chiếu thủ công; đơn và chat chỉ được mở sau khi xác nhận nhận đủ tiền.", "Agribank transfers are verified manually; bookings and chat unlock only after the funds are confirmed.", "Agribankへの振込は手動で確認されます。全額入金の確認後に予約とチャットが有効になります。"],
   chat_failed: ["Không tải được cuộc trò chuyện.", "Could not load the conversation.", "会話を読み込めませんでした。"],
@@ -680,8 +682,18 @@ window.delChar = function() { toast("Hãy quản lý hồ sơ trong mục Tài k
 
 window.startCk = function(id) {
   const account = activeAccount();
-  if (!sb || !account || account.role !== "customer") {
-    toast(t("acct_access_denied"));
+  if (!sb) {
+    toast(t("acct_config_required"));
+    go("account");
+    return;
+  }
+  if (!account) {
+    toast(t("acct_login_to_book"));
+    go("account");
+    return;
+  }
+  if (account.role !== "customer") {
+    toast(t("acct_customer_only"));
     go("account");
     return;
   }
@@ -765,8 +777,21 @@ window.confirmPay = async function() {
   const button = $("payB");
   const account = activeAccount();
   const profile = getG(ck?.id);
-  if (!button || !sb || !backendReady || !account || account.role !== "customer" || !profile || !ck) {
-    showError("bookingErr", t("acct_access_denied"));
+  if (!button) return;
+  if (!sb) {
+    showError("bookingErr", t("acct_config_required"));
+    return;
+  }
+  if (!account) {
+    showError("bookingErr", t("acct_login_to_book"));
+    return;
+  }
+  if (account.role !== "customer") {
+    showError("bookingErr", t("acct_customer_only"));
+    return;
+  }
+  if (!backendReady || !profile || !ck) {
+    showError("bookingErr", t("pay_booking_failed"));
     return;
   }
   button.disabled = true;
