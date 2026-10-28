@@ -1,0 +1,5 @@
+[functions.sepay-webhook]
+verify_jwt = false
+
+[functions.ai-chat-reply]
+verify_jwt = true
