@@ -3,8 +3,13 @@ Object.assign(T, {
   acct_password: ["Mật khẩu", "Password", "パスワード"],
   acct_config_required: ["Cần cấu hình Supabase để đăng nhập và lưu dữ liệu trực tuyến.", "Configure Supabase to sign in and store data online.", "オンラインでログインしてデータを保存するにはSupabaseの設定が必要です。"],
   acct_backend_pending: ["Backend chưa được khởi tạo. Để bảo vệ dữ liệu của bạn, đăng ký, đặt lịch và thanh toán đang tạm khóa. Hãy chạy supabase/schema.sql theo hướng dẫn trong supabase/SETUP.md.", "The backend is not initialized. Registration, booking, and payment are disabled to protect your data. Run supabase/schema.sql as described in supabase/SETUP.md.", "バックエンドが初期化されていません。データ保護のため登録、予約、支払いを停止しています。supabase/SETUP.md の手順に従い supabase/schema.sql を実行してください。"],
-  acct_auth_error: ["Không thể xác thực. Vui lòng kiểm tra email và mật khẩu.", "Authentication failed. Check your email and password.", "認証できませんでした。メールアドレスとパスワードを確認してください。"],
+  acct_auth_error: ["Không đăng nhập được. Kiểm tra email và mật khẩu; nếu chưa xác nhận email, hãy dùng nút gửi lại email xác nhận bên dưới.", "Could not sign in. Check your email and password; if your email is unconfirmed, use the resend confirmation button below.", "ログインできません。メールアドレスとパスワードを確認してください。メール未確認の場合は、下の確認メール再送ボタンを使用してください。"],
   acct_confirm_email: ["Hãy xác nhận email theo liên kết Supabase gửi trước khi đăng nhập.", "Confirm your email using the link sent by Supabase before signing in.", "Supabaseから届いたリンクでメールを確認してからログインしてください。"],
+  acct_resend_confirmation: ["Gửi lại email xác nhận", "Resend confirmation email", "確認メールを再送"],
+  acct_resend_sent: ["Đã yêu cầu gửi email xác nhận. Kiểm tra Hộp thư đến và Spam.", "Confirmation email requested. Check your inbox and spam folder.", "確認メールを再送しました。受信トレイと迷惑メールを確認してください。"],
+  acct_smtp_domain_error: ["Supabase chưa gửi được email vì domain người gửi trong Resend chưa xác minh. Hãy xác minh domain trong Resend rồi đặt Sender email cùng domain trong Supabase SMTP Settings. Tài khoản không bị xóa.", "Supabase could not send the email because the sender domain is not verified in Resend. Verify the domain in Resend and use that same domain for Supabase's SMTP Sender email. Your account was not deleted.", "Resendで送信元ドメインが未確認のため、メールを送信できません。Resendでドメインを確認し、Supabase SMTPの送信元メールにも同じドメインを設定してください。アカウントは削除されていません。"],
+  acct_smtp_rate_error: ["Email đang bị giới hạn gửi. Đừng bấm gửi liên tục; kiểm tra SMTP và thử lại sau khi hạn mức hồi phục.", "Email sending is rate-limited. Do not retry repeatedly; verify SMTP settings and try again after the limit resets.", "メール送信が制限されています。繰り返し再送せず、SMTP設定を確認し、制限解除後に再試行してください。"],
+  acct_resend_error: ["Không gửi được email xác nhận. Kiểm tra domain và thông tin SMTP trong Supabase, rồi thử lại sau.", "Could not send the confirmation email. Check the domain and SMTP settings in Supabase, then try again later.", "確認メールを送信できません。SupabaseのドメインとSMTP設定を確認し、後でもう一度お試しください。"],
   acct_underage: ["Bạn phải đủ 18 tuổi để đăng ký.", "You must be at least 18 to register.", "登録には18歳以上である必要があります。"],
   acct_email_confirm: ["Đã gửi yêu cầu đổi email. Hãy xác nhận email mới theo hướng dẫn của Supabase.", "Email change requested. Confirm the new address using Supabase's email.", "メール変更をリクエストしました。Supabaseからのメールで新しいアドレスを確認してください。"],
   acct_admin_note: ["Tài khoản quản trị chỉ dùng để quản lý hồ sơ AI.", "Admin accounts are limited to managing AI profiles.", "管理者アカウントはAIプロフィール管理専用です。"],
@@ -280,7 +285,8 @@ function renderRemoteAccountForm(mode) {
       <label class="field">${t("acct_password")}<input id="accPassword" type="password" minlength="8" autocomplete="${mode === "register" ? "new-password" : "current-password"}" required></label>
     </div><div class="err" id="accErr"></div>
     <div class="row"><button class="btn sm" onclick="accountAction('${mode}')">${t(mode === "register" ? "acct_register" : "acct_login")}</button>
-      <button class="btn ghost sm" onclick="accountForm('${mode === "register" ? "login" : "register"}')">${t(mode === "register" ? "acct_login" : "acct_register")}</button></div></div>`;
+      <button class="btn ghost sm" onclick="accountForm('${mode === "register" ? "login" : "register"}')">${t(mode === "register" ? "acct_login" : "acct_register")}</button>
+      ${mode === "login" ? `<button class="btn ghost sm" id="accResend" onclick="resendConfirmationEmail()">${t("acct_resend_confirmation")}</button>` : ""}</div></div>`;
   const role = $("accRole");
   if (role) role.value = S.pendingAccountRole || "customer";
 }
@@ -343,13 +349,56 @@ async function accountAction(mode) {
     await hydrateSession(data.user);
   } catch (error) {
     console.error("Authentication request failed", error.message);
-    errorEl.textContent = error.message.includes("already registered")
-      ? t("acct_taken")
-      : error.message.includes("Invalid login")
-        ? t("acct_auth_error")
-        : error.message;
+    const message = String(error.message || "").toLowerCase();
+    if (message.includes("domain is not verified")) {
+      errorEl.textContent = t("acct_smtp_domain_error");
+    } else if (message.includes("email rate limit exceeded")) {
+      errorEl.textContent = t("acct_smtp_rate_error");
+    } else if (message.includes("already registered")) {
+      errorEl.textContent = `${t("acct_taken")} ${t("acct_auth_error")}`;
+    } else if (message.includes("invalid login")) {
+      errorEl.textContent = t("acct_auth_error");
+    } else if (message.includes("could not send email") || message.includes("error sending confirmation email")) {
+      errorEl.textContent = t("acct_resend_error");
+    } else {
+      errorEl.textContent = error.message;
+    }
   }
 }
+
+window.resendConfirmationEmail = async function() {
+  const email = emailKey($("accEmail")?.value || "");
+  const errorEl = $("accErr");
+  const button = $("accResend");
+  if (!sb || !email || !/^\S+@\S+\.\S+$/.test(email)) {
+    if (errorEl) errorEl.textContent = t("acct_bad_email");
+    return;
+  }
+  if (button) {
+    button.disabled = true;
+    button.textContent = t("processing");
+  }
+  if (errorEl) errorEl.textContent = "";
+  const { error } = await sb.auth.resend({ type: "signup", email });
+  if (error) {
+    console.error("Could not resend confirmation email", error.message);
+    const message = String(error.message || "").toLowerCase();
+    if (errorEl) {
+      errorEl.textContent = message.includes("domain is not verified")
+        ? t("acct_smtp_domain_error")
+        : message.includes("email rate limit exceeded")
+          ? t("acct_smtp_rate_error")
+          : t("acct_resend_error");
+    }
+    if (button) {
+      button.disabled = false;
+      button.textContent = t("acct_resend_confirmation");
+    }
+    return;
+  }
+  if (errorEl) errorEl.textContent = t("acct_resend_sent");
+  if (button) button.textContent = t("acct_resend_sent");
+};
 
 function renderAccount() {
   const account = activeAccount();
