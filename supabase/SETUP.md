@@ -7,25 +7,26 @@ hosting location.
 ## Supabase
 
 1. Create a Supabase project and run `supabase/schema.sql` in its SQL Editor.
+   For manual Agribank transfers, also run `supabase/manual-payment.sql`.
 2. Put the project URL and **anon/public** key in `supabase-config.js`.
    Never put the service-role key in that file or in the HTML.
 3. Configure Auth email confirmation and the allowed site/redirect URLs for
    the existing website URL. New accounts must be at least 18 years old.
-4. Set server-side secrets for the Edge Functions:
+4. To enable AI chat, add `OPENAI_API_KEY` under Supabase **Edge Function
+   Secrets**. Payment confirmation for Agribank transfers is manual and does
+   not require a payment-provider API key.
 
    ```text
-   supabase secrets set SEPAY_WEBHOOK_SECRET=... SEPAY_BANK_ACCOUNT=6440205910363 OPENAI_API_KEY=...
+   supabase secrets set OPENAI_API_KEY=...
    ```
 
    Supabase provides `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and
    `SUPABASE_SERVICE_ROLE_KEY` to Edge Functions. Do not copy the service-role
    key into the website.
-5. Link the Supabase CLI to this project, then deploy `sepay-webhook` and
-   `ai-chat-reply` (`supabase link --project-ref <project-ref>`,
-   `supabase functions deploy sepay-webhook`, and
-   `supabase functions deploy ai-chat-reply`). The deploy uses the supplied
-   `supabase/config.toml`. Keep the existing website URL in Auth's site and
-   redirect URL settings.
+5. Link the Supabase CLI to this project and deploy `ai-chat-reply` if using
+   AI profiles. The existing `sepay-webhook` function is an optional,
+   separate integration; it is not used for manual bank-transfer confirmation.
+   Keep the website URL in Auth's site and redirect URL settings.
 6. To enable the operator tools, create a normal account, then promote that
    account to `admin` from the Supabase SQL Editor:
 
@@ -38,7 +39,7 @@ hosting location.
    Sign out and sign back in to refresh the role. Never expose a service-role
    key in the site.
 
-## Agribank QR and SePay
+## Agribank QR and manual payment confirmation
 
 The checkout QR is generated in the browser from the Agribank account in the
 provided QR image (BIN `970405`, account `6440205910363`, beneficiary
@@ -48,17 +49,21 @@ details are not sent to a QR image service.
 Profile images are uploaded to the public `renter-photos` bucket; do not add
 private identity documents there.
 
-In SePay, create an incoming-transfer webhook for that same Agribank account,
-select **HMAC-SHA256**, and point it to:
+An administrator reviews pending orders under the Orders/Inbox page and
+confirms a transfer only after checking the exact amount and bank transaction
+reference in the Agribank statement. A customer-provided screenshot or receipt
+does not confirm payment. The database records the admin account, bank
+reference, booking, and amount. Chat opens only after this confirmation.
 
-```text
-https://<project-ref>.supabase.co/functions/v1/sepay-webhook
-```
+The SQL editor migration `supabase/manual-payment.sql` installs the
+administrator-only queue and confirmation functions. After running it, sign
+in with the account promoted to `admin`; the manual-review interface appears
+in the account page and Orders/Inbox page. Never give an admin login to a
+customer.
 
-Save SePay's webhook signing secret as `SEPAY_WEBHOOK_SECRET`. The function
-checks the signature, timestamp, destination account, transfer direction,
-booking code, exact VND amount, and duplicate transaction ID before it marks
-the booking paid. Chat is available only after this confirmation.
+Do not advertise automatic payment verification while this manual process is
+in use. The optional SePay webhook requires a supported Agribank connection,
+its own HMAC secret, and separate end-to-end testing before it can be enabled.
 
 ## AI personas
 
@@ -78,7 +83,7 @@ filename. GitHub Pages uses a public repository, so the source is publicly
 visible. The former `file:///...` address only works on one computer and
 cannot be used as a public website URL.
 
-This deployment is a preview until a real Supabase project is configured.
-With `supabase-config.js` left blank, online registration, booking, chat, and
-payment confirmation do not work. Do not collect real customer data or accept
-payments until Supabase and the SePay webhook are configured and tested.
+The deployment uses the configured Supabase project. Payment stays pending
+until an administrator verifies the incoming bank transfer. AI chat requires
+`OPENAI_API_KEY`; human-to-human chat requires a paid booking and works after
+the admin confirms payment.

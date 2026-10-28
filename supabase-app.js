@@ -9,12 +9,18 @@ Object.assign(T, {
   acct_email_confirm: ["Đã gửi yêu cầu đổi email. Hãy xác nhận email mới theo hướng dẫn của Supabase.", "Email change requested. Confirm the new address using Supabase's email.", "メール変更をリクエストしました。Supabaseからのメールで新しいアドレスを確認してください。"],
   acct_admin_note: ["Tài khoản quản trị chỉ dùng để quản lý hồ sơ AI.", "Admin accounts are limited to managing AI profiles.", "管理者アカウントはAIプロフィール管理専用です。"],
   pay_transfer_note: ["Nội dung chuyển khoản", "Transfer description", "振込内容"],
-  pay_transfer_hint: ["Quét QR và giữ nguyên nội dung chuyển khoản để SePay tự xác nhận.", "Scan the QR and keep the transfer description unchanged for SePay verification.", "QRを読み取り、SePayの確認のため振込内容を変更しないでください。"],
-  pay_wait: ["Đang chờ SePay xác nhận giao dịch. Chat sẽ mở sau khi nhận đủ tiền.", "Waiting for SePay to verify the transfer. Chat unlocks after payment is confirmed.", "SePayの入金確認を待っています。支払い確認後にチャットが開きます。"],
+  pay_transfer_hint: ["Chuyển khoản đúng số tiền và giữ nguyên nội dung. Quản trị viên sẽ đối chiếu sao kê Agribank trước khi xác nhận; không gửi ảnh biên lai thay cho tiền đã vào tài khoản.", "Transfer the exact amount and keep the payment description unchanged. An administrator will verify the Agribank statement before confirming; a receipt image does not replace funds received.", "正確な金額を振り込み、振込内容を変更しないでください。管理者が入金明細を確認してから確定します。振込画面の画像だけでは確認できません。"],
+  pay_wait: ["Đang chờ quản trị viên đối chiếu tiền vào tài khoản. Chat chỉ mở sau khi xác nhận.", "Waiting for an administrator to verify the funds in the bank account. Chat unlocks only after confirmation.", "口座への入金確認を管理者が行っています。確認後にチャットを利用できます。"],
+  manual_payment_title: ["Đối soát chuyển khoản", "Manual bank transfer review", "銀行振込の手動確認"],
+  manual_payment_notice: ["Chỉ xác nhận sau khi tiền thực sự vào Agribank. Đối chiếu đúng số tiền và mã giao dịch trong sao kê; không dựa vào ảnh biên lai của khách.", "Confirm only after funds have arrived in Agribank. Match the exact amount and transaction reference in the bank statement; do not rely on a customer receipt image.", "Agribankへの実際の入金後にのみ確定してください。明細の金額と取引番号を照合し、顧客の振込画像だけを根拠にしないでください。"],
+  manual_payment_reference: ["Mã giao dịch trong sao kê Agribank", "Transaction reference from the Agribank statement", "Agribank明細の取引番号"],
+  manual_payment_confirm: ["Xác nhận đã nhận tiền", "Confirm funds received", "入金を確認"],
+  manual_payment_empty: ["Không có đơn đang chờ thanh toán.", "No bookings are awaiting payment.", "支払い待ちの予約はありません。"],
+  manual_payment_sql_missing: ["Chưa cài quy trình xác nhận thủ công. Quản trị viên cần chạy supabase/manual-payment.sql trong SQL Editor của Supabase.", "Manual confirmation is not installed. An administrator must run supabase/manual-payment.sql in the Supabase SQL Editor.", "手動確認が未設定です。管理者はSupabase SQL Editorで supabase/manual-payment.sql を実行してください。"],
   pay_qr_failed: ["Không tạo được QR. Kiểm tra thư viện QR rồi thử lại.", "Could not render the QR. Check the QR library and try again.", "QRを表示できません。QRライブラリを確認してください。"],
   pay_booking_failed: ["Không tạo được đơn. Vui lòng thử lại.", "Could not create the booking. Please try again.", "予約を作成できませんでした。もう一度お試しください。"],
   acct_access_denied: ["Tài khoản này không có quyền thực hiện thao tác.", "This account is not allowed to perform this action.", "このアカウントには操作権限がありません。"],
-  chat_paid_only: ["Chat chỉ mở sau khi SePay xác nhận thanh toán.", "Chat is available after SePay confirms payment.", "SePayの支払い確認後にチャットを利用できます。"],
+  chat_paid_only: ["Chat chỉ mở sau khi quản trị viên xác nhận đã nhận đủ tiền.", "Chat opens after an administrator confirms full payment.", "管理者が全額入金を確認した後にチャットを利用できます。"],
   chat_failed: ["Không tải được cuộc trò chuyện.", "Could not load the conversation.", "会話を読み込めませんでした。"],
   chat_send_failed: ["Không gửi được tin nhắn.", "Could not send the message.", "メッセージを送信できませんでした。"],
   chat_ai: ["Bạn đang trò chuyện với nhân vật AI hư cấu. Tin nhắn được gửi tới OpenAI để tạo câu trả lời; không gửi thông tin nhạy cảm.", "You are chatting with a fictional AI persona. Messages are sent to OpenAI to generate replies; do not share sensitive information.", "架空のAIキャラクターとの会話です。返信生成のためメッセージはOpenAIに送信されます。機密情報を送らないでください。"],
@@ -42,6 +48,7 @@ if (!sb) {
 }
 let remoteAccount = null;
 let backendReady = false;
+let adminPendingPayments = [];
 let chatBookingId = "";
 let chatChannel = null;
 let notificationsChannel = null;
@@ -346,7 +353,8 @@ function renderAccount() {
       <button class="btn sm" onclick="openAdd()">${t(S.custom.some((profile) => profile.ownerId === account.id) ? "acct_edit_profile" : "acct_add_profile")}</button></div>` : ""}
     ${account.role === "admin" ? `<div class="panel"><h3>Quản lý nhân vật AI</h3>
       <p class="muted">Tạo hồ sơ nhân vật hư cấu; hệ thống sẽ trả lời bằng AI sau khi đơn được thanh toán.</p>
-      <button class="btn sm" onclick="openAdd()">+ Thêm nhân vật AI</button></div>` : ""}
+      <button class="btn sm" onclick="openAdd()">+ Thêm nhân vật AI</button>
+      <button class="btn ghost sm" onclick="go('orders')">${t("manual_payment_title")}</button></div>` : ""}
     <div class="panel"><h3>${t("ord_t")}</h3><button class="btn ghost sm" onclick="go('orders')">${t("chat_inbox")}</button></div>`;
 }
 
@@ -516,6 +524,66 @@ window.renderAll = function() {
   else if (view === "checkout" && ck) renderCk();
 };
 
+async function renderAdminPaymentReview() {
+  const app = $("app");
+  app.innerHTML = `<h2>${t("manual_payment_title")}</h2><p class="notice">${t("manual_payment_notice")}</p><p class="muted">Đang tải...</p>`;
+  const { data, error } = await sb.rpc("list_pending_manual_payments");
+  if (view !== "orders") return;
+  if (error) {
+    console.error("Could not load manual payment review queue", error.message);
+    app.innerHTML = `<h2>${t("manual_payment_title")}</h2><p class="notice">${t("manual_payment_sql_missing")}</p><p class="err">${esc(error.message)}</p>`;
+    return;
+  }
+
+  adminPendingPayments = data || [];
+  app.innerHTML = `<h2>${t("manual_payment_title")}</h2>
+    <p class="notice">${t("manual_payment_notice")}</p>
+    ${adminPendingPayments.length ? adminPendingPayments.map((payment, index) => `
+      <div class="ord">
+        <div class="top">
+          <div style="flex:1;min-width:0">
+            <b>${esc(payment.customer_name)}</b>
+            <div class="muted">${esc(payment.renter_name)} · ${esc(payment.code)}</div>
+            <div class="muted">Mã đối chiếu: <code>${esc(payment.transfer_reference)}</code> · ${esc(new Date(payment.created_at).toLocaleString("vi-VN"))}</div>
+          </div>
+          <div style="text-align:right"><b>${Number(payment.total_vnd).toLocaleString("vi-VN")} ₫</b><div class="st-b wait">${t("pay_pending")}</div></div>
+        </div>
+        <label class="field">${t("manual_payment_reference")}<input id="manualRef${index}" maxlength="160" autocomplete="off" required></label>
+        <button class="btn sm" onclick="confirmManualPayment(${index})">${t("manual_payment_confirm")}</button>
+      </div>`).join("") : `<p class="sub">${t("manual_payment_empty")}</p>`}`;
+}
+
+window.confirmManualPayment = async function(index) {
+  const account = activeAccount();
+  const payment = adminPendingPayments[index];
+  const referenceInput = $(`manualRef${index}`);
+  const reference = referenceInput?.value.trim() || "";
+  if (!sb || !backendReady || account?.role !== "admin" || !payment) {
+    return toast(t("acct_access_denied"));
+  }
+  if (!reference || reference.length > 160) {
+    referenceInput?.focus();
+    return toast(t("acct_missing"));
+  }
+  if (!window.confirm(`Chỉ xác nhận sau khi đã thấy tiền vào Agribank.\n\nĐối chiếu sao kê cho đơn ${payment.code}, đúng ${Number(payment.total_vnd).toLocaleString("vi-VN")} ₫ và mã giao dịch ${reference}.\n\nXác nhận đã nhận đủ tiền?`)) {
+    return;
+  }
+  const button = referenceInput.closest(".ord")?.querySelector("button");
+  if (button) button.disabled = true;
+  const { error } = await sb.rpc("confirm_manual_bank_payment", {
+    p_code: payment.code,
+    p_reference_code: reference,
+  });
+  if (error) {
+    console.error("Could not confirm manual bank payment", error.message);
+    toast(error.message || "Không xác nhận được giao dịch.");
+    if (button) button.disabled = false;
+    return;
+  }
+  toast("Đã ghi nhận khoản tiền vào Agribank.");
+  await renderAdminPaymentReview();
+};
+
 window.openProfile = function(id, index) {
   localOpenProfile(id, index);
   const box = $("box");
@@ -608,7 +676,7 @@ window.openPay = function() {
   const quote = quote();
   openBox(`<h2>${t("pm_t")}</h2><p>${esc(getG(ck.id)?.name || "")} · ${ck.sessions.length} ${t("sess")} · ${ck.hours} ${t("hrs")}</p>
     <h2 style="margin:10px 0">${fmt(quote.total)}</h2>
-    <p class="notice">QR VietQR sẽ được tạo cho đúng số tiền và mã đơn, về tài khoản Agribank của bạn. SePay sẽ xác nhận giao dịch qua webhook.</p>
+    <p class="notice">QR VietQR về tài khoản Agribank. Đơn sẽ được quản trị viên đối chiếu thủ công trong sao kê trước khi mở chat.</p>
     <div class="err" id="bookingErr"></div>
     <button class="btn" id="payB" onclick="confirmPay()">${t("confirm_pay")} · ${fmt(quote.total)}</button>`);
 };
@@ -655,6 +723,10 @@ window.renderRemoteOrders = async function() {
   app.innerHTML = `<h2>${t("ord_t")}</h2><p class="muted">Đang tải...</p>`;
   if (!sb || !activeAccount()) {
     app.innerHTML = `<h2>${t("ord_t")}</h2>${authNotice()}<button class="btn sm" onclick="go('account')">${t("tab_account")}</button>`;
+    return;
+  }
+  if (activeAccount().role === "admin") {
+    await renderAdminPaymentReview();
     return;
   }
   try {
