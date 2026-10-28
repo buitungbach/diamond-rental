@@ -41,6 +41,12 @@ hosting location.
 
 ## Agribank QR and manual payment confirmation
 
+The built-in illustrative profiles remain visible when Supabase is connected,
+but are labeled as samples and cannot be booked. Only active renter profiles
+stored in Supabase accept bookings. The list grows when renter accounts
+publish profiles through their Account page or an administrator adds an AI
+persona.
+
 The checkout QR is generated in the browser from the Agribank account in the
 provided QR image (BIN `970405`, account `6440205910363`, beneficiary
 `BUI TUNG BACH`). Each QR contains the server-calculated VND amount and unique

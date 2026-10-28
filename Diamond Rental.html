@@ -202,6 +202,7 @@ all:["Tất cả","All","すべて"],fav_only:["Yêu thích","Favorites","お気
 sort_sec:["Theo hạng","By tier","ランク順"],sort_rating:["Đánh giá cao","Top rated","評価順"],sort_pa:["Giá thấp đến cao","Price: low to high","価格が安い順"],sort_pd:["Giá cao đến thấp","Price: high to low","価格が高い順"],
 maxp:["Giá tối đa","Max price","上限価格"],any_tag:["Mọi tag","Any tag","全タグ"],
 add_char:["Thêm hồ sơ bạn gái thuê (+)","Add renter profile (+)","レンタルプロフィールを追加 (+)"],rent:["Thuê ngay","Book now","予約する"],photo:["Đổi ảnh","Change photo","写真変更"],
+profile_preview:["Hồ sơ mẫu · chưa nhận đặt lịch","Sample profile · not available to book","サンプルプロフィール・予約不可"],
 per2h:["/ 2 giờ","/ 2 h","/ 2時間"],hrs:["giờ","h","時間"],revn:["đánh giá","reviews","件"],noresult:["Không có kết quả phù hợp.","No matches found.","該当なし。"],
 nextfree:["Rảnh gần nhất","Next free","次の空き"],nofree:["Chưa có lịch trống","No open slots soon","空きなし"],
 sec_platinum:["Platinum","Platinum","プラチナ"],sec_gold:["Gold","Gold","ゴールド"],sec_silver:["Silver","Silver","シルバー"],sec_special:["Special","Special","スペシャル"],
@@ -417,7 +418,7 @@ function renderChips(){
     `<button class="chip ${F.fav?"on":""}" onclick="F.fav=!F.fav;renderChips();renderResults()">♥ ${t("fav_only")}</button>`;
 }
 function card(g){
-  const e=eff(g),nf=nextFree(g),n=revs(g.id).length;
+  const e=eff(g),nf=nextFree(g),n=revs(g.id).length,canBook=!!g.custom;
   return `<div class="card">
     <div class="ph" style="${bg(g)}" role="img" aria-label="${esc(g.name)}">
       <span class="tl"><span class="pill ${e.promoted?"up":""}">${e.promoted?t("promoted")+" · ":""}${t(level(g.id))}</span></span>
@@ -429,7 +430,7 @@ function card(g){
       <div>${g.tags.map(x=>`<span class="pill tag">${esc(x)}</span>`).join("")}</div>
       <div class="free">${nf?t("nextfree")+": "+nf:t("nofree")}</div>
       <div class="price">${fmt(e.price)} <span class="muted" style="font-weight:500;font-size:.8rem">${t("per2h")}</span></div>
-      <div class="btns"><button class="btn" onclick="startCk('${g.id}')">${t("rent")}</button><button class="btn ghost" onclick="chImg('${g.id}')" aria-label="${esc(t("photo"))}">${t("photo")}</button></div>
+      <div class="btns"><button class="btn" ${canBook?`onclick="startCk('${g.id}')"`:"disabled"}>${canBook?t("rent"):t("profile_preview")}</button><button class="btn ghost" onclick="chImg('${g.id}')" aria-label="${esc(t("photo"))}">${t("photo")}</button></div>
     </div></div>`;
 }
 function renderResults(){
