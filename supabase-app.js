@@ -2,6 +2,7 @@
 Object.assign(T, {
   acct_password: ["Mật khẩu", "Password", "パスワード"],
   acct_config_required: ["Cần cấu hình Supabase để đăng nhập và lưu dữ liệu trực tuyến.", "Configure Supabase to sign in and store data online.", "オンラインでログインしてデータを保存するにはSupabaseの設定が必要です。"],
+  acct_backend_pending: ["Backend chưa được khởi tạo. Để bảo vệ dữ liệu của bạn, đăng ký, đặt lịch và thanh toán đang tạm khóa. Hãy chạy supabase/schema.sql theo hướng dẫn trong supabase/SETUP.md.", "The backend is not initialized. Registration, booking, and payment are disabled to protect your data. Run supabase/schema.sql as described in supabase/SETUP.md.", "バックエンドが初期化されていません。データ保護のため登録、予約、支払いを停止しています。supabase/SETUP.md の手順に従い supabase/schema.sql を実行してください。"],
   acct_auth_error: ["Không thể xác thực. Vui lòng kiểm tra email và mật khẩu.", "Authentication failed. Check your email and password.", "認証できませんでした。メールアドレスとパスワードを確認してください。"],
   acct_confirm_email: ["Hãy xác nhận email theo liên kết Supabase gửi trước khi đăng nhập.", "Confirm your email using the link sent by Supabase before signing in.", "Supabaseから届いたリンクでメールを確認してからログインしてください。"],
   acct_underage: ["Bạn phải đủ 18 tuổi để đăng ký.", "You must be at least 18 to register.", "登録には18歳以上である必要があります。"],
@@ -40,6 +41,7 @@ if (!sb) {
   ];
 }
 let remoteAccount = null;
+let backendReady = false;
 let chatBookingId = "";
 let chatChannel = null;
 let notificationsChannel = null;
@@ -99,6 +101,7 @@ function rowToRenter(row) {
 
 async function loadRenterProfiles() {
   if (!sb) return;
+  backendReady = false;
   const { data, error } = await sb.from("renter_profiles")
     .select("*")
     .eq("is_active", true)
@@ -109,6 +112,7 @@ async function loadRenterProfiles() {
     return;
   }
   S.custom = (data || []).map(rowToRenter);
+  backendReady = true;
 }
 
 async function loadBookingRows() {
@@ -258,11 +262,16 @@ function accountForm(mode) {
     $("app").innerHTML = `<h2>${t("acct_title")}</h2>${authNotice()}<p class="muted">Cấu hình URL và anon key trong <code>supabase-config.js</code> để bật đăng ký.</p>`;
     return;
   }
+  if (!backendReady) {
+    $("app").innerHTML = `<h2>${t("acct_title")}</h2><p class="notice">${t("acct_backend_pending")}</p>`;
+    return;
+  }
   renderRemoteAccountForm(mode);
 }
 
 async function accountAction(mode) {
   if (!sb) return showError("accErr", t("acct_config_required"));
+  if (!backendReady) return accountForm(mode);
   const role = mode === "register" ? $("accRole").value : "";
   const email = emailKey($("accEmail").value);
   const password = $("accPassword").value;
@@ -608,7 +617,7 @@ window.confirmPay = async function() {
   const button = $("payB");
   const account = activeAccount();
   const profile = getG(ck?.id);
-  if (!sb || !account || account.role !== "customer" || !profile || !ck) {
+  if (!sb || !backendReady || !account || account.role !== "customer" || !profile || !ck) {
     showError("bookingErr", t("acct_access_denied"));
     return;
   }
