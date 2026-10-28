@@ -635,12 +635,12 @@ function renderCk(){
     <div class="notice">${t("notice")}</div>
     <div class="ck"><div>
       <div class="panel"><h3>${t("ck_svc")}</h3>
-        ${(g.profileType==="ai"?SVC.filter(s=>s.id==="ai_chat"):SVC.filter(s=>s.id!=="ai_chat")).map(s=>`<button class="opt ${s.id===ck.svc?"on":""}" onclick="ck.svc='${s.id}';renderCk()"><span>${s.n[L()]}</span><span class="pr">${s.fee?"+"+fmt(s.fee):"0"}</span></button>`).join("")}
+        ${(g.profileType==="ai"?SVC.filter(s=>s.id==="ai_chat"):SVC.filter(s=>s.id!=="ai_chat")).map(s=>`<button class="opt ${s.id===ck.svc?"on":""}" onclick="ck.svc='${s.id}';renderCk()"><span>${s.n[L()]}</span><span class="pr">${s.feePct?`+${s.feePct}%`:"0%"}</span></button>`).join("")}
         <label class="field">${t("ck_dur")}<select id="ckh" onchange="ck.hours=+this.value;ck.sessions.forEach(s=>s.t='');renderCk()">${[2,4,6,8].map(h=>`<option value="${h}" ${ck.hours===h?"selected":""}>${h} ${t("hrs")}</option>`).join("")}</select></label>
         <div class="field" style="margin-bottom:6px">${t("ck_pkg")}</div>
         ${PKG.map(p=>`<button class="opt ${p.id===ck.pkg?"on":""}" onclick="setPkg('${p.id}')"><span>${t(p.id)}</span><span class="pr">${p.off?"-"+p.off+"%":"0%"}</span></button>`).join("")}
       </div>
-      <div class="panel"><h3>${t("ck_time")}</h3>${ck.sessions.map((s,i)=>sessHtml(g,i)).join("")}</div>
+      <div class="panel" id="ckTimePanel"><h3>${t("ck_time")}</h3>${ck.sessions.map((s,i)=>sessHtml(g,i)).join("")}</div>
       ${g.profileType==="ai"?`<div class="notice">${t("ai_booking_notice")}</div>`:`<div class="panel"><h3>${t("ck_place")}</h3>
         <label class="field">${t("ck_pname")}<input id="ckp" value="${esc(ck.place)}" oninput="ck.place=this.value"></label>
         <label class="field">${t("ck_addr")}<input id="cka" value="${esc(ck.addr)}" oninput="ck.addr=this.value"></label></div>`}
@@ -670,14 +670,25 @@ function applyCp(){
   $("sum").innerHTML=sumHtml();
 }
 function submitCk(){
-  applyCp();const E=$("ckE");E.textContent="";
-  if(ck.sessions.some(s=>!s.d||!s.t))return E.textContent=t("e_date");
-  if(getG(ck.id)?.profileType!=="ai"&&!ck.place.trim())return E.textContent=t("e_place");
-  if(!ck.name.trim())return E.textContent=t("e_name");
-  if(!/^[0-9+\s().-]{8,16}$/.test(ck.phone.trim()))return E.textContent=t("e_phone");
-  if(!/^\S+@\S+\.\S+$/.test(ck.email.trim()))return E.textContent=t("e_email");
-  if(!(+ck.age>=18))return E.textContent=t("e_age");
-  if(!ck.agree)return E.textContent=t("e_agree");
+  applyCp();
+  const error=$("ckE");
+  error.textContent="";
+  const reject=(message,targetId)=>{
+    error.textContent=message;
+    const target=$(targetId);
+    const focusTarget=target?.matches("input,select,textarea,button")
+      ? target
+      : target?.querySelector("input,select,textarea,button") || target;
+    target?.scrollIntoView({behavior:"smooth",block:"center"});
+    focusTarget?.focus({preventScroll:true});
+  };
+  if(ck.sessions.some(s=>!s.d||!s.t))return reject(t("e_date"),"ckTimePanel");
+  if(getG(ck.id)?.profileType!=="ai"&&!ck.place.trim())return reject(t("e_place"),"ckp");
+  if(!ck.name.trim())return reject(t("e_name"),"ckn");
+  if(!/^[0-9+\s().-]{8,16}$/.test(ck.phone.trim()))return reject(t("e_phone"),"ckph");
+  if(!/^\S+@\S+\.\S+$/.test(ck.email.trim()))return reject(t("e_email"),"cke");
+  if(!(+ck.age>=18))return reject(t("e_age"),"ckag");
+  if(!ck.agree)return reject(t("e_agree"),"ckok");
   openPay();
 }
 function openPay(){
