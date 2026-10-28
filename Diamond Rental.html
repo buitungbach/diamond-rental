@@ -30,7 +30,7 @@
 body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15px;line-height:1.5}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--surface)}
 button,input,select,textarea{font:inherit;color:inherit}
-button{cursor:pointer}
+button{cursor:pointer;transition:transform .18s ease,box-shadow .18s ease}
 .wrap{width:100%;max-width:1120px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
 :focus-visible{outline:2px solid var(--ice);outline-offset:2px}
 
@@ -172,6 +172,8 @@ th{color:var(--muted);font-weight:600;font-size:.78rem}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--fg);color:var(--bg);padding:10px 18px;border-radius:999px;z-index:70;font-size:.88rem;max-width:90vw;text-align:center}
 .ft{padding-block:26px 40px;color:var(--muted);font-size:.78rem;text-align:center}
 .inv{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.82rem;background:var(--surface2);border-radius:10px;padding:12px;white-space:pre-wrap;overflow-x:auto;user-select:all}
+@media (hover:hover) and (pointer:fine){button:not(:disabled):hover{transform:translateY(-2px);box-shadow:0 6px 16px rgba(0,0,0,.2)}}
+button:not(:disabled):active{transform:scale(.98)}
 @media (max-width:820px){.ck{grid-template-columns:minmax(0,1fr)}.sum{position:static}}
 @media (max-width:420px){.r2{grid-template-columns:1fr}.rr{gap:10px}.rr .sc{font-size:1.15rem}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
@@ -655,7 +657,7 @@ function renderCk(){
         <div class="err" id="cpm"></div>
         <label class="field">${t("ck_note")}<textarea id="ckno" oninput="ck.note=this.value">${esc(ck.note)}</textarea></label></div>
     </div>
-    <div class="sum panel"><h3>${t("q_t")}</h3><div id="sum">${sumHtml()}</div><div class="err" id="ckE"></div>
+    <div class="sum panel"><h3>${t("q_t")}</h3><div id="sum">${sumHtml()}</div><div class="err" id="ckE" role="status" aria-live="polite"></div>
       <button class="btn" style="padding:13px;font-size:1.02rem" onclick="submitCk()">${t("pay")} · ${fmt(quote().total)}</button>
       <div class="muted" style="font-size:.78rem;margin-top:8px">${t("demo")}</div></div></div>`;
 }
@@ -675,6 +677,7 @@ function submitCk(){
   error.textContent="";
   const reject=(message,targetId)=>{
     error.textContent=message;
+    toast(message);
     const target=$(targetId);
     const focusTarget=target?.matches("input,select,textarea,button")
       ? target
