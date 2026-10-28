@@ -776,7 +776,8 @@ window.openPay = function() {
 window.confirmPay = async function() {
   const button = $("payB");
   const account = activeAccount();
-  const profile = getG(ck?.id);
+  const selectedProfile = getG(ck?.id);
+  const profile = S.custom.find((item) => item.id === ck?.id || item.id === selectedProfile?.backendId);
   if (!button) return;
   if (!sb) {
     showError("bookingErr", t("acct_config_required"));
@@ -790,8 +791,8 @@ window.confirmPay = async function() {
     showError("bookingErr", t("acct_customer_only"));
     return;
   }
-  if (!backendReady || !profile || !ck) {
-    showError("bookingErr", t("pay_booking_failed"));
+  if (!backendReady || !profile || !/^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(profile.id) || !ck) {
+    showError("bookingErr", "Hồ sơ này chưa được kết nối với hệ thống đặt lịch. Vui lòng tải lại trang hoặc chọn hồ sơ khác.");
     return;
   }
   button.disabled = true;
