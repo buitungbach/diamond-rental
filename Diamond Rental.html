@@ -142,6 +142,10 @@ th{color:var(--muted);font-weight:600;font-size:.78rem}
 .tlist li{padding:0 0 10px 14px;position:relative;font-size:.9rem}
 .tlist li::before{content:"";position:absolute;left:-6px;top:6px;width:10px;height:10px;border-radius:50%;background:var(--accent)}
 .rev{border-top:1px solid var(--line);padding:10px 0;font-size:.9rem}
+.availability-row{display:grid;grid-template-columns:minmax(120px,1fr) repeat(2,minmax(96px,.7fr));gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}
+.availability-row>label:first-child{display:flex;align-items:center;gap:8px}
+.availability-row .field{margin:0}
+.report-card{border-top:1px solid var(--line);padding:12px 0;overflow-wrap:anywhere}
 .days{display:flex;gap:6px;flex-wrap:wrap}
 .day{border-radius:8px;padding:4px 10px;font-size:.8rem;font-weight:600;background:var(--surface2);color:var(--muted)}
 .day.on{background:var(--ok-soft);color:var(--ok)}
@@ -197,7 +201,7 @@ th{color:var(--muted);font-weight:600;font-size:.78rem}
 @media (hover:hover) and (pointer:fine){button:not(:disabled):hover{transform:translateY(-2px);box-shadow:0 6px 16px rgba(0,0,0,.2)}}
 button:not(:disabled):active{transform:scale(.98)}
 @media (max-width:820px){.ck{grid-template-columns:minmax(0,1fr)}.sum{position:static}}
-@media (max-width:420px){.r2{grid-template-columns:1fr}.rr{gap:10px}.rr .sc{font-size:1.15rem}}
+@media (max-width:420px){.r2{grid-template-columns:1fr}.rr{gap:10px}.rr .sc{font-size:1.15rem}.availability-row{grid-template-columns:1fr 1fr}.availability-row>label:first-child{grid-column:1/-1}.ov{padding-inline:8px}.box{padding:18px 14px}.ord .top{align-items:flex-start}.ord .top .av{width:44px;height:44px}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 
@@ -220,7 +224,7 @@ button:not(:disabled):active{transform:scale(.98)}
 const T={
 tag:["Dịch vụ bạn gái thuê · trang fan-made","Rental girlfriend service · fan-made site","レンタル彼女サービス · ファンサイト"],
 tab_list:["Danh sách","Girls","一覧"],tab_rank:["Xếp hạng","Ranking","ランキング"],tab_orders:["Lịch thuê","Bookings","予約"],tab_vip:["Thành viên","Membership","会員"],tab_account:["Tài khoản","Account","アカウント"],
-notice:["Đây là trang fan-made lấy cảm hứng từ anime Rent-a-Girlfriend. Dịch vụ không có thật, thanh toán chỉ là mô phỏng. Đừng nhập thông tin cá nhân thật.","Fan-made site inspired by the anime Rent-a-Girlfriend. The service is not real and payments are simulated. Please do not enter real personal details.","アニメ『彼女、お借りします』にインスパイアされたファンサイトです。サービスは実在せず、支払いは模擬です。実際の個人情報は入力しないでください。"],
+notice:["Đây là dịch vụ đặt lịch và thanh toán chuyển khoản thủ công. Kiểm tra kỹ thông tin đơn và chỉ chuyển đúng số tiền, nội dung trên mã QR; quản trị viên xác nhận sau khi tiền vào tài khoản. Dữ liệu tài khoản được lưu trên hệ thống Supabase; không gửi thông tin nhạy cảm trong chat.","This site supports real bookings and manually verified bank transfers. Check the booking details and transfer only the exact amount and reference shown in the QR; an administrator confirms after funds arrive. Account data is stored in Supabase; do not share sensitive information in chat.","このサイトでは予約と手動確認の銀行振込を扱います。予約内容を確認し、QRに表示された正確な金額と振込内容を使用してください。入金後に管理者が確認します。アカウント情報はSupabaseに保存されます。チャットで機密情報を共有しないでください。"],
 search_ph:["Tìm theo tên hoặc tag","Search by name or tag","名前・タグで検索"],
 all:["Tất cả","All","すべて"],fav_only:["Yêu thích","Favorites","お気に入り"],sort:["Sắp xếp","Sort","並び替え"],
 sort_sec:["Theo hạng","By tier","ランク順"],sort_rating:["Đánh giá cao","Top rated","評価順"],sort_pa:["Giá thấp đến cao","Price: low to high","価格が安い順"],sort_pd:["Giá cao đến thấp","Price: high to low","価格が高い順"],
@@ -250,7 +254,7 @@ vt_bronze:["Đồng","Bronze","ブロンズ"],vt_silver:["Bạc","Silver","シ�
 most:["Người bạn thuê nhiều nhất","Most booked by you","よく予約する人"],
 ord_t:["Lịch thuê của bạn","Your bookings","あなたの予約"],ord_none:["Chưa có đơn nào. Chọn một nhân vật ở tab Danh sách để bắt đầu.","No bookings yet. Pick someone in the Girls tab to start.","予約はまだありません。一覧から選んでください。"],
 st_up:["Sắp tới","Upcoming","予定"],st_done:["Hoàn thành","Completed","完了"],st_can:["Đã huỷ","Cancelled","キャンセル"],paid:["Đã thanh toán","Paid","支払済"],cashp:["Thanh toán khi gặp","Pay on meeting","会った時に支払い"],
-invoice:["Hoá đơn","Invoice","請求書"],finish:["Hoàn thành & đánh giá","Complete & review","完了してレビュー"],cancel:["Huỷ đơn","Cancel order","キャンセル"],cancel2:["Bấm lần nữa để huỷ","Tap again to cancel","もう一度押して確定"],addcal:["Thêm vào Google Lịch","Add to Google Calendar","Googleカレンダーに追加"],
+invoice:["Biên nhận","Receipt","領収書"],finish:["Hoàn thành & đánh giá","Complete & review","完了してレビュー"],cancel:["Huỷ đơn","Cancel order","キャンセル"],cancel2:["Bấm lần nữa để huỷ","Tap again to cancel","もう一度押して確定"],addcal:["Thêm vào Google Lịch","Add to Google Calendar","Googleカレンダーに追加"],
 remind:["Nhắc hẹn: {n} gặp bạn lúc {w}.","Reminder: meeting {n} at {w}.","リマインド：{n}さんと{w}に会います。"],
 ck_back:["Quay lại","Back","戻る"],ck_t:["Đặt lịch {n}","Book {n}","{n}を予約"],ck_svc:["1. Chọn dịch vụ","1. Choose a service","1. サービス選択"],ck_dur:["Thời lượng mỗi buổi","Length of each session","1回の時間"],ck_pkg:["Gói ưu đãi","Package","パッケージ"],
 pk1:["Lẻ 1 buổi","Single session","単発1回"],pk2:["Gói đôi 2 buổi","Duo pack, 2 sessions","2回パック"],pk3:["Combo 3 buổi","Combo, 3 sessions","3回コンボ"],
@@ -320,7 +324,7 @@ const PM=["qr","wallet","cash"];
 /* ================= STATE ================= */
 const KEY="diamond_v2";
 function load(){try{const s=JSON.parse(localStorage.getItem(KEY)||"null");if(s&&typeof s==="object")return s}catch(e){}return null}
-let S=Object.assign({fav:{},reviews:{},orders:[],imgs:{},gallery:{},custom:[],lang:"vi",cur:"VND",theme:null},load()||{});
+let S=Object.assign({fav:{},reviews:{},remoteReviews:{},orders:[],imgs:{},gallery:{},custom:[],lang:"vi",cur:"VND",theme:null},load()||{});
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){toast(t("storage_full"))}}
 let view="list", F={q:"",sec:"all",max:"all",tag:"all",fav:false,sort:"sec"}, ck=null;
 
@@ -345,7 +349,7 @@ const sameRenter=(a,b)=>{
 };
 const imgOf=g=>S.imgs[g.id]||IMG[g.id]||"";
 const bg=g=>{const u=imgOf(g);return u?`background-image:url('${u}')`:`background-image:linear-gradient(135deg,${g.color},#2a2140)`};
-const revs=id=>(SEED_REV[id]||[]).concat(S.reviews[id]||[]);
+const revs=id=>(SEED_REV[id]||[]).concat(S.reviews[id]||[],S.remoteReviews?.[id]||[]);
 const avg=id=>{const r=revs(id);return r.length?r.reduce((a,b)=>a+b.r,0)/r.length:0};
 const doneN=id=>S.orders.filter(o=>sameRenter(o.id,id)&&o.status==="done").reduce((a,o)=>a+o.sessions.length,0);
 const rents=id=>(SEED_RENTS[id]||0)+doneN(id);
@@ -373,12 +377,21 @@ function nowP(){const n=new Date();return{d:n.getFullYear()+"-"+p2(n.getMonth()+
 function busy(id,d,h){let x=7;const s=id+d+h;for(let i=0;i<s.length;i++)x=(x*31+s.charCodeAt(i))>>>0;return x%6===0}
 function mine(id,d,h){return S.orders.some(o=>sameRenter(o.id,id)&&o.status!=="cancelled"&&o.sessions.some(s=>s.d===d&&h>=+s.t.slice(0,2)&&h<+s.t.slice(0,2)+o.hours))}
 function slotsFor(g,d,hours,self){
-  const a=g.avail,np=nowP(),out=[];
-  if(!a.days.includes(new Date(d+"T00:00:00").getDay()))return{closed:true,out};
-  for(let h=a.from;h+hours<=a.to;h++){
+  const a=g.avail,np=nowP(),out=[],day=new Date(d+"T00:00:00").getDay();
+  const windows=a.windows?.filter(w=>w.day===day)||(
+    a.days.includes(day)?[{day,from:a.from,to:a.to}]:[]
+  );
+  if(!windows.length)return{closed:true,out};
+  for(const window of windows)for(let h=window.from;h+hours<=window.to;h++){
     let why="";
     if(d<np.d||(d===np.d&&h<=np.h))why="x";
-    for(let x=h;x<h+hours&&!why;x++)if(busy(g.id,d,x)||mine(g.id,d,x))why="x";
+    for(let x=h;x<h+hours&&!why;x++){
+      const remotelyBusy=ck?.renterProfileId===g.id&&ck.busySlots?.some(slot=>{
+        const start=+slot.t.slice(0,2),end=start+slot.hours;
+        return x>=start&&x<end;
+      });
+      if((!g.backendId&&busy(g.id,d,x))||mine(g.id,d,x)||remotelyBusy)why="x";
+    }
     if(!why&&ck&&ck.sessions.some((s,i)=>i!==self&&s.d===d&&s.t&&h<+s.t.slice(0,2)+ck.hours&&+s.t.slice(0,2)<h+hours))why="x";
     out.push({h,why});
   }
@@ -515,8 +528,8 @@ function openProfile(id,idx){
     <div class="tw"><table>${g.profile.map(([k,v])=>`<tr><td style="font-weight:700;width:32%;color:var(--muted)">${esc(k)}</td><td>${esc(v)}</td></tr>`).join("")}</table></div>
     ${g.story&&g.story.length?`<h3 style="margin-top:16px">${t("story")}</h3><ul class="tlist">${g.story.map(s=>`<li>${esc(s)}</li>`).join("")}</ul>`:""}
     <h3 style="margin-top:16px">${t("sched")}</h3>
-    <div class="days">${[1,2,3,4,5,6,0].map(d=>`<span class="day ${g.avail.days.includes(d)?"on":""}">${dayN[d]}</span>`).join("")}</div>
-    <p class="muted" style="font-size:.85rem;margin:6px 0 16px">${p2(g.avail.from)}:00 – ${p2(g.avail.to)}:00</p>
+    <div class="days">${[1,2,3,4,5,6,0].map(d=>`<span class="day ${(g.avail.windows?.some(w=>w.day===d)||g.avail.days.includes(d))?"on":""}">${dayN[d]}</span>`).join("")}</div>
+    <p class="muted" style="font-size:.85rem;margin:6px 0 16px">${g.avail.windows?.length?g.avail.windows.slice().sort((a,b)=>a.day-b.day).map(w=>`${dayN[w.day]} ${p2(w.from)}:00–${p2(w.to)}:00`).join(" · "):`${p2(g.avail.from)}:00 – ${p2(g.avail.to)}:00`}</p>
     <h3>${t("reviews")}</h3>
     ${rv.length?rv.map(r=>`<div class="rev"><span class="st">${stars(r.r)}</span> <b>${esc(r.w)}</b>${r.w==="Khách mẫu"?` <span class="muted">(${t("sample")})</span>`:""}<div>${esc(r.x)}</div></div>`).join(""):`<p class="muted">${t("noreview")}</p>`}
     ${g.custom?`<div style="margin-top:16px"><button class="btn bad sm" id="delc" onclick="delChar('${id}')">${t("delchar")}</button></div>`:""}`);
@@ -643,14 +656,17 @@ function sumHtml(){
 }
 function sessHtml(g,i){
   const s=ck.sessions[i],np=nowP();
+  const maxDate=new Date(Date.now()+90*864e5),max=maxDate.getFullYear()+"-"+p2(maxDate.getMonth()+1)+"-"+p2(maxDate.getDate());
   let body=`<p class="muted" style="font-size:.85rem;margin:4px 0">${t("ck_pickdate")}</p>`;
   if(s.d){
     const r=slotsFor(g,s.d,ck.hours,i);
-    if(r.closed)body=`<p class="err">${t("ck_closed")}</p>`;
+    if(ck.busyLoading)body=`<p class="muted">${t("processing")}</p>`;
+    else if(ck.busyUnavailable)body=`<p class="err">${t("availability_load_error")}</p>`;
+    else if(r.closed)body=`<p class="err">${t("ck_closed")}</p>`;
     else if(!r.out.some(x=>!x.why))body=`<p class="err">${t("ck_noslot")}</p>`;
     else body=`<div class="slots">${r.out.map(x=>`<button class="slot ${s.t===p2(x.h)+":00"?"on":""}" ${x.why?"disabled":""} onclick="pickSlot(${i},'${p2(x.h)}:00')">${p2(x.h)}:00</button>`).join("")}</div><div class="muted" style="font-size:.78rem">${t("ck_legend")}</div>`;
   }
-  return `<div style="margin-bottom:12px"><label class="field" style="margin-bottom:0">${t("ck_sn",{i:i+1})} · ${t("ck_date")}<input type="date" id="ckd${i}" min="${np.d}" value="${s.d}" onchange="pickDate(${i},this.value)"></label>${body}</div>`;
+  return `<div style="margin-bottom:12px"><label class="field" style="margin-bottom:0">${t("ck_sn",{i:i+1})} · ${t("ck_date")}<input type="date" id="ckd${i}" min="${np.d}" max="${max}" value="${s.d}" onchange="pickDate(${i},this.value)"></label>${body}</div>`;
 }
 function renderCk(){
   const g=getG(ck.id),e=eff(g);
@@ -684,7 +700,23 @@ function renderCk(){
       <div class="muted" style="font-size:.78rem;margin-top:8px">${t("demo")}</div></div></div>`;
 }
 function setPkg(id){const n=PKG.find(p=>p.id===id).n;ck.pkg=id;while(ck.sessions.length<n)ck.sessions.push({d:"",t:""});ck.sessions.length=n;renderCk()}
-function pickDate(i,v){ck.sessions[i].d=v;ck.sessions[i].t="";renderCk()}
+async function pickDate(i,v){
+  ck.sessions[i].d=v;ck.sessions[i].t="";ck.busySlots=[];ck.busyLoading=false;ck.busyUnavailable=false;
+  const profile=getG(ck.id);
+  if(sb&&activeAccount()?.role==="customer"&&profile?.custom){
+    const requestId=crypto.randomUUID();
+    ck.busyRequestId=requestId;ck.busyLoading=true;renderCk();
+    const {data,error}=await sb.rpc("get_renter_busy_slots",{p_renter_profile_id:profile.id,p_date:v});
+    if(ck?.busyRequestId!==requestId)return;
+    ck.busyLoading=false;
+    if(error){
+      console.error("Could not load renter busy slots",error.message);
+      ck.busyUnavailable=true;
+      toast(t("availability_load_error"));
+    }else ck.busySlots=Array.isArray(data)?data:[];
+  }
+  renderCk();
+}
 function pickSlot(i,v){ck.sessions[i].t=v;renderCk()}
 function applyCp(){
   const c=ck.code.trim().toUpperCase(),m=$("cpm");ck.code=c;

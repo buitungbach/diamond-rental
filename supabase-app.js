@@ -25,6 +25,7 @@ Object.assign(T, {
   ck_agree: ["Tôi đủ 18 tuổi và hiểu đây là nhân vật AI hư cấu; dịch vụ chỉ chat trực tuyến, không có cuộc gặp ngoài đời.", "I am 18 or older and understand this is a fictional AI character for online chat only, with no in-person meeting.", "私は18歳以上で、架空のAIキャラクターとのオンラインチャットのみであり、対面はないことを理解しています。"],
   pay_transfer_note: ["Nội dung chuyển khoản", "Transfer description", "振込内容"],
   pay_transfer_hint: ["Chuyển khoản đúng số tiền và giữ nguyên nội dung. Quản trị viên sẽ đối chiếu sao kê Agribank trước khi xác nhận; không gửi ảnh biên lai thay cho tiền đã vào tài khoản.", "Transfer the exact amount and keep the payment description unchanged. An administrator will verify the Agribank statement before confirming; a receipt image does not replace funds received.", "正確な金額を振り込み、振込内容を変更しないでください。管理者が入金明細を確認してから確定します。振込画面の画像だけでは確認できません。"],
+  pay_window: ["Đơn chỉ giữ khung giờ trong 15 phút. Nếu quá thời hạn, vui lòng tạo đơn mới và không chuyển tiền theo mã QR cũ.", "The booking holds its time slot for 15 minutes. If it expires, create a new booking and do not pay using the old QR.", "予約枠の確保は15分間です。期限切れの場合は新しい予約を作成し、古いQRで振り込まないでください。"],
   pay_wait: ["Đang chờ quản trị viên đối chiếu tiền vào tài khoản. Chat chỉ mở sau khi xác nhận.", "Waiting for an administrator to verify the funds in the bank account. Chat unlocks only after confirmation.", "口座への入金確認を管理者が行っています。確認後にチャットを利用できます。"],
   pay_create_info: ["Nhấn nút bên dưới để tạo đơn; mã QR chuyển khoản Agribank sẽ hiện sau khi đơn được lưu. Quản trị viên đối chiếu giao dịch thủ công, website không tự động trừ tiền.", "Create the booking below to display its Agribank transfer QR. An administrator verifies the transfer manually; the website does not charge your account automatically.", "下のボタンで予約を作成するとAgribank振込用QRが表示されます。入金は管理者が手動確認し、サイトが自動で引き落とすことはありません。"],
   pay_pricing_mismatch: ["Bảng giá trên máy chủ chưa được cập nhật. Đơn này đã được tạo nhưng vui lòng không chuyển tiền; chạy supabase/pricing-vnd.sql rồi tạo đơn mới.", "Server pricing is out of date. This booking was created, but do not transfer money; apply supabase/pricing-vnd.sql and create a new booking.", "サーバーの料金が未更新です。この予約は作成されましたが、送金しないでください。supabase/pricing-vnd.sqlを適用して新しい予約を作成してください。"],
@@ -39,7 +40,7 @@ Object.assign(T, {
   acct_access_denied: ["Tài khoản này không có quyền thực hiện thao tác.", "This account is not allowed to perform this action.", "このアカウントには操作権限がありません。"],
   acct_login_to_book: ["Vui lòng đăng nhập tài khoản khách hàng trước khi đặt lịch.", "Sign in with a customer account before booking.", "予約するには顧客アカウントでログインしてください。"],
   acct_customer_only: ["Tài khoản quản trị/bạn gái thuê không thể tạo đơn. Hãy đăng xuất và đăng nhập bằng tài khoản khách hàng để đặt lịch.", "Admin and renter accounts cannot create bookings. Sign out and use a customer account to book.", "管理者・レンタル相手アカウントでは予約できません。ログアウトして顧客アカウントで予約してください。"],
-  chat_paid_only: ["Chat chỉ mở sau khi quản trị viên xác nhận đã nhận đủ tiền.", "Chat opens after an administrator confirms full payment.", "管理者が全額入金を確認した後にチャットを利用できます。"],
+  chat_paid_only: ["Chat mở sau khi quản trị viên xác nhận thanh toán.", "Chat opens after an administrator confirms payment.", "管理者が支払いを確認した後にチャットを利用できます。"],
   demo: ["Chuyển khoản Agribank đang được quản trị viên đối chiếu thủ công; đơn và chat chỉ được mở sau khi xác nhận nhận đủ tiền.", "Agribank transfers are verified manually; bookings and chat unlock only after the funds are confirmed.", "Agribankへの振込は手動で確認されます。全額入金の確認後に予約とチャットが有効になります。"],
   chat_failed: ["Không tải được cuộc trò chuyện.", "Could not load the conversation.", "会話を読み込めませんでした。"],
   chat_send_failed: ["Không gửi được tin nhắn.", "Could not send the message.", "メッセージを送信できませんでした。"],
@@ -55,7 +56,7 @@ Object.assign(T, {
   chat_ai_network_error: ["Supabase không kết nối được tới Cloudflare Workers AI. Kiểm tra trạng thái dịch vụ Cloudflare rồi thử lại.", "Supabase could not connect to Cloudflare Workers AI. Check Cloudflare service status and try again.", "SupabaseからCloudflare Workers AIに接続できませんでした。Cloudflareのサービス状態を確認して再試行してください。"],
   chat_ai_model_error: ["Cloudflare từ chối yêu cầu model (mã lỗi {code}). Kiểm tra model Workers AI và quyền API token trong Cloudflare Dashboard.", "Cloudflare rejected the model request (error code {code}). Check the Workers AI model and API token permissions in the Cloudflare dashboard.", "Cloudflareがモデル要求を拒否しました（エラーコード {code}）。Cloudflare DashboardでモデルとAPIトークン権限を確認してください。"],
   chat_ai_http_error: ["Cloudflare trả lỗi HTTP {status} (mã {code}). Kiểm tra model đang bật và quyền Workers AI của API token trong Cloudflare Dashboard.", "Cloudflare returned HTTP {status} (code {code}). Check that the model is available and the API token has Workers AI permissions in the Cloudflare dashboard.", "CloudflareがHTTP {status}（コード {code}）を返しました。モデルの利用可否とAPIトークンのWorkers AI権限を確認してください。"],
-  chat_ai_route_error: ["Cloudflare báo mã 7003: không tìm thấy đường dẫn API. Hãy kiểm tra CLOUDFLARE_ACCOUNT_ID là Account ID (không phải Zone ID). Mã hiện dùng model mặc định @cf/meta/llama-3.1-8b-instruct-fp8-fast; nếu bạn có thêm secret CLOUDFLARE_AI_MODEL để ghi đè model, hãy kiểm tra lại giá trị đó.", "Cloudflare error 7003 means the API route was not found. Verify CLOUDFLARE_ACCOUNT_ID is your Account ID (not the Zone ID). The function defaults to @cf/meta/llama-3.1-8b-instruct-fp8-fast; if you added CLOUDFLARE_AI_MODEL to override it, verify that value.", "Cloudflareエラー7003はAPIルートが見つからないことを示します。CLOUDFLARE_ACCOUNT_IDがZone IDではなくAccount IDであることを確認してください。既定モデルは@cf/meta/llama-3.1-8b-instruct-fp8-fastです。CLOUDFLARE_AI_MODELで上書きしている場合は、その値も確認してください。"],
+  chat_ai_route_error: ["Cloudflare báo mã 7003: không tìm thấy đường dẫn API. Hãy kiểm tra CLOUDFLARE_ACCOUNT_ID là Account ID (không phải Zone ID). Model mặc định hiện là @cf/meta/llama-3.2-3b-instruct; nếu có secret CLOUDFLARE_AI_MODEL ghi đè, hãy đặt đúng model này hoặc model đang được Cloudflare hỗ trợ.", "Cloudflare error 7003 means the API route was not found. Verify CLOUDFLARE_ACCOUNT_ID is your Account ID (not the Zone ID). The default model is now @cf/meta/llama-3.2-3b-instruct; if CLOUDFLARE_AI_MODEL is set, use this or another model currently supported by Cloudflare.", "Cloudflareエラー7003はAPIルートが見つからないことを示します。CLOUDFLARE_ACCOUNT_IDがZone IDではなくAccount IDであることを確認してください。既定モデルは@cf/meta/llama-3.2-3b-instructです。CLOUDFLARE_AI_MODELを設定している場合は、Cloudflareが現在サポートするモデルを指定してください。"],
   chat_ai_failed: ["Tin nhắn đã gửi nhưng AI chưa trả lời được. Kiểm tra log của Edge Function ai-chat-reply trong Supabase.", "Message sent, but the AI could not reply. Check the ai-chat-reply Edge Function logs in Supabase.", "メッセージは送信されましたが、AIが返信できませんでした。Supabaseのai-chat-replyログを確認してください。"],
   chat_background_change: ["Đổi hình nền chat", "Change chat background", "チャット背景を変更"],
   chat_background_saving: ["Đang cập nhật hình nền…", "Updating chat background…", "チャット背景を更新中…"],
@@ -67,6 +68,41 @@ Object.assign(T, {
   admin_chat_inbox: ["Tin nhắn từ quản trị viên", "Messages from admin", "管理者からのメッセージ"],
   admin_chat_empty: ["Chưa có tin nhắn quản trị viên.", "No admin messages yet.", "管理者からのメッセージはありません。"],
   admin_chat_label: ["Chat quản trị", "Admin chat", "管理者チャット"],
+  renter_availability: ["Quản lý lịch rảnh", "Manage availability", "空き時間を管理"],
+  availability_help: ["Chọn ngày và khung giờ nhận lịch hằng tuần. Khách chỉ thấy các khung giờ này.", "Choose weekly days and hours when you accept bookings. Customers only see these windows.", "予約を受け付ける曜日と時間を設定します。お客様には設定した時間のみ表示されます。"],
+  availability_saved: ["Đã cập nhật lịch rảnh.", "Availability updated.", "空き時間を更新しました。"],
+  availability_load_error: ["Không tải được lịch. Hãy chạy supabase/feature-upgrades.sql.", "Could not load availability. Run supabase/feature-upgrades.sql.", "空き時間を読み込めません。supabase/feature-upgrades.sqlを実行してください。"],
+  from: ["Từ", "From", "開始"],
+  to: ["Đến", "To", "終了"],
+  chat_read: ["Đã xem", "Seen", "既読"],
+  chat_block: ["Chặn cuộc trò chuyện", "Block chat", "チャットをブロック"],
+  chat_unblock: ["Bỏ chặn", "Unblock", "ブロック解除"],
+  chat_blocked: ["Cuộc trò chuyện đã bị chặn. Bạn không thể gửi tin nhắn.", "This chat is blocked. You cannot send messages.", "このチャットはブロックされています。メッセージを送信できません。"],
+  chat_block_confirm: ["Chặn người này? Hai bên sẽ không thể gửi tin nhắn trong cuộc trò chuyện này.", "Block this participant? Neither side will be able to send messages in this conversation.", "この相手をブロックしますか？この会話では双方がメッセージを送信できなくなります。"],
+  chat_report: ["Báo cáo", "Report", "報告"],
+  chat_report_prompt: ["Mô tả lý do báo cáo (tối thiểu 10 ký tự):", "Describe the reason for the report (at least 10 characters):", "報告理由を入力してください（10文字以上）："],
+  chat_report_sent: ["Đã gửi báo cáo để quản trị viên xem xét.", "Report submitted for administrator review.", "管理者確認のため報告を送信しました。"],
+  chat_report_empty: ["Chưa có báo cáo.", "No reports found.", "報告はありません。"],
+  chat_report_resolve: ["Đánh dấu đã xử lý", "Mark resolved", "解決済みにする"],
+  chat_report_dismiss: ["Bỏ qua", "Dismiss", "却下"],
+  booking_complete_confirm: ["Xác nhận hoàn thành", "Confirm completed", "完了を確認"],
+  booking_complete_wait: ["Đã ghi nhận xác nhận của bạn; đơn hoàn tất khi bên còn lại cũng xác nhận.", "Your confirmation is saved; the booking completes when the other participant confirms.", "確認を記録しました。相手も確認すると予約が完了します。"],
+  booking_expired: ["Đơn quá 15 phút chưa thanh toán và không còn giữ lịch. Vui lòng đặt lại trước khi chuyển khoản.", "This unpaid booking expired after 15 minutes and no longer holds the time slot. Create a new booking before transferring.", "未払い予約は15分で期限切れとなり、枠は確保されません。振込前に新しい予約を作成してください。"],
+  booking_expired_short: ["Hết hạn", "Expired", "期限切れ"],
+  booking_review_verified: ["Đánh giá sau khi hai bên xác nhận hoàn thành", "Review after both participants confirm completion", "双方の完了確認後にレビューできます。"],
+  review_not_eligible: ["Chỉ khách hàng của đơn đã hoàn thành mới có thể đánh giá.", "Only the customer on a completed booking can review.", "完了した予約の顧客のみレビューできます。"],
+  chat_reports_title: ["Báo cáo cần xem xét", "Reports to review", "確認が必要な報告"],
+  chat_reports_load_error: ["Không tải được báo cáo chat.", "Could not load chat reports.", "チャット報告を読み込めませんでした。"],
+  chat_report_resolved: ["Đã cập nhật trạng thái báo cáo.", "Report status updated.", "報告の状態を更新しました。"],
+  receipt_paid: ["Đã xác nhận thanh toán", "Payment verified", "支払い確認済み"],
+  receipt_pending: ["Chưa xác nhận thanh toán", "Payment not yet verified", "支払い未確認"],
+  receipt_expired: ["Đơn đã hết hạn · chưa xác nhận thanh toán", "Booking expired · payment not verified", "予約期限切れ・支払い未確認"],
+  receipt_print: ["In / Lưu PDF", "Print / Save PDF", "印刷 / PDF保存"],
+  receipt_label: ["Biên nhận giao dịch (không phải hóa đơn VAT)", "Payment receipt (not a tax invoice)", "支払領収書（税務インボイスではありません）"],
+  receipt_unpaid: ["Biên nhận tạm tính · khoản thanh toán chưa được quản trị viên xác nhận", "Provisional receipt · payment has not been verified by an administrator", "仮領収書・管理者による入金確認前"],
+  receipt_paid: ["Đã thanh toán · được quản trị viên xác nhận", "Paid · verified by an administrator", "支払済み・管理者確認済み"],
+  receipt_print: ["In / Lưu PDF", "Print / Save PDF", "印刷 / PDF保存"],
+  unread_count: ["Tin nhắn chưa đọc", "Unread messages", "未読メッセージ"],
   acct_login: ["Đăng nhập", "Sign in", "ログイン"],
   acct_register: ["Đăng ký", "Create account", "アカウント作成"],
   chat_open: ["Mở trò chuyện", "Open chat", "チャットを開く"],
@@ -97,9 +133,12 @@ let chatBookingId = "";
 let chatThreadId = "";
 let chatThreadMode = "booking";
 let pendingAiMessageId = "";
+let chatBlockedByMe = false;
+let chatBlockedByOther = false;
 let chatChannel = null;
 let notificationsChannel = null;
 let bookingsChannel = null;
+let unreadMessages = 0;
 const localSave = window.save;
 const localOpenProfile = window.openProfile;
 
@@ -143,6 +182,12 @@ function showError(id, message) {
 
 function rowToRenter(row) {
   if (!row) return null;
+  const windows = Array.isArray(row.availability) ? row.availability
+    .map((item) => ({ day: Number(item.day), from: Number(item.from), to: Number(item.to) }))
+    .filter((item) => Number.isInteger(item.day) && item.day >= 0 && item.day <= 6
+      && Number.isInteger(item.from) && item.from >= 0
+      && Number.isInteger(item.to) && item.to <= 24 && item.from < item.to)
+    : [0, 1, 2, 3, 4, 5, 6].map((day) => ({ day, from: 10, to: 22 }));
   const profile = {
     id: row.id,
     name: row.display_name,
@@ -150,7 +195,12 @@ function rowToRenter(row) {
     price: SECTIONS[row.section]?.price || SECTIONS.silver.price,
     color: "#7048e8",
     tags: Array.isArray(row.tags) ? row.tags : [],
-    avail: { days: [0, 1, 2, 3, 4, 5, 6], from: 10, to: 22 },
+    avail: {
+      days: windows.map((item) => item.day),
+      from: windows.length ? Math.min(...windows.map((item) => item.from)) : 10,
+      to: windows.length ? Math.max(...windows.map((item) => item.to)) : 22,
+      windows,
+    },
     profile: [["Giới thiệu", row.bio || ""]],
     story: [],
     custom: true,
@@ -184,7 +234,7 @@ async function loadRenterProfiles() {
 async function loadBookingRows() {
   if (!sb || !remoteAccount) return [];
   const { data, error } = await sb.from("bookings")
-    .select("*, renter_profiles(id,owner_id,display_name,section,persona_mode,catalog_key,chat_background_url)")
+    .select("*, renter_profiles(id,owner_id,display_name,section,persona_mode,catalog_key,chat_background_url,availability)")
     .order("created_at", { ascending: false });
   if (error) throw error;
 
@@ -230,6 +280,7 @@ async function hydrateSession(user) {
   remoteAccount = null;
   if (!sb || !user) {
     S.orders = [];
+    unreadMessages = 0;
     S.activeAccountId = null;
     currentChat = "";
     chatBookingId = "";
@@ -276,7 +327,42 @@ async function hydrateSession(user) {
     console.error("Could not load bookings", bookingError.message);
   }
   subscribeToNotifications();
+  await loadUnreadMessageCount();
   renderAll();
+}
+
+async function loadUnreadMessageCount() {
+  if (!sb || !remoteAccount) {
+    unreadMessages = 0;
+    return;
+  }
+  const [bookingResult, adminResult] = await Promise.all([
+    sb.from("messages").select("id", { count: "exact", head: true })
+      .is("read_at", null).or(`sender_id.is.null,sender_id.neq.${remoteAccount.id}`),
+    sb.from("admin_chat_messages").select("id", { count: "exact", head: true })
+      .is("read_at", null).or(`sender_id.is.null,sender_id.neq.${remoteAccount.id}`),
+  ]);
+  if (bookingResult.error || adminResult.error) {
+    console.error("Could not load unread message count", bookingResult.error?.message || adminResult.error?.message);
+    unreadMessages = 0;
+    return;
+  }
+  unreadMessages = (bookingResult.count || 0) + (adminResult.count || 0);
+}
+
+async function markChatMessagesRead(table, conversationColumn, conversationId, messages) {
+  if (!sb || !remoteAccount || !conversationId) return;
+  const unreadIds = messages.filter((message) => message.sender_id !== remoteAccount.id && !message.read_at)
+    .map((message) => message.id);
+  if (!unreadIds.length) return;
+  const { error } = await sb.from(table).update({ read_at: new Date().toISOString() })
+    .in("id", unreadIds).eq(conversationColumn, conversationId);
+  if (error) {
+    console.error("Could not mark chat messages as read", error.message);
+    return;
+  }
+  await loadUnreadMessageCount();
+  renderChrome();
 }
 
 function subscribeToNotifications() {
@@ -286,6 +372,8 @@ function subscribeToNotifications() {
     .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" }, (event) => {
       if (event.new.sender_id !== remoteAccount.id) {
         toast("Tin nhắn mới trong cuộc trò chuyện đã thanh toán.");
+        notifyIncomingMessage();
+        loadUnreadMessageCount().then(renderChrome);
         if (view === "orders") renderAll();
         if (view === "chat" && chatBookingId === event.new.booking_id) loadChatMessages();
       }
@@ -293,6 +381,8 @@ function subscribeToNotifications() {
     .on("postgres_changes", { event: "INSERT", schema: "public", table: "admin_chat_messages" }, (event) => {
       if (event.new.sender_id !== remoteAccount.id) {
         toast("Tin nhắn mới trong chat quản trị.");
+        notifyIncomingMessage();
+        loadUnreadMessageCount().then(renderChrome);
         if (view === "account" && remoteAccount.role === "renter") loadRenterAdminChats();
         if (view === "chat" && chatThreadMode === "admin" && chatThreadId === event.new.thread_id) loadAdminChatMessages();
       }
@@ -309,6 +399,20 @@ function subscribeToNotifications() {
       }
     })
     .subscribe();
+}
+
+window.enableMessageNotifications = async function() {
+  if (!("Notification" in window)) return toast("Trình duyệt này không hỗ trợ thông báo.");
+  const permission = await Notification.requestPermission();
+  toast(permission === "granted" ? "Đã bật thông báo tin nhắn." : "Bạn chưa cấp quyền thông báo cho website.");
+};
+
+function notifyIncomingMessage() {
+  if (!("Notification" in window) || Notification.permission !== "granted" || !document.hidden) return;
+  new Notification("Diamond Rental", {
+    body: "Bạn có tin nhắn mới. Đăng nhập để xem.",
+    icon: "favicon.ico",
+  });
 }
 
 function renderRemoteAccountForm(mode) {
@@ -455,7 +559,8 @@ function renderAccount() {
     : t(locked ? "acct_readonly" : "acct_renter_note");
   $("app").innerHTML = `<h2>${t("acct_title")}</h2>
     <div class="panel"><div class="row" style="justify-content:space-between"><h3>${t(account.role === "customer" ? "acct_customer" : "acct_girl")}</h3>
-      <button class="btn ghost sm" onclick="logoutAccount()">${t("acct_logout")}</button></div>
+      <div class="row">${"Notification" in window ? `<button class="btn ghost sm" onclick="enableMessageNotifications()">Bật thông báo</button>` : ""}
+      <button class="btn ghost sm" onclick="logoutAccount()">${t("acct_logout")}</button></div></div>
       <p class="muted">${esc(accountType)} · ${accountNote}</p>
       <div class="r2">
         <label class="field">${t("acct_name")}<input id="accName" value="${esc(account.name)}" ${locked ? "readonly" : ""}></label>
@@ -465,7 +570,8 @@ function renderAccount() {
       </div>${locked ? "" : `<button class="btn sm" onclick="updateAccount()">${t("acct_save")}</button>`}
     </div>
     ${account.role === "renter" ? `<div class="panel"><h3>${t("acct_girl")}</h3>
-      <button class="btn sm" onclick="openAdd()">${t(S.custom.some((profile) => profile.ownerId === account.id) ? "acct_edit_profile" : "acct_add_profile")}</button></div>` : ""}
+      <button class="btn sm" onclick="openAdd()">${t(S.custom.some((profile) => profile.ownerId === account.id) ? "acct_edit_profile" : "acct_add_profile")}</button>
+      ${S.custom.some((profile) => profile.ownerId === account.id) ? `<button class="btn ghost sm" onclick="openAvailabilityEditor()">${t("renter_availability")}</button>` : ""}</div>` : ""}
     ${account.role === "admin" ? `<div class="panel"><h3>Quản lý nhân vật AI</h3>
       <p class="muted">Tạo hồ sơ nhân vật hư cấu để dùng trong website.</p>
       <button class="btn sm" onclick="openAdd()">+ Thêm nhân vật AI</button>
@@ -476,10 +582,94 @@ function renderAccount() {
         <span>${esc(profile.name)} · ${profile.profileType === "ai" ? "AI" : "Bạn gái thuê"}</span>
         <button class="btn sm" onclick="openAdminChat('${esc(profile.id)}')">${t("admin_chat_open")}</button>
       </div>`).join("") || `<p class="muted">${t("admin_chat_empty")}</p>`}</div>` : ""}
+    ${account.role === "admin" ? `<div class="panel" id="chatReports"><h3>${t("chat_reports_title")}</h3><p class="muted">${t("processing")}</p></div>` : ""}
     ${account.role === "renter" ? `<div id="adminChatInbox"></div>` : ""}
     <div class="panel"><h3>${t("ord_t")}</h3><button class="btn ghost sm" onclick="go('orders')">${t("chat_inbox")}</button></div>`;
   if (account.role === "renter") loadRenterAdminChats();
+  if (account.role === "admin") loadChatReports();
 }
+
+window.loadChatReports = async function() {
+  const panel = $("chatReports");
+  if (!panel || !sb || activeAccount()?.role !== "admin") return;
+  const { data, error } = await sb.rpc("list_chat_reports");
+  if (error) {
+    console.error("Could not load chat reports", error.message);
+    panel.innerHTML = `<h3>${t("chat_reports_title")}</h3><p class="err">${t("chat_reports_load_error")}</p>`;
+    return;
+  }
+  panel.innerHTML = `<h3>${t("chat_reports_title")}</h3>${data?.length ? data.map((report) => `
+    <article class="report-card">
+      <div class="row" style="justify-content:space-between"><b>${esc(report.renter_name || "")}</b>
+        <span class="st-b ${report.status === "open" ? "wait" : "ok"}">${esc(report.status)}</span></div>
+      <p class="muted">${esc(report.reporter_name || "")}${report.booking_code ? ` · ${esc(report.booking_code)}` : ""} · ${new Date(report.created_at).toLocaleString()}</p>
+      <p>${esc(report.reason)}</p>
+      ${report.status === "open" ? `<div class="row">
+        <button class="btn sm" onclick="resolveChatReport('${esc(report.id)}','resolved')">${t("chat_report_resolve")}</button>
+        <button class="btn ghost sm" onclick="resolveChatReport('${esc(report.id)}','dismissed')">${t("chat_report_dismiss")}</button>
+      </div>` : ""}
+    </article>`).join("") : `<p class="muted">${t("chat_report_empty")}</p>`}`;
+};
+
+window.resolveChatReport = async function(id, status) {
+  if (!sb || activeAccount()?.role !== "admin") return toast(t("acct_access_denied"));
+  const { error } = await sb.rpc("resolve_chat_report", { p_report_id: id, p_status: status });
+  if (error) {
+    console.error("Could not resolve chat report", error.message);
+    return toast(error.message);
+  }
+  await loadChatReports();
+  toast(t("chat_report_resolved"));
+};
+
+window.openAvailabilityEditor = function() {
+  const account = activeAccount();
+  const profile = S.custom.find((item) => item.ownerId === account?.id);
+  if (!sb || account?.role !== "renter" || !profile) return toast(t("acct_access_denied"));
+  const days = [1, 2, 3, 4, 5, 6, 0];
+  const week = WK[L()];
+  const options = (selected) => Array.from({ length: 25 }, (_, hour) =>
+    `<option value="${hour}" ${hour === selected ? "selected" : ""}>${String(hour).padStart(2, "0")}:00</option>`).join("");
+  openBox(`<h2>${t("renter_availability")}</h2><p class="muted">${t("availability_help")}</p>
+    ${days.map((day) => {
+      const current = profile.avail.windows?.find((item) => item.day === day);
+      return `<div class="availability-row">
+        <label><input id="availabilityDay${day}" type="checkbox" ${current ? "checked" : ""}> ${week[day]}</label>
+        <label class="field">${t("from")}<select id="availabilityFrom${day}">${options(current?.from ?? 10)}</select></label>
+        <label class="field">${t("to")}<select id="availabilityTo${day}">${options(current?.to ?? 22)}</select></label>
+      </div>`;
+    }).join("")}
+    <div class="err" id="availabilityError"></div>
+    <button class="btn" onclick="saveAvailability()">${t("acct_save")}</button>`);
+};
+
+window.saveAvailability = async function() {
+  const account = activeAccount();
+  const profile = S.custom.find((item) => item.ownerId === account?.id);
+  if (!sb || account?.role !== "renter" || !profile) return toast(t("acct_access_denied"));
+  const availability = [0, 1, 2, 3, 4, 5, 6].filter((day) => $(`availabilityDay${day}`).checked)
+    .map((day) => ({
+      day,
+      from: Number($(`availabilityFrom${day}`).value),
+      to: Number($(`availabilityTo${day}`).value),
+    }));
+  if (availability.some((item) => item.from >= item.to)) {
+    showError("availabilityError", t("acct_missing"));
+    return;
+  }
+  const { data, error } = await sb.from("renter_profiles").update({ availability })
+    .eq("id", profile.id).eq("owner_id", account.id).select("*").single();
+  if (error) {
+    console.error("Could not save renter availability", error.message);
+    showError("availabilityError", error.message);
+    return;
+  }
+  const updated = rowToRenter(data);
+  S.custom = S.custom.map((item) => item.id === profile.id ? updated : item);
+  closeBox();
+  renderAll();
+  toast(t("availability_saved"));
+};
 
 async function updateAccount() {
   const account = activeAccount();
@@ -627,8 +817,9 @@ async function saveChar() {
 window.renderChrome = function() {
   coreRenderChrome();
   const account = activeAccount();
-  $("nav").insertAdjacentHTML("beforeend", `<button class="${view === "account" ? "on" : ""}" onclick="go('account')">${t("tab_account")}</button>`);
-  $("ctl").insertAdjacentHTML("beforeend", `<button class="btn ghost sm" onclick="go('account')">${account ? esc(account.name) : t("tab_account")}</button>`);
+  const badge = unreadMessages ? ` <span class="badge-n" aria-label="${esc(t("unread_count"))}">${unreadMessages}</span>` : "";
+  $("nav").insertAdjacentHTML("beforeend", `<button class="${view === "account" ? "on" : ""}" onclick="go('account')">${t("tab_account")}${badge}</button>`);
+  $("ctl").insertAdjacentHTML("beforeend", `<button class="btn ghost sm" onclick="go('account')">${account ? esc(account.name) : t("tab_account")}${badge}</button>`);
 };
 
 window.renderAll = function() {
@@ -747,6 +938,7 @@ window.startCk = function(id) {
     return;
   }
   coreStartCk(backendProfile.id);
+  ck.renterProfileId = backendProfile.id;
   ck.name = account.name;
   ck.phone = account.phone;
   ck.email = account.email;
@@ -793,6 +985,7 @@ function paymentHtml(booking) {
   const amount = Number(booking.total_vnd ?? booking.totalVnd).toLocaleString("vi-VN");
   return `<div id="orderQr" class="qr-image" style="width:280px;height:280px;padding:8px" aria-label="VietQR thanh toán Agribank"></div>
     <p class="notice">${esc(t("pay_transfer_hint"))}</p>
+    <p class="err">${esc(t("pay_window"))}</p>
     <p><b>${esc(t("pay_transfer_note"))}:</b> <code>${esc(booking.code)}</code></p>
     <p><b>Người nhận:</b> BUI TUNG BACH · Agribank · 6440205910363</p>
     <p><b>Số tiền:</b> ${amount} ₫</p>
@@ -892,18 +1085,28 @@ window.renderRemoteOrders = async function() {
   try {
     await loadBookingRows();
     if (view !== "orders") return;
+    if (activeAccount().role === "customer") {
+      const { data: reviewedCodes, error: reviewFlagsError } = await sb.rpc("list_my_reviewed_booking_codes");
+      if (reviewFlagsError) console.error("Could not load review eligibility", reviewFlagsError.message);
+      const reviewed = new Set(reviewedCodes || []);
+      S.orders.forEach((order) => { order.reviewed = reviewed.has(order.code); });
+    }
     app.innerHTML = `<h2>${t("ord_t")}</h2>${S.orders.length ? S.orders.map((order) => {
       const customer = activeAccount().role === "customer";
-      const label = order.status === "paid" ? t("paid")
+      const expired = order.status === "pending" && Date.now() - new Date(order.created).getTime() >= 15 * 60 * 1000;
+      const label = expired ? t("booking_expired_short") : order.status === "paid" ? t("paid")
         : order.status === "done" ? t("st_done")
           : order.status === "cancelled" ? t("st_can") : t("pay_pending");
       return `<div class="ord"><div class="top"><div class="av" style="${getG(order.id) ? bg(getG(order.id)) : ""}"></div>
         <div style="flex:1;min-width:0"><b>${esc(order.renterName)}</b><div class="muted">${esc(order.code)} · ${order.hours} ${t("hrs")}</div></div>
-        <div style="text-align:right"><b>${Number(order.totalVnd).toLocaleString("vi-VN")} ₫</b><div class="st-b ${order.status === "paid" ? "ok" : "wait"}">${esc(label)}</div></div></div>
+        <div style="text-align:right"><b>${Number(order.totalVnd).toLocaleString("vi-VN")} ₫</b><div class="st-b ${order.status === "paid" || order.status === "done" ? "ok" : expired ? "bad" : "wait"}">${esc(label)}</div></div></div>
         <p class="muted">${esc(order.place)}</p>
         <div class="acts"><button class="btn ghost sm" onclick="openInvoice('${esc(order.code)}')">${t("invoice")}</button>
-        ${order.status === "paid" ? `<button class="btn sm" onclick="openChat('${esc(order.code)}')">${t("chat_open")}</button>` : ""}
-        ${customer && order.status === "pending" ? `<button class="btn sm" onclick="openPayForBooking('${esc(order.code)}')">${t("pay")}</button>` : ""}</div></div>`;
+        ${["paid", "done"].includes(order.status) ? `<button class="btn sm" onclick="openChat('${esc(order.code)}')">${t("chat_open")}</button>` : ""}
+        ${order.status === "paid" && bookingEndPassed(order) ? `<button class="btn ghost sm" onclick="confirmBookingComplete('${esc(order.code)}')">${t("booking_complete_confirm")}</button>` : ""}
+        ${customer && order.status === "done" && !order.reviewed ? `<button class="btn ghost sm" onclick="openReview('${esc(order.code)}')">${t("rv_send")}</button>` : ""}
+        ${customer && order.status === "pending" && !expired ? `<button class="btn sm" onclick="openPayForBooking('${esc(order.code)}')">${t("pay")}</button>` : ""}</div>
+        ${expired ? `<p class="err">${esc(t("booking_expired"))}</p>` : ""}</div>`;
     }).join("") : `<p class="sub">${t("ord_none")}</p>`}`;
   } catch (error) {
     console.error("Could not render bookings", error.message);
@@ -911,9 +1114,70 @@ window.renderRemoteOrders = async function() {
   }
 };
 
+function bookingEndPassed(order) {
+  const end = Math.max(...order.sessions.map((session) =>
+    new Date(`${session.d}T${session.t}:00+07:00`).getTime() + order.hours * 60 * 60 * 1000));
+  return Number.isFinite(end) && end <= Date.now();
+}
+
+window.confirmBookingComplete = async function(code) {
+  if (!sb || !activeAccount()) return toast(t("acct_access_denied"));
+  const { error } = await sb.rpc("confirm_booking_complete", { p_code: code });
+  if (error) {
+    console.error("Could not confirm booking completion", error.message);
+    return toast(error.message);
+  }
+  await loadBookingRows();
+  renderAll();
+  toast(t("booking_complete_wait"));
+};
+
+window.openReview = function(code) {
+  const order = mapRemoteOrder(code);
+  if (!order || activeAccount()?.role !== "customer" || order.status !== "done" || order.reviewed) {
+    return toast(t("review_not_eligible"));
+  }
+  rvO = code;
+  rvR = 0;
+  openBox(`<h2>${t("rv_t", { n: esc(order.renterName) })}</h2>
+    <p class="muted">${t("booking_review_verified")}</p>
+    <div class="stars" id="rvS">${[1, 2, 3, 4, 5].map((rating) => `<button aria-label="${rating}" onclick="rvSet(${rating})">★</button>`).join("")}</div>
+    <label class="field"><textarea id="rvT" maxlength="500" placeholder="${esc(t("rv_ph"))}"></textarea></label>
+    <div class="err" id="rvE"></div><button class="btn" onclick="rvSend()">${t("rv_send")}</button>`);
+};
+
+window.rvSend = async function() {
+  const order = mapRemoteOrder(rvO);
+  if (!sb || !order || activeAccount()?.role !== "customer" || order.status !== "done") {
+    return toast(t("review_not_eligible"));
+  }
+  if (!rvR) {
+    showError("rvE", t("rv_pick"));
+    return;
+  }
+  const { error } = await sb.from("renter_reviews").insert({
+    booking_id: order.raw.id,
+    renter_profile_id: order.raw.renter_profile_id,
+    customer_id: activeAccount().id,
+    rating: rvR,
+    comment: $("rvT").value.trim(),
+  });
+  if (error) {
+    console.error("Could not submit renter review", error.message);
+    showError("rvE", error.code === "23505" ? t("review_not_eligible") : error.message);
+    return;
+  }
+  order.reviewed = true;
+  await loadRemoteReviews();
+  closeBox();
+  renderAll();
+  toast(t("rv_thx"));
+};
+
 window.openPayForBooking = function(code) {
   const order = mapRemoteOrder(code);
   if (!order || order.status !== "pending" || activeAccount()?.role !== "customer") return toast(t("acct_access_denied"));
+  if (Date.now() - new Date(order.created).getTime() >= 15 * 60 * 1000) return toast(t("booking_expired"));
   openBox(`<h2>${t("pm_t")}</h2>${paymentHtml(order)}<button class="btn ghost sm" onclick="closeBox();openInvoice('${esc(order.code)}')">${t("invoice")}</button>`);
   renderQr("orderQr", Number(order.totalVnd), order.code);
 };
@@ -923,7 +1187,8 @@ window.openInvoice = function(code) {
   if (!order) return toast("Không tìm thấy hóa đơn.");
   const invoice = [
     "DIAMOND RENTAL",
-    `Hóa đơn: ${order.invoiceNumber}`,
+    t("receipt_label"),
+    `Biên nhận: ${order.invoiceNumber}`,
     `Mã đơn: ${order.code}`,
     `Ngày tạo: ${new Date(order.created).toLocaleString("vi-VN")}`,
     `Dịch vụ: ${order.svcName} · ${order.hours} giờ`,
@@ -931,11 +1196,30 @@ window.openInvoice = function(code) {
     `Người cho thuê: ${order.renterName}`,
     `Địa điểm: ${order.place}`,
     `Tổng tiền: ${Number(order.totalVnd).toLocaleString("vi-VN")} VND`,
-    `Trạng thái: ${order.status === "paid" ? "Đã thanh toán" : "Chưa xác nhận thanh toán"}`,
+    `Trạng thái: ${order.status === "pending" && Date.now() - new Date(order.created).getTime() >= 15 * 60 * 1000
+      ? t("receipt_expired") : ["paid", "done"].includes(order.status) ? t("receipt_paid") : t("receipt_pending")}`,
     `Nội dung chuyển khoản: ${order.code}`,
   ].join("\n");
   openBox(`<h2>${t("invoice")}</h2><div class="inv" id="invT">${esc(invoice)}</div>
-    <div class="row" style="margin-top:12px"><button class="btn sm" onclick="downloadInvoice('${esc(order.code)}')">Tải hóa đơn</button></div>`);
+    <div class="row" style="margin-top:12px"><button class="btn sm" onclick="downloadInvoice('${esc(order.code)}')">Tải biên nhận</button>
+    <button class="btn ghost sm" onclick="printInvoice('${esc(order.code)}')">${t("receipt_print")}</button></div>`);
+};
+
+window.printInvoice = function(code) {
+  const order = mapRemoteOrder(code);
+  const content = $("invT")?.textContent;
+  if (!order || !content) return toast("Không tìm thấy biên nhận.");
+  const printWindow = window.open("", "_blank");
+  if (!printWindow) return toast("Trình duyệt đã chặn cửa sổ in. Hãy cho phép cửa sổ bật lên rồi thử lại.");
+  printWindow.opener = null;
+  printWindow.addEventListener("load", () => {
+    printWindow.focus();
+    printWindow.print();
+  }, { once: true });
+  printWindow.document.write(`<!doctype html><html lang="vi"><meta charset="utf-8"><title>${esc(order.invoiceNumber || order.code)}</title>
+    <style>body{font:15px system-ui,sans-serif;max-width:760px;margin:40px auto;padding:0 20px;color:#222}pre{white-space:pre-wrap;overflow-wrap:anywhere;font:inherit;line-height:1.7}h1{font-size:20px}</style>
+    <h1>${esc(t("receipt_label"))}</h1><pre>${esc(content)}</pre></html>`);
+  printWindow.document.close();
 };
 
 window.downloadInvoice = function(code) {
@@ -955,7 +1239,7 @@ window.openChat = async function(code) {
   try {
     await loadBookingRows();
     const order = mapRemoteOrder(code);
-    if (!order || order.status !== "paid") return toast(t("chat_paid_only"));
+    if (!order || !["paid", "done"].includes(order.status)) return toast(t("chat_paid_only"));
     currentChat = code;
     chatBookingId = order.raw.id;
     chatThreadId = "";
@@ -1054,6 +1338,7 @@ async function loadChatMessages() {
   }
   const profile = getG(mapRemoteOrder(currentChat)?.id);
   renderChatMessages(data || [], profile || { name: "Nhân vật" });
+  await markChatMessagesRead("messages", "booking_id", chatBookingId, data || []);
   if (pendingAiMessageId && data?.some((message) => message.reply_to_message_id === pendingAiMessageId)) {
     pendingAiMessageId = "";
     setChatStatus("");
@@ -1071,6 +1356,7 @@ async function loadAdminChatMessages() {
     return [];
   }
   renderChatMessages(data || [], getG(currentChat) || { name: "Nhân vật" });
+  await markChatMessagesRead("admin_chat_messages", "thread_id", chatThreadId, data || []);
   if (pendingAiMessageId && data?.some((message) => message.reply_to_message_id === pendingAiMessageId)) {
     pendingAiMessageId = "";
     setChatStatus("");
@@ -1151,6 +1437,7 @@ function renderChatPage() {
       return;
     }
     renderChatFrame(profile, "account", account.role === "renter" && profile.profileType === "real" && profile.ownerId === account.id);
+    refreshChatBlockStatus();
     loadAdminChatMessages();
     if (chatChannel) sb.removeChannel(chatChannel);
     chatChannel = sb.channel(`admin-chat:${chatThreadId}`)
@@ -1164,7 +1451,7 @@ function renderChatPage() {
     return;
   }
   const order = mapRemoteOrder(currentChat);
-  if (!order || order.status !== "paid") {
+  if (!order || !["paid", "done"].includes(order.status)) {
     $("app").innerHTML = `<p class="notice">${t("chat_paid_only")}</p>`;
     return;
   }
@@ -1172,6 +1459,7 @@ function renderChatPage() {
   const account = activeAccount();
   renderChatFrame(renter || { name: order.renterName, profileType: "real" }, "orders",
     account?.role === "renter" && renter?.profileType === "real" && renter.ownerId === account.id);
+  refreshChatBlockStatus();
   loadChatMessages();
   if (chatChannel) sb.removeChannel(chatChannel);
   chatChannel = sb.channel(`booking-chat:${order.raw.id}`)
@@ -1196,6 +1484,10 @@ function renderChatFrame(profile, backView, canChangeBackground) {
     <div class="chat-compose"><div class="chat-status" id="chatStatus" role="status" aria-live="polite"></div>
       <div class="r2"><input class="inp" id="chatInput" maxlength="2000" placeholder="${esc(t("chat_placeholder"))}" onkeydown="if(event.key==='Enter')sendChat()">
         <button class="btn sm" onclick="sendChat()">${t("chat_send")}</button></div>
+      <div class="chat-tools">
+        <button class="btn ghost sm" id="chatBlockButton" onclick="toggleChatBlock()">${t("chat_block")}</button>
+        <button class="btn ghost sm" onclick="reportChat()">${t("chat_report")}</button>
+      </div>
       ${canChangeBackground ? `<div class="chat-tools"><button class="btn ghost sm" onclick="changeChatBackground()">${t("chat_background_change")}</button><span class="muted" style="font-size:.75rem">Nền này hiển thị với mọi người trong chat</span></div>` : ""}
     </div>
   </section>`;
@@ -1203,6 +1495,65 @@ function renderChatFrame(profile, backView, canChangeBackground) {
   const imageUrl = trustedImageUrl(profile.chatBackgroundUrl) || trustedImageUrl(imgOf(profile));
   if (wallpaper && imageUrl) wallpaper.src = imageUrl;
 }
+
+async function refreshChatBlockStatus() {
+  if (!sb || !activeAccount()) return;
+  const { data, error } = await sb.rpc("get_chat_block_status", {
+    p_booking_id: chatThreadMode === "booking" ? chatBookingId : null,
+    p_thread_id: chatThreadMode === "admin" ? chatThreadId : null,
+  });
+  if (error) {
+    console.error("Could not load chat block status", error.message);
+    return;
+  }
+  chatBlockedByMe = data?.blocked_by_me === true;
+  chatBlockedByOther = data?.blocked_by_other === true;
+  const blocked = chatBlockedByMe || chatBlockedByOther;
+  const input = $("chatInput");
+  const send = document.querySelector(".chat-compose .r2 button");
+  const button = $("chatBlockButton");
+  if (input) input.disabled = blocked;
+  if (send) send.disabled = blocked;
+  if (button) {
+    button.textContent = chatBlockedByMe ? t("chat_unblock") : t("chat_block");
+    button.disabled = chatBlockedByOther && !chatBlockedByMe;
+  }
+  if (blocked) setChatStatus(t("chat_blocked"), true);
+  else if ($("chatStatus")?.textContent === t("chat_blocked")) setChatStatus("");
+}
+
+window.toggleChatBlock = async function() {
+  if (!sb || chatBlockedByOther && !chatBlockedByMe) return toast(t("chat_blocked"));
+  const blocked = !chatBlockedByMe;
+  if (blocked && !window.confirm(t("chat_block_confirm"))) return;
+  const { error } = await sb.rpc("set_chat_block", {
+    p_booking_id: chatThreadMode === "booking" ? chatBookingId : null,
+    p_thread_id: chatThreadMode === "admin" ? chatThreadId : null,
+    p_blocked: blocked,
+  });
+  if (error) {
+    console.error("Could not update chat block", error.message);
+    return toast(error.message);
+  }
+  await refreshChatBlockStatus();
+};
+
+window.reportChat = async function() {
+  if (!sb) return toast(t("acct_config_required"));
+  const reason = window.prompt(t("chat_report_prompt"));
+  if (reason === null) return;
+  if (reason.trim().length < 10) return toast(t("acct_missing"));
+  const { error } = await sb.rpc("submit_chat_report", {
+    p_booking_id: chatThreadMode === "booking" ? chatBookingId : null,
+    p_thread_id: chatThreadMode === "admin" ? chatThreadId : null,
+    p_reason: reason.trim(),
+  });
+  if (error) {
+    console.error("Could not submit chat report", error.message);
+    return toast(error.message);
+  }
+  toast(t("chat_report_sent"));
+};
 
 function trustedImageUrl(value) {
   try {
@@ -1228,7 +1579,7 @@ function renderChatMessages(messages, profile) {
         : message.sender_kind === "customer" ? "Khách hàng"
           : message.sender_kind === "admin" ? "Quản trị viên" : "Bạn gái thuê";
     return `<article class="chat-message ${own ? "own" : ""}"><b>${esc(label)}</b>
-      <div>${esc(message.body)}</div><time>${esc(new Date(message.created_at).toLocaleString())}</time></article>`;
+      <div>${esc(message.body)}</div><time>${esc(new Date(message.created_at).toLocaleString())}${own && message.read_at ? ` · ${esc(t("chat_read"))}` : ""}</time></article>`;
   }).join("");
   body.scrollTop = body.scrollHeight;
 }
@@ -1330,7 +1681,7 @@ window.sendChat = async function() {
     return;
   }
   const order = mapRemoteOrder(currentChat);
-  if (!sb || !account || !order || order.status !== "paid" || !input) return toast(t("chat_paid_only"));
+  if (!sb || !account || !order || !["paid", "done"].includes(order.status) || !input) return toast(t("chat_paid_only"));
   const text = input.value.trim();
   if (!text) return;
   const { data, error } = await sb.from("messages").insert({
@@ -1360,6 +1711,7 @@ async function initializeSupabaseApp() {
   S.activeAccountId = null;
   S.custom = [];
   await loadRenterProfiles();
+  await loadRemoteReviews();
   const { data, error } = await sb.auth.getSession();
   if (error) {
     console.error("Could not restore Supabase session", error.message);
@@ -1373,6 +1725,27 @@ async function initializeSupabaseApp() {
 }
 
 initializeSupabaseApp();
+
+async function loadRemoteReviews() {
+  if (!sb) return;
+  const { data, error } = await sb.from("renter_reviews")
+    .select("renter_profile_id,rating,comment,created_at")
+    .order("created_at", { ascending: false });
+  if (error) {
+    console.error("Could not load verified renter reviews", error.message);
+    return;
+  }
+  S.remoteReviews = {};
+  for (const review of data || []) {
+    const profile = S.custom.find((item) => item.id === review.renter_profile_id);
+    const key = profile?.catalogKey || review.renter_profile_id;
+    (S.remoteReviews[key] ||= []).push({
+      r: review.rating,
+      w: "Khách đã thuê",
+      x: review.comment,
+    });
+  }
+}
 
 window.spent = function() {
   return S.orders.filter((order) => order.status === "paid" || order.status === "done")

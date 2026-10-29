@@ -13,6 +13,7 @@ create table if not exists public.admin_chat_messages (
   sender_id uuid references public.profiles(id),
   sender_kind text not null check (sender_kind in ('admin', 'renter', 'persona')),
   body text not null check (char_length(body) between 1 and 2000),
+  read_at timestamptz,
   created_at timestamptz not null default now(),
   constraint admin_chat_persona_sender check (
     (sender_kind = 'persona' and sender_id is null)

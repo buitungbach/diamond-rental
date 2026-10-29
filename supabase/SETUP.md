@@ -9,10 +9,20 @@ hosting location.
 1. Create a Supabase project and run `supabase/schema.sql` in its SQL Editor.
    For an existing installation, run `supabase/pricing-vnd.sql` after applying
    the original schema to update server-side booking prices. Run
-   `supabase/admin-direct-chat.sql` to enable admin-to-renter chats without a
-   booking or payment. Run `supabase/chat-backgrounds.sql` so a renter can set
-   a shared chat background. For manual Agribank transfers, also run
+   `supabase/admin-direct-chat.sql` before `supabase/feature-upgrades.sql`;
+   the feature migration adds weekly renter availability, server-side
+   double-booking protection, completion confirmation, verified reviews,
+   chat block/report tools, and read receipts. Run
+   `supabase/chat-backgrounds.sql` so a renter can set a shared chat
+   background. For manual Agribank transfers, also run
    `supabase/manual-payment.sql`.
+
+   For an existing project, run migrations in this order: `schema.sql` (only
+   if the base schema has not been installed), `pricing-vnd.sql`,
+   `admin-direct-chat.sql`, `manual-payment.sql`, then
+   `feature-upgrades.sql`. The last migration assumes the admin chat tables
+   already exist. Do not advertise the new booking, review, or chat-safety
+   features as enabled until the SQL Editor reports that migration succeeded.
 2. Put the project URL and **anon/public** key in `supabase-config.js`.
    Never put the service-role key in that file or in the HTML.
 3. In **Authentication → URL Configuration**, set **Site URL** to
@@ -109,7 +119,18 @@ An administrator reviews pending orders under the Orders/Inbox page and
 confirms a transfer only after checking the exact amount and bank transaction
 reference in the Agribank statement. A customer-provided screenshot or receipt
 does not confirm payment. The database records the admin account, bank
-reference, booking, and amount. Chat opens only after this confirmation.
+reference, booking, and amount. Chat opens only after this confirmation. The
+site's downloadable or printable receipt is not a VAT invoice.
+
+After `feature-upgrades.sql` is applied, renter accounts can configure weekly
+availability in **Account**; customers see available time slots during
+checkout, and the database checks for conflicts again when creating a booking.
+Pending bookings expire for availability purposes after 15 minutes. After the
+last session ends, both participants confirm completion for human bookings;
+the customer confirms AI bookings. Only then can that customer submit one
+verified review. Participants can block or report a chat; administrators can
+review and resolve reports from **Account**. Browser notifications require
+the user to enable them and are best-effort while the site is open.
 
 The SQL editor migration `supabase/admin-direct-chat.sql` installs a separate,
 admin-only direct chat with active AI and human renter profiles. It does not
@@ -133,7 +154,9 @@ its own HMAC secret, and separate end-to-end testing before it can be enabled.
 1. In the Cloudflare dashboard, open **Workers AI → Use REST API** and create
    a Workers AI API token. Copy the account ID shown there. The token needs
    Workers AI access; do not send it to anyone. The default model is
-   `@cf/meta/llama-3.1-8b-instruct-fp8-fast`.
+   `@cf/meta/llama-3.2-3b-instruct`. If you previously set the optional
+   `CLOUDFLARE_AI_MODEL` secret to another value, remove that override or set
+   it to a model currently available in Cloudflare's model catalog.
 2. In the Supabase dashboard, open the Diamond Rental project, then **Edge
    Functions → Secrets → Add new secret**. Add `CLOUDFLARE_ACCOUNT_ID` with
    the account ID and `CLOUDFLARE_API_TOKEN` with the token. Do not include

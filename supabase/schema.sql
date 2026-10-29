@@ -136,6 +136,8 @@ create table if not exists public.renter_profiles (
   bio text not null default '',
   avatar_url text,
   chat_background_url text,
+  availability jsonb not null default
+    '[{"day":0,"from":10,"to":22},{"day":1,"from":10,"to":22},{"day":2,"from":10,"to":22},{"day":3,"from":10,"to":22},{"day":4,"from":10,"to":22},{"day":5,"from":10,"to":22},{"day":6,"from":10,"to":22}]'::jsonb,
   persona_mode text not null default 'human' check (persona_mode in ('human', 'ai')),
   is_active boolean not null default true,
   created_at timestamptz not null default now(),
@@ -239,6 +241,7 @@ create table if not exists public.messages (
   sender_id uuid references public.profiles(id),
   sender_kind text not null check (sender_kind in ('customer', 'renter', 'persona')),
   body text not null check (char_length(body) between 1 and 2000),
+  read_at timestamptz,
   created_at timestamptz not null default now(),
   constraint persona_sender_has_no_user check (
     (sender_kind = 'persona' and sender_id is null)

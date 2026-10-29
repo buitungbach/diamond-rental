@@ -24,7 +24,7 @@ Deno.serve(async (request) => {
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   const cloudflareAccountId = Deno.env.get("CLOUDFLARE_ACCOUNT_ID");
   const cloudflareApiToken = Deno.env.get("CLOUDFLARE_API_TOKEN");
-  const cloudflareModel = Deno.env.get("CLOUDFLARE_AI_MODEL") ?? "@cf/meta/llama-3.1-8b-instruct-fp8-fast";
+  const cloudflareModel = Deno.env.get("CLOUDFLARE_AI_MODEL") ?? "@cf/meta/llama-3.2-3b-instruct";
   if (!supabaseUrl || !anonKey || !serviceRoleKey) {
     return json({ error: "Chat backend is not configured" }, 503);
   }
@@ -79,7 +79,7 @@ Deno.serve(async (request) => {
       .eq("id", input.booking_id)
       .maybeSingle();
     if (bookingError) return json({ error: "Could not load booking" }, 500);
-    if (!booking || booking.status !== "paid" || booking.customer_id !== userData.user.id) {
+    if (!booking || !["paid", "completed"].includes(booking.status) || booking.customer_id !== userData.user.id) {
       return json({ error: "Paid customer booking required" }, 403);
     }
     conversationId = booking.id;
