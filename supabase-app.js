@@ -48,6 +48,9 @@ Object.assign(T, {
   chat_empty: ["Chưa có tin nhắn. Hãy bắt đầu trò chuyện nhé!", "No messages yet. Start the conversation!", "メッセージはまだありません。会話を始めましょう！"],
   chat_ai_not_deployed: ["Chưa triển khai dịch vụ trả lời AI trên Supabase. Hãy chạy lệnh deploy ai-chat-reply.", "The AI reply function is not deployed. Deploy ai-chat-reply to Supabase.", "AI返信機能が未デプロイです。ai-chat-replyをSupabaseにデプロイしてください。"],
   chat_ai_secret_missing: ["Dịch vụ AI chưa sẵn sàng. Kiểm tra Edge Function secret OPENAI_API_KEY trong Supabase.", "The AI service is not configured. Check the OPENAI_API_KEY Edge Function secret in Supabase.", "AIサービスが設定されていません。SupabaseのOPENAI_API_KEYシークレットを確認してください。"],
+  chat_ai_quota_exceeded: ["OpenAI API đã hết hạn mức hoặc chưa bật thanh toán. Vào OpenAI Platform → Billing để thêm phương thức thanh toán/nạp tiền, kiểm tra giới hạn ngân sách của project API key, rồi gửi tin nhắn mới.", "The OpenAI API quota is exhausted or billing is not enabled. OpenAI Platform → Billing: add a payment method/credits, check the API key project's budget limits, then send a new message.", "OpenAI APIの利用枠がありません。OpenAI Platform → Billingで支払い方法・クレジットとAPIキーのプロジェクト利用上限を確認し、新しいメッセージを送信してください。"],
+  chat_ai_rate_limited: ["OpenAI đang giới hạn số yêu cầu trong thời gian ngắn. Chờ khoảng một phút rồi gửi lại; tránh bấm gửi liên tục.", "OpenAI is rate-limiting requests. Wait about a minute and try again; avoid repeated sends.", "OpenAIのリクエスト数が一時的に制限されています。約1分待ってから再送し、連続送信は避けてください。"],
+  chat_ai_key_rejected: ["OpenAI từ chối API key. Kiểm tra OPENAI_API_KEY trong Supabase Edge Function Secrets rồi deploy lại function.", "OpenAI rejected the API key. Check OPENAI_API_KEY in Supabase Edge Function Secrets, then redeploy the function.", "OpenAIがAPIキーを拒否しました。Supabase Edge Function SecretsのOPENAI_API_KEYを確認し、関数を再デプロイしてください。"],
   chat_ai_failed: ["Tin nhắn đã gửi nhưng AI chưa trả lời được. Kiểm tra log của Edge Function ai-chat-reply trong Supabase.", "Message sent, but the AI could not reply. Check the ai-chat-reply Edge Function logs in Supabase.", "メッセージは送信されましたが、AIが返信できませんでした。Supabaseのai-chat-replyログを確認してください。"],
   chat_background_change: ["Đổi hình nền chat", "Change chat background", "チャット背景を変更"],
   chat_background_saving: ["Đang cập nhật hình nền…", "Updating chat background…", "チャット背景を更新中…"],
@@ -1096,10 +1099,13 @@ async function requestAiReply(body, messageId, refreshMessages) {
         detail = "";
       }
     }
-    const message = status === 404 ? t("chat_ai_not_deployed")
-      : status === 503 ? t("chat_ai_secret_missing")
-        : detail ? `${t("chat_ai_failed")} (${detail.slice(0, 180)})`
-          : t("chat_ai_failed");
+    const message = detail === "openai_quota_exceeded" ? t("chat_ai_quota_exceeded")
+      : detail === "openai_rate_limited" ? t("chat_ai_rate_limited")
+        : detail === "openai_api_key_rejected" ? t("chat_ai_key_rejected")
+          : status === 404 ? t("chat_ai_not_deployed")
+            : status === 503 ? t("chat_ai_secret_missing")
+              : detail ? `${t("chat_ai_failed")} (${detail.slice(0, 180)})`
+                : t("chat_ai_failed");
     setChatStatus(message, true);
     toast(message);
     console.error("AI reply request failed", status || error.message);
