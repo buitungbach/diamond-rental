@@ -44,6 +44,12 @@ Object.assign(T, {
   chat_failed: ["Không tải được cuộc trò chuyện.", "Could not load the conversation.", "会話を読み込めませんでした。"],
   chat_send_failed: ["Không gửi được tin nhắn.", "Could not send the message.", "メッセージを送信できませんでした。"],
   chat_ai: ["Bạn đang trò chuyện với nhân vật AI hư cấu. Tin nhắn được gửi tới OpenAI để tạo câu trả lời; không gửi thông tin nhạy cảm.", "You are chatting with a fictional AI persona. Messages are sent to OpenAI to generate replies; do not share sensitive information.", "架空のAIキャラクターとの会話です。返信生成のためメッセージはOpenAIに送信されます。機密情報を送らないでください。"],
+  admin_chat_title: ["Chat quản trị không cần thanh toán", "Admin chats (no payment required)", "管理者チャット（支払い不要）"],
+  admin_chat_intro: ["Chọn hồ sơ để bắt đầu chat trực tiếp. Với hồ sơ bạn gái thuê thật, tin nhắn sẽ được gửi đến tài khoản của họ.", "Choose a profile to start a direct chat. Messages to real renters are delivered to their account.", "プロフィールを選んで直接チャットを開始します。実際のレンタル相手にはアカウントへメッセージが届きます。"],
+  admin_chat_open: ["Chat", "Chat", "チャット"],
+  admin_chat_inbox: ["Tin nhắn từ quản trị viên", "Messages from admin", "管理者からのメッセージ"],
+  admin_chat_empty: ["Chưa có tin nhắn quản trị viên.", "No admin messages yet.", "管理者からのメッセージはありません。"],
+  admin_chat_label: ["Chat quản trị", "Admin chat", "管理者チャット"],
   acct_login: ["Đăng nhập", "Sign in", "ログイン"],
   acct_register: ["Đăng ký", "Create account", "アカウント作成"],
   chat_open: ["Mở trò chuyện", "Open chat", "チャットを開く"],
@@ -71,6 +77,8 @@ let remoteAccount = null;
 let backendReady = false;
 let adminPendingPayments = [];
 let chatBookingId = "";
+let chatThreadId = "";
+let chatThreadMode = "booking";
 let chatChannel = null;
 let notificationsChannel = null;
 let bookingsChannel = null;
@@ -132,6 +140,7 @@ function rowToRenter(row) {
     catalogKey: row.catalog_key || null,
     ownerId: row.owner_id,
     avatarUrl: row.avatar_url,
+    active: row.is_active,
   };
   if (row.avatar_url) S.imgs[row.id] = row.avatar_url;
   return profile;
@@ -260,6 +269,13 @@ function subscribeToNotifications() {
         toast("Tin nhắn mới trong cuộc trò chuyện đã thanh toán.");
         if (view === "orders") renderAll();
         if (view === "chat" && chatBookingId === event.new.booking_id) loadChatMessages();
+      }
+    })
+    .on("postgres_changes", { event: "INSERT", schema: "public", table: "admin_chat_messages" }, (event) => {
+      if (event.new.sender_id !== remoteAccount.id) {
+        toast("Tin nhắn mới trong chat quản trị.");
+        if (view === "account" && remoteAccount.role === "renter") loadRenterAdminChats();
+        if (view === "chat" && chatThreadMode === "admin" && chatThreadId === event.new.thread_id) loadAdminChatMessages();
       }
     })
     .subscribe();
@@ -432,10 +448,18 @@ function renderAccount() {
     ${account.role === "renter" ? `<div class="panel"><h3>${t("acct_girl")}</h3>
       <button class="btn sm" onclick="openAdd()">${t(S.custom.some((profile) => profile.ownerId === account.id) ? "acct_edit_profile" : "acct_add_profile")}</button></div>` : ""}
     ${account.role === "admin" ? `<div class="panel"><h3>Quản lý nhân vật AI</h3>
-      <p class="muted">Tạo hồ sơ nhân vật hư cấu; hệ thống sẽ trả lời bằng AI sau khi đơn được thanh toán.</p>
+      <p class="muted">Tạo hồ sơ nhân vật hư cấu để dùng trong website.</p>
       <button class="btn sm" onclick="openAdd()">+ Thêm nhân vật AI</button>
       <button class="btn ghost sm" onclick="go('orders')">${t("manual_payment_title")}</button></div>` : ""}
+    ${account.role === "admin" ? `<div class="panel"><h3>${t("admin_chat_title")}</h3>
+      <p class="muted">${t("admin_chat_intro")}</p>
+      ${S.custom.filter((profile) => profile.active !== false).map((profile) => `<div class="row" style="justify-content:space-between;margin:8px 0">
+        <span>${esc(profile.name)} · ${profile.profileType === "ai" ? "AI" : "Bạn gái thuê"}</span>
+        <button class="btn sm" onclick="openAdminChat('${esc(profile.id)}')">${t("admin_chat_open")}</button>
+      </div>`).join("") || `<p class="muted">${t("admin_chat_empty")}</p>`}</div>` : ""}
+    ${account.role === "renter" ? `<div id="adminChatInbox"></div>` : ""}
     <div class="panel"><h3>${t("ord_t")}</h3><button class="btn ghost sm" onclick="go('orders')">${t("chat_inbox")}</button></div>`;
+  if (account.role === "renter") loadRenterAdminChats();
 }
 
 async function updateAccount() {
@@ -915,6 +939,8 @@ window.openChat = async function(code) {
     if (!order || order.status !== "paid") return toast(t("chat_paid_only"));
     currentChat = code;
     chatBookingId = order.raw.id;
+    chatThreadId = "";
+    chatThreadMode = "booking";
     view = "chat";
     renderAll();
   } catch (error) {
@@ -922,6 +948,81 @@ window.openChat = async function(code) {
     toast(t("chat_failed"));
   }
 };
+
+window.openAdminChat = async function(profileId) {
+  const account = activeAccount();
+  if (!sb || account?.role !== "admin") return toast(t("acct_access_denied"));
+  const profile = S.custom.find((item) => item.id === profileId);
+  if (!profile) return toast(t("chat_failed"));
+  const { data, error } = await sb.rpc("open_admin_chat", { p_renter_profile_id: profile.id });
+  if (error || !data) {
+    console.error("Could not open admin chat", error?.message || "No thread returned");
+    return toast(t("chat_failed"));
+  }
+  currentChat = profile.id;
+  chatBookingId = "";
+  chatThreadId = data;
+  chatThreadMode = "admin";
+  view = "chat";
+  renderAll();
+};
+
+window.openRenterAdminChat = async function(threadId) {
+  const account = activeAccount();
+  if (!sb || account?.role !== "renter") return toast(t("acct_access_denied"));
+  const { data, error } = await sb.from("admin_chat_threads")
+    .select("id,renter_profile_id").eq("id", threadId).maybeSingle();
+  if (error || !data) {
+    console.error("Could not open renter admin chat", error?.message || "Thread unavailable");
+    return toast(t("chat_failed"));
+  }
+  currentChat = data.renter_profile_id;
+  chatBookingId = "";
+  chatThreadId = data.id;
+  chatThreadMode = "admin";
+  view = "chat";
+  renderAll();
+};
+
+async function loadRenterAdminChats() {
+  const account = activeAccount();
+  const container = $("adminChatInbox");
+  if (!sb || account?.role !== "renter" || !container) return;
+  container.innerHTML = `<div class="panel"><h3>${t("admin_chat_inbox")}</h3><p class="muted">Đang tải...</p></div>`;
+  const { data: threads, error } = await sb.from("admin_chat_threads")
+    .select("id,renter_profile_id,renter_profiles(display_name,catalog_key)")
+    .order("created_at", { ascending: false });
+  if (error) {
+    console.error("Could not load renter admin chats", error.message);
+    container.innerHTML = `<div class="panel"><h3>${t("admin_chat_inbox")}</h3><p class="err">${t("chat_failed")}</p></div>`;
+    return;
+  }
+  if (!threads?.length) {
+    container.innerHTML = `<div class="panel"><h3>${t("admin_chat_inbox")}</h3><p class="muted">${t("admin_chat_empty")}</p></div>`;
+    return;
+  }
+  const { data: messages, error: messageError } = await sb.from("admin_chat_messages")
+    .select("thread_id,body,sender_kind,created_at")
+    .in("thread_id", threads.map((thread) => thread.id))
+    .order("created_at", { ascending: false });
+  if (messageError) {
+    console.error("Could not load renter admin chat previews", messageError.message);
+    container.innerHTML = `<div class="panel"><h3>${t("admin_chat_inbox")}</h3><p class="err">${t("chat_failed")}</p></div>`;
+    return;
+  }
+  const latest = new Map();
+  for (const message of messages || []) {
+    if (!latest.has(message.thread_id)) latest.set(message.thread_id, message);
+  }
+  container.innerHTML = `<div class="panel"><h3>${t("admin_chat_inbox")}</h3>${threads.map((thread) => {
+    const profile = Array.isArray(thread.renter_profiles) ? thread.renter_profiles[0] : thread.renter_profiles;
+    const message = latest.get(thread.id);
+    return `<div class="row" style="justify-content:space-between;margin:8px 0">
+      <span>${esc(profile?.display_name || t("admin_chat_label"))}${message ? ` · ${esc(message.body.slice(0, 70))}` : ""}</span>
+      <button class="btn sm" onclick="openRenterAdminChat('${esc(thread.id)}')">${t("admin_chat_open")}</button>
+    </div>`;
+  }).join("")}</div>`;
+}
 
 async function loadChatMessages() {
   if (!sb || !chatBookingId) return;
@@ -942,7 +1043,51 @@ async function loadChatMessages() {
   body.scrollTop = body.scrollHeight;
 }
 
+async function loadAdminChatMessages() {
+  if (!sb || !chatThreadId) return;
+  const { data, error } = await sb.from("admin_chat_messages").select("*")
+    .eq("thread_id", chatThreadId).order("created_at", { ascending: true });
+  if (error) {
+    console.error("Could not load admin chat messages", error.message);
+    return toast(t("chat_failed"));
+  }
+  const body = $("chatBody");
+  if (!body) return;
+  body.innerHTML = (data || []).map((message) => {
+    const label = message.sender_kind === "persona" ? getG(currentChat)?.name || "Nhân vật"
+      : message.sender_id === activeAccount()?.id ? activeAccount().name
+        : message.sender_kind === "admin" ? "Quản trị viên" : "Bạn gái thuê";
+    return `<div class="rev"><b>${esc(label)}</b><div>${esc(message.body)}</div><small class="muted">${esc(new Date(message.created_at).toLocaleString())}</small></div>`;
+  }).join("");
+  body.scrollTop = body.scrollHeight;
+}
+
 function renderChatPage() {
+  if (chatThreadMode === "admin") {
+    const account = activeAccount();
+    const profile = getG(currentChat);
+    if (!account || !profile || !chatThreadId || !["admin", "renter"].includes(account.role)) {
+      $("app").innerHTML = `<p class="notice">${t("acct_access_denied")}</p>`;
+      return;
+    }
+    $("app").innerHTML = `<h2>${t("admin_chat_label")} · ${esc(profile.name)}</h2>
+      <p class="notice">${esc(profile.profileType === "ai" ? t("chat_ai") : t("chat_human"))}</p>
+      <div class="panel"><div id="chatBody" style="max-height:45vh;overflow:auto"></div>
+        <div class="r2"><input class="inp" id="chatInput" maxlength="2000" placeholder="${esc(t("chat_placeholder"))}" onkeydown="if(event.key==='Enter')sendChat()">
+          <button class="btn sm" onclick="sendChat()">${t("chat_send")}</button></div>
+        <button class="btn ghost sm" style="margin-top:10px" onclick="go('account')">${t("ck_back")}</button></div>`;
+    loadAdminChatMessages();
+    if (chatChannel) sb.removeChannel(chatChannel);
+    chatChannel = sb.channel(`admin-chat:${chatThreadId}`)
+      .on("postgres_changes", {
+        event: "INSERT",
+        schema: "public",
+        table: "admin_chat_messages",
+        filter: `thread_id=eq.${chatThreadId}`,
+      }, loadAdminChatMessages)
+      .subscribe();
+    return;
+  }
   const order = mapRemoteOrder(currentChat);
   if (!order || order.status !== "paid") {
     $("app").innerHTML = `<p class="notice">${t("chat_paid_only")}</p>`;
@@ -969,8 +1114,36 @@ function renderChatPage() {
 
 window.sendChat = async function() {
   const account = activeAccount();
-  const order = mapRemoteOrder(currentChat);
   const input = $("chatInput");
+  if (chatThreadMode === "admin") {
+    if (!sb || !account || !chatThreadId || !input || !["admin", "renter"].includes(account.role)) {
+      return toast(t("acct_access_denied"));
+    }
+    const text = input.value.trim();
+    if (!text) return;
+    const { data, error } = await sb.from("admin_chat_messages").insert({
+      thread_id: chatThreadId,
+      sender_id: account.id,
+      sender_kind: account.role,
+      body: text,
+    }).select("id").single();
+    if (error) {
+      console.error("Could not send admin chat message", error.message);
+      return toast(t("chat_send_failed"));
+    }
+    input.value = "";
+    if (account.role === "admin" && getG(currentChat)?.profileType === "ai") {
+      const { error: aiError } = await sb.functions.invoke("ai-chat-reply", {
+        body: { admin_chat_id: chatThreadId, message_id: data.id },
+      });
+      if (aiError) {
+        console.error("AI admin chat reply failed", aiError.message);
+        toast("Tin nhắn đã gửi; dịch vụ AI đang tạm lỗi.");
+      }
+    }
+    return;
+  }
+  const order = mapRemoteOrder(currentChat);
   if (!sb || !account || !order || order.status !== "paid" || !input) return toast(t("chat_paid_only"));
   const text = input.value.trim();
   if (!text) return;

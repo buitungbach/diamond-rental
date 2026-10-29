@@ -8,8 +8,10 @@ hosting location.
 
 1. Create a Supabase project and run `supabase/schema.sql` in its SQL Editor.
    For an existing installation, run `supabase/pricing-vnd.sql` after applying
-   the original schema to update server-side booking prices. For manual
-   Agribank transfers, also run `supabase/manual-payment.sql`.
+   the original schema to update server-side booking prices. Run
+   `supabase/admin-direct-chat.sql` to enable admin-to-renter chats without a
+   booking or payment. For manual Agribank transfers, also run
+   `supabase/manual-payment.sql`.
 2. Put the project URL and **anon/public** key in `supabase-config.js`.
    Never put the service-role key in that file or in the HTML.
 3. In **Authentication → URL Configuration**, set **Site URL** to
@@ -34,7 +36,13 @@ hosting location.
    `SUPABASE_SERVICE_ROLE_KEY` to Edge Functions. Do not copy the service-role
    key into the website.
 5. Link the Supabase CLI to this project and deploy `ai-chat-reply` if using
-   AI profiles. After setting `OPENAI_API_KEY`, run
+   AI profiles or admin chats with AI profiles:
+
+   ```text
+   supabase functions deploy ai-chat-reply
+   ```
+
+   After setting `OPENAI_API_KEY`, run
    `supabase/anime-ai-catalog.sql` in the SQL Editor. The seeded profiles stay
    inactive until you verify the secret is configured and run:
 
@@ -58,7 +66,10 @@ hosting location.
    ```
 
    Sign out and sign back in to refresh the role. Never expose a service-role
-   key in the site.
+   key in the site. After running `admin-direct-chat.sql`, the admin can open
+   **Tài khoản → Chat quản trị không cần thanh toán** and start a chat with any
+   active AI or human renter profile. Human renters receive the thread in
+   **Tài khoản → Tin nhắn từ quản trị viên**.
 
 ## Agribank QR and manual payment confirmation
 
@@ -92,6 +103,12 @@ confirms a transfer only after checking the exact amount and bank transaction
 reference in the Agribank statement. A customer-provided screenshot or receipt
 does not confirm payment. The database records the admin account, bank
 reference, booking, and amount. Chat opens only after this confirmation.
+
+The SQL editor migration `supabase/admin-direct-chat.sql` installs a separate,
+admin-only direct chat with active AI and human renter profiles. It does not
+create a booking or change a booking's payment status. Human renters receive
+these messages in the account inbox and can reply there. AI replies use the
+deployed `ai-chat-reply` Edge Function and still require `OPENAI_API_KEY`.
 
 The SQL editor migration `supabase/manual-payment.sql` installs the
 administrator-only queue and confirmation functions. After running it, sign

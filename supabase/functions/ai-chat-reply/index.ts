@@ -26,13 +26,16 @@ Deno.serve(async (request) => {
     return json({ error: "Chat AI is not configured" }, 503);
   }
 
-  let input: { booking_id?: string; message_id?: string };
+  let input: { booking_id?: string; admin_chat_id?: string; message_id?: string };
   try {
     input = await request.json();
   } catch {
     return json({ error: "Invalid JSON" }, 400);
   }
-  if (!input.booking_id || !input.message_id) return json({ error: "Missing message identifiers" }, 400);
+  const isAdminChat = Boolean(input.admin_chat_id);
+  if ((!input.booking_id && !isAdminChat) || (input.booking_id && isAdminChat) || !input.message_id) {
+    return json({ error: "Missing or conflicting message identifiers" }, 400);
+  }
 
   const userClient = createClient(supabaseUrl, anonKey, {
     global: { headers: { authorization } },
@@ -44,19 +47,43 @@ Deno.serve(async (request) => {
   const admin = createClient(supabaseUrl, serviceRoleKey, {
     auth: { persistSession: false },
   });
-  const { data: booking, error: bookingError } = await admin
-    .from("bookings")
-    .select("id,customer_id,renter_profile_id,status,renter_profiles(id,persona_mode,display_name)")
-    .eq("id", input.booking_id)
-    .maybeSingle();
-  if (bookingError) return json({ error: "Could not load booking" }, 500);
-  if (!booking || booking.status !== "paid" || booking.customer_id !== userData.user.id) {
-    return json({ error: "Paid customer booking required" }, 403);
+  let conversationId: string;
+  let renterProfileId: string;
+  let expectedSenderKind: "customer" | "admin";
+  if (isAdminChat) {
+    const { data: thread, error: threadError } = await admin
+      .from("admin_chat_threads")
+      .select("id,admin_id,renter_profile_id")
+      .eq("id", input.admin_chat_id)
+      .maybeSingle();
+    if (threadError) return json({ error: "Could not load admin chat" }, 500);
+    if (!thread || thread.admin_id !== userData.user.id) {
+      return json({ error: "Admin chat access required" }, 403);
+    }
+    conversationId = thread.id;
+    renterProfileId = thread.renter_profile_id;
+    expectedSenderKind = "admin";
+  } else {
+    const { data: booking, error: bookingError } = await admin
+      .from("bookings")
+      .select("id,customer_id,renter_profile_id,status")
+      .eq("id", input.booking_id)
+      .maybeSingle();
+    if (bookingError) return json({ error: "Could not load booking" }, 500);
+    if (!booking || booking.status !== "paid" || booking.customer_id !== userData.user.id) {
+      return json({ error: "Paid customer booking required" }, 403);
+    }
+    conversationId = booking.id;
+    renterProfileId = booking.renter_profile_id;
+    expectedSenderKind = "customer";
   }
 
-  const persona = Array.isArray(booking.renter_profiles)
-    ? booking.renter_profiles[0]
-    : booking.renter_profiles;
+  const { data: persona, error: profileError } = await admin
+    .from("renter_profiles")
+    .select("id,persona_mode,display_name")
+    .eq("id", renterProfileId)
+    .maybeSingle();
+  if (profileError) return json({ error: "Could not load renter profile" }, 500);
   if (!persona || persona.persona_mode !== "ai") return json({ skipped: true });
   const { data: personaConfig, error: personaError } = await admin
     .from("renter_personas")
@@ -66,19 +93,21 @@ Deno.serve(async (request) => {
   if (personaError) return json({ error: "Could not load persona configuration" }, 500);
   if (!personaConfig) return json({ error: "AI persona is not configured" }, 503);
 
+  const messageTable = isAdminChat ? "admin_chat_messages" : "messages";
+  const conversationColumn = isAdminChat ? "thread_id" : "booking_id";
   const { data: message, error: messageError } = await admin
-    .from("messages")
+    .from(messageTable)
     .select("id,body,sender_id,sender_kind")
     .eq("id", input.message_id)
-    .eq("booking_id", booking.id)
+    .eq(conversationColumn, conversationId)
     .maybeSingle();
   if (messageError) return json({ error: "Could not load message" }, 500);
-  if (!message || message.sender_id !== userData.user.id || message.sender_kind !== "customer") {
-    return json({ error: "Customer message not found" }, 404);
+  if (!message || message.sender_id !== userData.user.id || message.sender_kind !== expectedSenderKind) {
+    return json({ error: "Chat message not found" }, 404);
   }
 
   const { data: existingReply, error: existingReplyError } = await admin
-    .from("messages")
+    .from(messageTable)
     .select("id")
     .eq("reply_to_message_id", message.id)
     .maybeSingle();
@@ -86,9 +115,9 @@ Deno.serve(async (request) => {
   if (existingReply) return json({ success: true, already_replied: true });
 
   const { data: recent, error: historyError } = await admin
-    .from("messages")
+    .from(messageTable)
     .select("sender_kind,body")
-    .eq("booking_id", booking.id)
+    .eq(conversationColumn, conversationId)
     .order("created_at", { ascending: false })
     .limit(12);
   if (historyError) return json({ error: "Could not load chat history" }, 500);
@@ -123,8 +152,8 @@ Deno.serve(async (request) => {
   const reply = String(result.choices?.[0]?.message?.content ?? "").trim();
   if (!reply) return json({ error: "AI returned an empty reply" }, 502);
 
-  const { error: saveError } = await admin.from("messages").insert({
-    booking_id: booking.id,
+  const { error: saveError } = await admin.from(messageTable).insert({
+    [conversationColumn]: conversationId,
     reply_to_message_id: message.id,
     sender_id: null,
     sender_kind: "persona",
