@@ -52,6 +52,8 @@ Object.assign(T, {
   chat_ai_rate_limited: ["Cloudflare Workers AI đang giới hạn yêu cầu. Chờ một lúc rồi gửi lại; tránh bấm gửi liên tục.", "Cloudflare Workers AI is rate-limiting requests. Wait a little and try again; avoid repeated sends.", "Cloudflare Workers AIのリクエストが制限されています。少し待ってから再送してください。連続送信は避けてください。"],
   chat_ai_key_rejected: ["Cloudflare từ chối API token. Kiểm tra token và quyền Workers AI trong Cloudflare, rồi cập nhật CLOUDFLARE_API_TOKEN trong Supabase Secrets.", "Cloudflare rejected the API token. Check its Workers AI permissions in Cloudflare, then update CLOUDFLARE_API_TOKEN in Supabase Secrets.", "CloudflareがAPIトークンを拒否しました。CloudflareでWorkers AI権限を確認し、Supabase SecretsのCLOUDFLARE_API_TOKENを更新してください。"],
   chat_ai_provider_error: ["Cloudflare Workers AI chưa xử lý được yêu cầu. Kiểm tra model và trạng thái dịch vụ trong Cloudflare Dashboard.", "Cloudflare Workers AI could not process the request. Check the model and service status in the Cloudflare dashboard.", "Cloudflare Workers AIがリクエストを処理できませんでした。Cloudflare Dashboardでモデルとサービス状態を確認してください。"],
+  chat_ai_network_error: ["Supabase không kết nối được tới Cloudflare Workers AI. Kiểm tra trạng thái dịch vụ Cloudflare rồi thử lại.", "Supabase could not connect to Cloudflare Workers AI. Check Cloudflare service status and try again.", "SupabaseからCloudflare Workers AIに接続できませんでした。Cloudflareのサービス状態を確認して再試行してください。"],
+  chat_ai_model_error: ["Cloudflare từ chối yêu cầu model (mã lỗi {code}). Kiểm tra model Workers AI và quyền API token trong Cloudflare Dashboard.", "Cloudflare rejected the model request (error code {code}). Check the Workers AI model and API token permissions in the Cloudflare dashboard.", "Cloudflareがモデル要求を拒否しました（エラーコード {code}）。Cloudflare DashboardでモデルとAPIトークン権限を確認してください。"],
   chat_ai_failed: ["Tin nhắn đã gửi nhưng AI chưa trả lời được. Kiểm tra log của Edge Function ai-chat-reply trong Supabase.", "Message sent, but the AI could not reply. Check the ai-chat-reply Edge Function logs in Supabase.", "メッセージは送信されましたが、AIが返信できませんでした。Supabaseのai-chat-replyログを確認してください。"],
   chat_background_change: ["Đổi hình nền chat", "Change chat background", "チャット背景を変更"],
   chat_background_saving: ["Đang cập nhật hình nền…", "Updating chat background…", "チャット背景を更新中…"],
@@ -1092,18 +1094,22 @@ async function requestAiReply(body, messageId, refreshMessages) {
     pendingAiMessageId = "";
     const status = error.context?.status;
     let detail = "";
-    if (error.context instanceof Response) {
-      try {
-        const responseBody = await error.context.clone().json();
-        detail = typeof responseBody.error === "string" ? responseBody.error : "";
-      } catch {
-        detail = "";
-      }
+  let providerCode = "";
+  if (error.context instanceof Response) {
+    try {
+      const responseBody = await error.context.clone().json();
+      detail = typeof responseBody.error === "string" ? responseBody.error : "";
+      providerCode = responseBody.provider_code == null ? "" : String(responseBody.provider_code);
+    } catch {
+      detail = "";
+    }
     }
     const message = detail === "cloudflare_limit_reached" ? t("chat_ai_quota_exceeded")
       : detail === "cloudflare_token_rejected" ? t("chat_ai_key_rejected")
         : detail === "cloudflare_ai_not_configured" || detail === "cloudflare_ai_model_invalid" ? t("chat_ai_secret_missing")
-          : detail.startsWith("cloudflare_ai_") ? t("chat_ai_provider_error")
+          : detail === "cloudflare_network_error" ? t("chat_ai_network_error")
+            : detail === "cloudflare_model_error" ? t("chat_ai_model_error").replace("{code}", providerCode || "unknown")
+              : detail.startsWith("cloudflare_ai_") ? t("chat_ai_provider_error")
           : status === 404 ? t("chat_ai_not_deployed")
             : status === 503 ? t("chat_ai_secret_missing")
               : detail ? `${t("chat_ai_failed")} (${detail.slice(0, 180)})`

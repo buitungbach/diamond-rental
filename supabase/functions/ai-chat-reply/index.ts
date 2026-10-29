@@ -131,30 +131,36 @@ Deno.serve(async (request) => {
     .limit(12);
   if (historyError) return json({ error: "Could not load chat history" }, 500);
 
-  const completion = await fetch(
-    `https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(cloudflareAccountId)}/ai/run/${cloudflareModel}`,
-    {
-      method: "POST",
-      headers: {
-        authorization: `Bearer ${cloudflareApiToken}`,
-        "content-type": "application/json",
+  let completion: Response;
+  try {
+    completion = await fetch(
+      `https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(cloudflareAccountId)}/ai/run/${cloudflareModel}`,
+      {
+        method: "POST",
+        headers: {
+          authorization: `Bearer ${cloudflareApiToken}`,
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({
+          messages: [
+            {
+              role: "system",
+              content: `Bạn là nhân vật hư cấu ${persona.display_name}. ${personaConfig.system_prompt} Hãy trả lời bằng tiếng Việt tự nhiên, thân thiện, không khẳng định bạn là người thật và không yêu cầu thông tin thanh toán.`,
+            },
+            ...(recent ?? []).reverse().map((entry) => ({
+              role: entry.sender_kind === "persona" ? "assistant" : "user",
+              content: entry.body,
+            })),
+          ],
+          max_tokens: 300,
+          temperature: 0.8,
+        }),
       },
-      body: JSON.stringify({
-        messages: [
-          {
-            role: "system",
-            content: `Bạn là nhân vật hư cấu ${persona.display_name}. ${personaConfig.system_prompt} Hãy trả lời bằng tiếng Việt tự nhiên, thân thiện, không khẳng định bạn là người thật và không yêu cầu thông tin thanh toán.`,
-          },
-          ...(recent ?? []).reverse().map((entry) => ({
-            role: entry.sender_kind === "persona" ? "assistant" : "user",
-            content: entry.body,
-          })),
-        ],
-        max_tokens: 300,
-        temperature: 0.8,
-      }),
-    },
-  );
+    );
+  } catch (error) {
+    console.error("Cloudflare Workers AI connection failed", String(error).slice(0, 300));
+    return json({ error: "cloudflare_network_error" }, 502);
+  }
   let result: Record<string, unknown> | null = null;
   if (!completion.ok) {
     const errorText = await completion.text();
@@ -185,8 +191,19 @@ Deno.serve(async (request) => {
     return json({ error: "cloudflare_ai_invalid_response" }, 502);
   }
   if (result?.success === false) {
-    console.error("Cloudflare Workers AI returned an error", JSON.stringify(result.errors ?? []).slice(0, 300));
-    return json({ error: "cloudflare_ai_failed" }, 502);
+    const errors = Array.isArray(result.errors) ? result.errors as Array<{ code?: number; message?: string }> : [];
+    const providerCodes = errors.map((item) => item.code).filter((code) => typeof code === "number");
+    const providerMessage = errors.map((item) => String(item.message ?? "")).join(" ").slice(0, 300);
+    console.error("Cloudflare Workers AI returned an error", providerCodes, providerMessage);
+    const normalizedError = providerMessage.toLowerCase();
+    const error = normalizedError.includes("quota")
+      || normalizedError.includes("neuron")
+      || normalizedError.includes("rate limit")
+      ? "cloudflare_limit_reached"
+      : providerCodes.includes(10000)
+        ? "cloudflare_token_rejected"
+        : "cloudflare_model_error";
+    return json({ error, provider_code: providerCodes[0] ?? null }, 502);
   }
   const resultBody = result?.result as Record<string, unknown> | undefined;
   const reply = String(resultBody?.response ?? "").trim();
