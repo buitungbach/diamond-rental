@@ -165,8 +165,14 @@ Deno.serve(async (request) => {
   if (!completion.ok) {
     const errorText = await completion.text();
     let providerMessage = errorText;
+    let providerCodes: number[] = [];
     try {
       const errorBody = JSON.parse(errorText);
+      providerCodes = Array.isArray(errorBody.errors)
+        ? errorBody.errors
+          .map((item: { code?: number }) => item.code)
+          .filter((code: unknown): code is number => typeof code === "number")
+        : [];
       providerMessage = (errorBody.errors ?? [])
         .map((item: { message?: string }) => String(item.message ?? ""))
         .join(" ");
@@ -182,8 +188,12 @@ Deno.serve(async (request) => {
         || normalizedError.includes("neuron")
         || normalizedError.includes("quota")
         ? "cloudflare_limit_reached"
-        : "cloudflare_ai_failed";
-    return json({ error }, 502);
+        : "cloudflare_http_error";
+    return json({
+      error,
+      provider_status: completion.status,
+      provider_code: providerCodes[0] ?? null,
+    }, 502);
   }
   try {
     result = await completion.json();

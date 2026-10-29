@@ -54,6 +54,7 @@ Object.assign(T, {
   chat_ai_provider_error: ["Cloudflare Workers AI chưa xử lý được yêu cầu. Kiểm tra model và trạng thái dịch vụ trong Cloudflare Dashboard.", "Cloudflare Workers AI could not process the request. Check the model and service status in the Cloudflare dashboard.", "Cloudflare Workers AIがリクエストを処理できませんでした。Cloudflare Dashboardでモデルとサービス状態を確認してください。"],
   chat_ai_network_error: ["Supabase không kết nối được tới Cloudflare Workers AI. Kiểm tra trạng thái dịch vụ Cloudflare rồi thử lại.", "Supabase could not connect to Cloudflare Workers AI. Check Cloudflare service status and try again.", "SupabaseからCloudflare Workers AIに接続できませんでした。Cloudflareのサービス状態を確認して再試行してください。"],
   chat_ai_model_error: ["Cloudflare từ chối yêu cầu model (mã lỗi {code}). Kiểm tra model Workers AI và quyền API token trong Cloudflare Dashboard.", "Cloudflare rejected the model request (error code {code}). Check the Workers AI model and API token permissions in the Cloudflare dashboard.", "Cloudflareがモデル要求を拒否しました（エラーコード {code}）。Cloudflare DashboardでモデルとAPIトークン権限を確認してください。"],
+  chat_ai_http_error: ["Cloudflare trả lỗi HTTP {status} (mã {code}). Kiểm tra model đang bật và quyền Workers AI của API token trong Cloudflare Dashboard.", "Cloudflare returned HTTP {status} (code {code}). Check that the model is available and the API token has Workers AI permissions in the Cloudflare dashboard.", "CloudflareがHTTP {status}（コード {code}）を返しました。モデルの利用可否とAPIトークンのWorkers AI権限を確認してください。"],
   chat_ai_failed: ["Tin nhắn đã gửi nhưng AI chưa trả lời được. Kiểm tra log của Edge Function ai-chat-reply trong Supabase.", "Message sent, but the AI could not reply. Check the ai-chat-reply Edge Function logs in Supabase.", "メッセージは送信されましたが、AIが返信できませんでした。Supabaseのai-chat-replyログを確認してください。"],
   chat_background_change: ["Đổi hình nền chat", "Change chat background", "チャット背景を変更"],
   chat_background_saving: ["Đang cập nhật hình nền…", "Updating chat background…", "チャット背景を更新中…"],
@@ -1095,11 +1096,13 @@ async function requestAiReply(body, messageId, refreshMessages) {
     const status = error.context?.status;
     let detail = "";
   let providerCode = "";
+  let providerStatus = "";
   if (error.context instanceof Response) {
     try {
       const responseBody = await error.context.clone().json();
       detail = typeof responseBody.error === "string" ? responseBody.error : "";
       providerCode = responseBody.provider_code == null ? "" : String(responseBody.provider_code);
+      providerStatus = responseBody.provider_status == null ? "" : String(responseBody.provider_status);
     } catch {
       detail = "";
     }
@@ -1109,6 +1112,9 @@ async function requestAiReply(body, messageId, refreshMessages) {
         : detail === "cloudflare_ai_not_configured" || detail === "cloudflare_ai_model_invalid" ? t("chat_ai_secret_missing")
           : detail === "cloudflare_network_error" ? t("chat_ai_network_error")
             : detail === "cloudflare_model_error" ? t("chat_ai_model_error").replace("{code}", providerCode || "unknown")
+              : detail === "cloudflare_http_error" ? t("chat_ai_http_error")
+                .replace("{status}", providerStatus || "unknown")
+                .replace("{code}", providerCode || "unknown")
               : detail.startsWith("cloudflare_ai_") ? t("chat_ai_provider_error")
           : status === 404 ? t("chat_ai_not_deployed")
             : status === 503 ? t("chat_ai_secret_missing")
