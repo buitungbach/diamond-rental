@@ -145,8 +145,21 @@ Deno.serve(async (request) => {
     }),
   });
   if (!completion.ok) {
-    console.error("OpenAI chat request failed", completion.status);
-    return json({ error: "AI reply service failed" }, 502);
+    const errorText = await completion.text();
+    let providerMessage = "";
+    try {
+      const errorBody = JSON.parse(errorText);
+      providerMessage = String(errorBody.error?.message ?? "");
+    } catch {
+      providerMessage = errorText;
+    }
+    console.error("OpenAI chat request failed", completion.status, providerMessage.slice(0, 500));
+    const error = completion.status === 401 || completion.status === 403
+      ? "OpenAI API key was rejected"
+      : completion.status === 429
+        ? "OpenAI API quota or rate limit was reached"
+        : "AI reply service failed";
+    return json({ error }, 502);
   }
   const result = await completion.json();
   const reply = String(result.choices?.[0]?.message?.content ?? "").trim();

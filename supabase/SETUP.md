@@ -10,7 +10,8 @@ hosting location.
    For an existing installation, run `supabase/pricing-vnd.sql` after applying
    the original schema to update server-side booking prices. Run
    `supabase/admin-direct-chat.sql` to enable admin-to-renter chats without a
-   booking or payment. For manual Agribank transfers, also run
+   booking or payment. Run `supabase/chat-backgrounds.sql` so a renter can set
+   a shared chat background. For manual Agribank transfers, also run
    `supabase/manual-payment.sql`.
 2. Put the project URL and **anon/public** key in `supabase-config.js`.
    Never put the service-role key in that file or in the HTML.
@@ -70,6 +71,9 @@ hosting location.
    **Tài khoản → Chat quản trị không cần thanh toán** and start a chat with any
    active AI or human renter profile. Human renters receive the thread in
    **Tài khoản → Tin nhắn từ quản trị viên**.
+   The chat background is blurred behind messages. The owner of a human renter
+   profile can change it from a chat; the image is shared with everyone
+   chatting with that profile and stored in the public renter-photos bucket.
 
 ## Agribank QR and manual payment confirmation
 

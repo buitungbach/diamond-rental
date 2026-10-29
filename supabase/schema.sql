@@ -135,6 +135,7 @@ create table if not exists public.renter_profiles (
   tags text[] not null default '{}',
   bio text not null default '',
   avatar_url text,
+  chat_background_url text,
   persona_mode text not null default 'human' check (persona_mode in ('human', 'ai')),
   is_active boolean not null default true,
   created_at timestamptz not null default now(),

@@ -44,6 +44,15 @@ Object.assign(T, {
   chat_failed: ["Không tải được cuộc trò chuyện.", "Could not load the conversation.", "会話を読み込めませんでした。"],
   chat_send_failed: ["Không gửi được tin nhắn.", "Could not send the message.", "メッセージを送信できませんでした。"],
   chat_ai: ["Bạn đang trò chuyện với nhân vật AI hư cấu. Tin nhắn được gửi tới OpenAI để tạo câu trả lời; không gửi thông tin nhạy cảm.", "You are chatting with a fictional AI persona. Messages are sent to OpenAI to generate replies; do not share sensitive information.", "架空のAIキャラクターとの会話です。返信生成のためメッセージはOpenAIに送信されます。機密情報を送らないでください。"],
+  chat_ai_typing: ["Nhân vật đang soạn câu trả lời…", "The character is typing…", "キャラクターが入力中…"],
+  chat_empty: ["Chưa có tin nhắn. Hãy bắt đầu trò chuyện nhé!", "No messages yet. Start the conversation!", "メッセージはまだありません。会話を始めましょう！"],
+  chat_ai_not_deployed: ["Chưa triển khai dịch vụ trả lời AI trên Supabase. Hãy chạy lệnh deploy ai-chat-reply.", "The AI reply function is not deployed. Deploy ai-chat-reply to Supabase.", "AI返信機能が未デプロイです。ai-chat-replyをSupabaseにデプロイしてください。"],
+  chat_ai_secret_missing: ["Dịch vụ AI chưa sẵn sàng. Kiểm tra Edge Function secret OPENAI_API_KEY trong Supabase.", "The AI service is not configured. Check the OPENAI_API_KEY Edge Function secret in Supabase.", "AIサービスが設定されていません。SupabaseのOPENAI_API_KEYシークレットを確認してください。"],
+  chat_ai_failed: ["Tin nhắn đã gửi nhưng AI chưa trả lời được. Kiểm tra log của Edge Function ai-chat-reply trong Supabase.", "Message sent, but the AI could not reply. Check the ai-chat-reply Edge Function logs in Supabase.", "メッセージは送信されましたが、AIが返信できませんでした。Supabaseのai-chat-replyログを確認してください。"],
+  chat_background_change: ["Đổi hình nền chat", "Change chat background", "チャット背景を変更"],
+  chat_background_saving: ["Đang cập nhật hình nền…", "Updating chat background…", "チャット背景を更新中…"],
+  chat_background_saved: ["Đã cập nhật hình nền chat cho hồ sơ; các bên sẽ cùng thấy nền mới.", "Profile chat background updated; everyone will see the new background.", "プロフィールのチャット背景を更新しました。全員に新しい背景が表示されます。"],
+  chat_background_error: ["Không cập nhật được hình nền. Hãy thử ảnh JPG, PNG hoặc WebP nhỏ hơn 8 MB.", "Could not update the background. Use a JPG, PNG, or WebP under 8 MB.", "背景を更新できません。8MB未満のJPG、PNG、WebPをお試しください。"],
   admin_chat_title: ["Chat quản trị không cần thanh toán", "Admin chats (no payment required)", "管理者チャット（支払い不要）"],
   admin_chat_intro: ["Chọn hồ sơ để bắt đầu chat trực tiếp. Với hồ sơ bạn gái thuê thật, tin nhắn sẽ được gửi đến tài khoản của họ.", "Choose a profile to start a direct chat. Messages to real renters are delivered to their account.", "プロフィールを選んで直接チャットを開始します。実際のレンタル相手にはアカウントへメッセージが届きます。"],
   admin_chat_open: ["Chat", "Chat", "チャット"],
@@ -79,6 +88,7 @@ let adminPendingPayments = [];
 let chatBookingId = "";
 let chatThreadId = "";
 let chatThreadMode = "booking";
+let pendingAiMessageId = "";
 let chatChannel = null;
 let notificationsChannel = null;
 let bookingsChannel = null;
@@ -141,6 +151,7 @@ function rowToRenter(row) {
     ownerId: row.owner_id,
     avatarUrl: row.avatar_url,
     active: row.is_active,
+    chatBackgroundUrl: row.chat_background_url || "",
   };
   if (row.avatar_url) S.imgs[row.id] = row.avatar_url;
   return profile;
@@ -165,7 +176,7 @@ async function loadRenterProfiles() {
 async function loadBookingRows() {
   if (!sb || !remoteAccount) return [];
   const { data, error } = await sb.from("bookings")
-    .select("*, renter_profiles(id,owner_id,display_name,section,persona_mode,catalog_key)")
+    .select("*, renter_profiles(id,owner_id,display_name,section,persona_mode,catalog_key,chat_background_url)")
     .order("created_at", { ascending: false });
   if (error) throw error;
 
@@ -1025,41 +1036,88 @@ async function loadRenterAdminChats() {
 }
 
 async function loadChatMessages() {
-  if (!sb || !chatBookingId) return;
+  if (!sb || !chatBookingId) return [];
   const { data, error } = await sb.from("messages").select("*")
     .eq("booking_id", chatBookingId).order("created_at", { ascending: true });
   if (error) {
     console.error("Could not load chat messages", error.message);
-    return toast(t("chat_failed"));
+    toast(t("chat_failed"));
+    return [];
   }
-  const body = $("chatBody");
-  if (!body) return;
-  body.innerHTML = (data || []).map((message) => {
-    const label = message.sender_kind === "persona" ? getG(mapRemoteOrder(currentChat)?.id)?.name || "Nhân vật"
-      : message.sender_id === activeAccount()?.id ? activeAccount().name
-        : message.sender_kind === "customer" ? "Khách hàng" : "Bạn gái thuê";
-    return `<div class="rev"><b>${esc(label)}</b><div>${esc(message.body)}</div><small class="muted">${esc(new Date(message.created_at).toLocaleString())}</small></div>`;
-  }).join("");
-  body.scrollTop = body.scrollHeight;
+  const profile = getG(mapRemoteOrder(currentChat)?.id);
+  renderChatMessages(data || [], profile || { name: "Nhân vật" });
+  if (pendingAiMessageId && data?.some((message) => message.reply_to_message_id === pendingAiMessageId)) {
+    pendingAiMessageId = "";
+    setChatStatus("");
+  }
+  return data || [];
 }
 
 async function loadAdminChatMessages() {
-  if (!sb || !chatThreadId) return;
+  if (!sb || !chatThreadId) return [];
   const { data, error } = await sb.from("admin_chat_messages").select("*")
     .eq("thread_id", chatThreadId).order("created_at", { ascending: true });
   if (error) {
     console.error("Could not load admin chat messages", error.message);
-    return toast(t("chat_failed"));
+    toast(t("chat_failed"));
+    return [];
   }
-  const body = $("chatBody");
-  if (!body) return;
-  body.innerHTML = (data || []).map((message) => {
-    const label = message.sender_kind === "persona" ? getG(currentChat)?.name || "Nhân vật"
-      : message.sender_id === activeAccount()?.id ? activeAccount().name
-        : message.sender_kind === "admin" ? "Quản trị viên" : "Bạn gái thuê";
-    return `<div class="rev"><b>${esc(label)}</b><div>${esc(message.body)}</div><small class="muted">${esc(new Date(message.created_at).toLocaleString())}</small></div>`;
-  }).join("");
-  body.scrollTop = body.scrollHeight;
+  renderChatMessages(data || [], getG(currentChat) || { name: "Nhân vật" });
+  if (pendingAiMessageId && data?.some((message) => message.reply_to_message_id === pendingAiMessageId)) {
+    pendingAiMessageId = "";
+    setChatStatus("");
+  }
+  return data || [];
+}
+
+async function requestAiReply(body, messageId, refreshMessages) {
+  pendingAiMessageId = messageId;
+  setChatStatus(t("chat_ai_typing"));
+  let result;
+  try {
+    result = await sb.functions.invoke("ai-chat-reply", { body });
+  } catch (error) {
+    pendingAiMessageId = "";
+    setChatStatus(t("chat_ai_failed"), true);
+    toast(t("chat_ai_failed"));
+    console.error("AI reply request failed", error.message);
+    return;
+  }
+  const { data, error } = result;
+  if (error) {
+    pendingAiMessageId = "";
+    const status = error.context?.status;
+    let detail = "";
+    if (error.context instanceof Response) {
+      try {
+        const responseBody = await error.context.clone().json();
+        detail = typeof responseBody.error === "string" ? responseBody.error : "";
+      } catch {
+        detail = "";
+      }
+    }
+    const message = status === 404 ? t("chat_ai_not_deployed")
+      : status === 503 ? t("chat_ai_secret_missing")
+        : detail ? `${t("chat_ai_failed")} (${detail.slice(0, 180)})`
+          : t("chat_ai_failed");
+    setChatStatus(message, true);
+    toast(message);
+    console.error("AI reply request failed", status || error.message);
+    return;
+  }
+  if (data?.skipped) {
+    pendingAiMessageId = "";
+    setChatStatus(t("chat_ai_failed"), true);
+    return;
+  }
+  const messages = await refreshMessages();
+  if (messages.some((message) => message.reply_to_message_id === messageId)) {
+    pendingAiMessageId = "";
+    setChatStatus("");
+    return;
+  }
+  pendingAiMessageId = "";
+  setChatStatus(t("chat_ai_failed"), true);
 }
 
 function renderChatPage() {
@@ -1070,12 +1128,7 @@ function renderChatPage() {
       $("app").innerHTML = `<p class="notice">${t("acct_access_denied")}</p>`;
       return;
     }
-    $("app").innerHTML = `<h2>${t("admin_chat_label")} · ${esc(profile.name)}</h2>
-      <p class="notice">${esc(profile.profileType === "ai" ? t("chat_ai") : t("chat_human"))}</p>
-      <div class="panel"><div id="chatBody" style="max-height:45vh;overflow:auto"></div>
-        <div class="r2"><input class="inp" id="chatInput" maxlength="2000" placeholder="${esc(t("chat_placeholder"))}" onkeydown="if(event.key==='Enter')sendChat()">
-          <button class="btn sm" onclick="sendChat()">${t("chat_send")}</button></div>
-        <button class="btn ghost sm" style="margin-top:10px" onclick="go('account')">${t("ck_back")}</button></div>`;
+    renderChatFrame(profile, "account", account.role === "renter" && profile.profileType === "real" && profile.ownerId === account.id);
     loadAdminChatMessages();
     if (chatChannel) sb.removeChannel(chatChannel);
     chatChannel = sb.channel(`admin-chat:${chatThreadId}`)
@@ -1094,12 +1147,9 @@ function renderChatPage() {
     return;
   }
   const renter = getG(order.id);
-  $("app").innerHTML = `<h2>${t("chat_title")} · ${esc(renter?.name || order.renterName)}</h2>
-    <p class="notice">${esc(renter?.profileType === "ai" ? t("chat_ai") : t("chat_human"))}</p>
-    <div class="panel"><div id="chatBody" style="max-height:45vh;overflow:auto"></div>
-      <div class="r2"><input class="inp" id="chatInput" maxlength="2000" placeholder="${esc(t("chat_placeholder"))}" onkeydown="if(event.key==='Enter')sendChat()">
-        <button class="btn sm" onclick="sendChat()">${t("chat_send")}</button></div>
-      <button class="btn ghost sm" style="margin-top:10px" onclick="go('orders')">${t("ck_back")}</button></div>`;
+  const account = activeAccount();
+  renderChatFrame(renter || { name: order.renterName, profileType: "real" }, "orders",
+    account?.role === "renter" && renter?.profileType === "real" && renter.ownerId === account.id);
   loadChatMessages();
   if (chatChannel) sb.removeChannel(chatChannel);
   chatChannel = sb.channel(`booking-chat:${order.raw.id}`)
@@ -1110,6 +1160,126 @@ function renderChatPage() {
       filter: `booking_id=eq.${order.raw.id}`,
     }, loadChatMessages)
     .subscribe();
+}
+
+function renderChatFrame(profile, backView, canChangeBackground) {
+  const isAi = profile.profileType === "ai";
+  $("app").innerHTML = `<section class="chat-shell">
+    <div class="chat-wallpaper"><img id="chatWallpaper" alt="" aria-hidden="true"></div><div class="chat-shade"></div>
+    <header class="chat-head"><div class="av" style="${bg(profile)}"></div>
+      <div class="chat-head-copy"><b>${esc(profile.name)}</b><small>${esc(isAi ? t("ai_badge") : t("chat_human"))}</small></div>
+      <button class="btn ghost sm" aria-label="${esc(t("ck_back"))}" onclick="go('${backView}')">←</button>
+    </header>
+    <div class="chat-body" id="chatBody"><div class="chat-empty">${esc(t("chat_empty"))}</div></div>
+    <div class="chat-compose"><div class="chat-status" id="chatStatus" role="status" aria-live="polite"></div>
+      <div class="r2"><input class="inp" id="chatInput" maxlength="2000" placeholder="${esc(t("chat_placeholder"))}" onkeydown="if(event.key==='Enter')sendChat()">
+        <button class="btn sm" onclick="sendChat()">${t("chat_send")}</button></div>
+      ${canChangeBackground ? `<div class="chat-tools"><button class="btn ghost sm" onclick="changeChatBackground()">${t("chat_background_change")}</button><span class="muted" style="font-size:.75rem">Nền này hiển thị với mọi người trong chat</span></div>` : ""}
+    </div>
+  </section>`;
+  const wallpaper = $("chatWallpaper");
+  const imageUrl = trustedImageUrl(profile.chatBackgroundUrl) || trustedImageUrl(imgOf(profile));
+  if (wallpaper && imageUrl) wallpaper.src = imageUrl;
+}
+
+function trustedImageUrl(value) {
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" ? url.href : "";
+  } catch {
+    return "";
+  }
+}
+
+function renderChatMessages(messages, profile) {
+  const body = $("chatBody");
+  if (!body) return;
+  if (!messages.length) {
+    body.innerHTML = `<div class="chat-empty">${esc(t("chat_empty"))}</div>`;
+    return;
+  }
+  const account = activeAccount();
+  body.innerHTML = messages.map((message) => {
+    const own = message.sender_id === account?.id;
+    const label = message.sender_kind === "persona" ? profile.name
+      : own ? account.name
+        : message.sender_kind === "customer" ? "Khách hàng"
+          : message.sender_kind === "admin" ? "Quản trị viên" : "Bạn gái thuê";
+    return `<article class="chat-message ${own ? "own" : ""}"><b>${esc(label)}</b>
+      <div>${esc(message.body)}</div><time>${esc(new Date(message.created_at).toLocaleString())}</time></article>`;
+  }).join("");
+  body.scrollTop = body.scrollHeight;
+}
+
+function setChatStatus(message = "", error = false) {
+  const status = $("chatStatus");
+  if (!status) return;
+  status.textContent = message;
+  status.classList.toggle("error", error);
+}
+
+async function changeChatBackground() {
+  const account = activeAccount();
+  const profile = getG(currentChat);
+  if (!sb || account?.role !== "renter" || profile?.ownerId !== account.id || profile.profileType !== "real") {
+    return toast(t("acct_access_denied"));
+  }
+  const picker = document.createElement("input");
+  picker.type = "file";
+  picker.accept = "image/jpeg,image/png,image/webp";
+  picker.onchange = async () => {
+    const file = picker.files?.[0];
+    if (!file) return;
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type) || file.size > 8 * 1024 * 1024) {
+      return toast(t("chat_background_error"));
+    }
+    setChatStatus(t("chat_background_saving"));
+    try {
+      const objectUrl = URL.createObjectURL(file);
+      const image = new Image();
+      const loaded = new Promise((resolve, reject) => {
+        image.onload = () => resolve();
+        image.onerror = () => reject(new Error("Could not read the selected image"));
+      });
+      image.src = objectUrl;
+      try {
+        await loaded;
+        const scale = Math.min(1, 1600 / Math.max(image.naturalWidth, image.naturalHeight));
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
+        canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
+        const context = canvas.getContext("2d");
+        if (!context) throw new Error("Image processing is unavailable");
+        context.drawImage(image, 0, 0, canvas.width, canvas.height);
+        const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.82));
+        if (!blob) throw new Error("Could not compress the selected image");
+        const path = `${account.id}/chat-backgrounds/${profile.id}-${Date.now()}.jpg`;
+        const { error: uploadError } = await sb.storage.from("renter-photos").upload(path, blob, {
+          contentType: "image/jpeg",
+          cacheControl: "3600",
+          upsert: false,
+        });
+        if (uploadError) throw uploadError;
+        const { data: publicUrl } = sb.storage.from("renter-photos").getPublicUrl(path);
+        const { error: updateError } = await sb.from("renter_profiles")
+          .update({ chat_background_url: publicUrl.publicUrl })
+          .eq("id", profile.id).eq("owner_id", account.id);
+        if (updateError) {
+          await sb.storage.from("renter-photos").remove([path]);
+          throw updateError;
+        }
+        profile.chatBackgroundUrl = publicUrl.publicUrl;
+        renderChatPage();
+        setChatStatus(t("chat_background_saved"));
+      } finally {
+        URL.revokeObjectURL(objectUrl);
+      }
+    } catch (error) {
+      console.error("Could not update chat background", error.message);
+      setChatStatus(t("chat_background_error"), true);
+    }
+  };
+  picker.click();
 }
 
 window.sendChat = async function() {
@@ -1133,13 +1303,7 @@ window.sendChat = async function() {
     }
     input.value = "";
     if (account.role === "admin" && getG(currentChat)?.profileType === "ai") {
-      const { error: aiError } = await sb.functions.invoke("ai-chat-reply", {
-        body: { admin_chat_id: chatThreadId, message_id: data.id },
-      });
-      if (aiError) {
-        console.error("AI admin chat reply failed", aiError.message);
-        toast("Tin nhắn đã gửi; dịch vụ AI đang tạm lỗi.");
-      }
+      await requestAiReply({ admin_chat_id: chatThreadId, message_id: data.id }, data.id, loadAdminChatMessages);
     }
     return;
   }
@@ -1159,13 +1323,7 @@ window.sendChat = async function() {
   }
   input.value = "";
   if (account.role === "customer" && getG(order.id)?.profileType === "ai") {
-    const { error: aiError } = await sb.functions.invoke("ai-chat-reply", {
-      body: { booking_id: order.raw.id, message_id: data.id },
-    });
-    if (aiError) {
-      console.error("AI reply failed", aiError.message);
-      toast("Tin nhắn đã gửi; dịch vụ AI đang tạm lỗi.");
-    }
+    await requestAiReply({ booking_id: order.raw.id, message_id: data.id }, data.id, loadChatMessages);
   }
 };
 
