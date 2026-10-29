@@ -21,16 +21,19 @@ hosting location.
    URL for production. The website explicitly sends signup and resend links
    back to its stable GitHub Pages URL. New accounts must be at least 18 years
    old.
-4. To enable AI chat, create an API key in the OpenAI API dashboard and add
-   it as `OPENAI_API_KEY` under Supabase **Edge Function Secrets**. ChatGPT
-   subscriptions do not include API credits; OpenAI API usage is billed
-   separately. Set a usage budget in the OpenAI dashboard. Never put this key
-   in the website, repository, SQL, or a chat message. Payment confirmation
-   for Agribank transfers is manual and does not require a payment-provider
-   API key.
+4. To enable AI chat with Cloudflare Workers AI, create a Cloudflare account,
+   get the Account ID, and create a Workers AI API token. Save them as
+   `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN` under Supabase
+   **Edge Function Secrets**. Workers AI currently includes a free daily
+   allocation of 10,000 Neurons; usage above that requires a paid Workers
+   plan. Model usage and availability may vary. Never put the token in the
+   website, repository, SQL, or a chat message. Payment confirmation for
+   Agribank transfers is manual and does not require a payment-provider API
+   key.
 
    ```text
-   supabase secrets set OPENAI_API_KEY=...
+   supabase secrets set CLOUDFLARE_ACCOUNT_ID=...
+   supabase secrets set CLOUDFLARE_API_TOKEN=...
    ```
 
    Supabase provides `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and
@@ -43,7 +46,7 @@ hosting location.
    supabase functions deploy ai-chat-reply
    ```
 
-   After setting `OPENAI_API_KEY`, run
+   After setting the Cloudflare secrets, run
    `supabase/anime-ai-catalog.sql` in the SQL Editor. The seeded profiles stay
    inactive until you verify the secret is configured and run:
 
@@ -112,7 +115,8 @@ The SQL editor migration `supabase/admin-direct-chat.sql` installs a separate,
 admin-only direct chat with active AI and human renter profiles. It does not
 create a booking or change a booking's payment status. Human renters receive
 these messages in the account inbox and can reply there. AI replies use the
-deployed `ai-chat-reply` Edge Function and still require `OPENAI_API_KEY`.
+deployed `ai-chat-reply` Edge Function and require the Cloudflare Workers AI
+secrets.
 
 The SQL editor migration `supabase/manual-payment.sql` installs the
 administrator-only queue and confirmation functions. After running it, sign
@@ -126,14 +130,17 @@ its own HMAC secret, and separate end-to-end testing before it can be enabled.
 
 ## Adding AI characters and chat automatically
 
-1. In the OpenAI API dashboard, create an API key for a project with API
-   billing enabled. ChatGPT Plus/Pro is separate from API billing.
+1. In the Cloudflare dashboard, open **Workers AI → Use REST API** and create
+   a Workers AI API token. Copy the account ID shown there. The token needs
+   Workers AI access; do not send it to anyone. The default model is
+   `@cf/meta/llama-3.1-8b-instruct-fp8-fast`.
 2. In the Supabase dashboard, open the Diamond Rental project, then **Edge
-   Functions → Secrets → Add new secret**. Set the name to exactly
-   `OPENAI_API_KEY` and paste the key as its value. Do not include quotes or
-   whitespace. Save it as a secret; do not send the key to anyone.
-3. If `ai-chat-reply` has not already been deployed, from PowerShell in the
-   project folder run:
+   Functions → Secrets → Add new secret**. Add `CLOUDFLARE_ACCOUNT_ID` with
+   the account ID and `CLOUDFLARE_API_TOKEN` with the token. Do not include
+   quotes or whitespace; never put the token in the website or repository.
+   The free plan currently includes 10,000 Neurons per day; check Cloudflare
+   Workers AI usage and model pricing for current limits.
+3. Deploy the updated `ai-chat-reply` from PowerShell in the project folder:
 
    ```powershell
    npx.cmd supabase functions deploy ai-chat-reply --project-ref tsojexeevcsizazservy
@@ -154,7 +161,7 @@ its own HMAC secret, and separate end-to-end testing before it can be enabled.
    cannot offer in-person meetings.
 
 The five built-in anime characters are seeded by `supabase/anime-ai-catalog.sql`
-and remain inactive until the OpenAI secret is configured. To activate those
+and remain inactive until the Cloudflare secrets are configured. To activate those
 five after setting the key, run the activation SQL from step 5 in the
 Supabase SQL Editor. New characters created from the admin account are
 connected automatically by the site.
@@ -170,5 +177,5 @@ cannot be used as a public website URL.
 
 The deployment uses the configured Supabase project. Payment stays pending
 until an administrator verifies the incoming bank transfer. AI chat requires
-`OPENAI_API_KEY`; human-to-human chat requires a paid booking and works after
-the admin confirms payment.
+`CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN`; human-to-human chat
+requires a paid booking and works after the admin confirms payment.

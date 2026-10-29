@@ -17,13 +17,23 @@ Deno.serve(async (request) => {
     return new Response("ok", { headers: corsHeaders });
   }
   if (request.method !== "POST") return json({ error: "Method not allowed" }, 405);
-  const authorization = request.headers.get("authorization");
+  const authorization = request.headers.get("authorization") ?? "";
+  const accessToken = authorization.match(/^Bearer\s+(.+)$/i)?.[1];
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  const openAiKey = Deno.env.get("OPENAI_API_KEY");
-  if (!authorization || !supabaseUrl || !anonKey || !serviceRoleKey || !openAiKey) {
-    return json({ error: "Chat AI is not configured" }, 503);
+  const cloudflareAccountId = Deno.env.get("CLOUDFLARE_ACCOUNT_ID");
+  const cloudflareApiToken = Deno.env.get("CLOUDFLARE_API_TOKEN");
+  const cloudflareModel = Deno.env.get("CLOUDFLARE_AI_MODEL") ?? "@cf/meta/llama-3.1-8b-instruct-fp8-fast";
+  if (!supabaseUrl || !anonKey || !serviceRoleKey) {
+    return json({ error: "Chat backend is not configured" }, 503);
+  }
+  if (!accessToken) return json({ error: "Unauthorized" }, 401);
+  if (!cloudflareAccountId || !cloudflareApiToken) {
+    return json({ error: "cloudflare_ai_not_configured" }, 503);
+  }
+  if (!/^@cf\/[a-zA-Z0-9._/-]+$/.test(cloudflareModel)) {
+    return json({ error: "cloudflare_ai_model_invalid" }, 503);
   }
 
   let input: { booking_id?: string; admin_chat_id?: string; message_id?: string };
@@ -38,10 +48,9 @@ Deno.serve(async (request) => {
   }
 
   const userClient = createClient(supabaseUrl, anonKey, {
-    global: { headers: { authorization } },
     auth: { persistSession: false },
   });
-  const { data: userData, error: userError } = await userClient.auth.getUser();
+  const { data: userData, error: userError } = await userClient.auth.getUser(accessToken);
   if (userError || !userData.user) return json({ error: "Unauthorized" }, 401);
 
   const admin = createClient(supabaseUrl, serviceRoleKey, {
@@ -122,47 +131,65 @@ Deno.serve(async (request) => {
     .limit(12);
   if (historyError) return json({ error: "Could not load chat history" }, 500);
 
-  const completion = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      authorization: `Bearer ${openAiKey}`,
-      "content-type": "application/json",
+  const completion = await fetch(
+    `https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(cloudflareAccountId)}/ai/run/${cloudflareModel}`,
+    {
+      method: "POST",
+      headers: {
+        authorization: `Bearer ${cloudflareApiToken}`,
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        messages: [
+          {
+            role: "system",
+            content: `Bạn là nhân vật hư cấu ${persona.display_name}. ${personaConfig.system_prompt} Hãy trả lời bằng tiếng Việt tự nhiên, thân thiện, không khẳng định bạn là người thật và không yêu cầu thông tin thanh toán.`,
+          },
+          ...(recent ?? []).reverse().map((entry) => ({
+            role: entry.sender_kind === "persona" ? "assistant" : "user",
+            content: entry.body,
+          })),
+        ],
+        max_tokens: 300,
+        temperature: 0.8,
+      }),
     },
-    body: JSON.stringify({
-      model: Deno.env.get("OPENAI_MODEL") ?? "gpt-4o-mini",
-      messages: [
-        {
-          role: "system",
-          content: `Bạn là nhân vật hư cấu ${persona.display_name}. ${personaConfig.system_prompt} Hãy trả lời bằng tiếng Việt tự nhiên, thân thiện, không khẳng định bạn là người thật và không yêu cầu thông tin thanh toán.`,
-        },
-        ...(recent ?? []).reverse().map((entry) => ({
-          role: entry.sender_kind === "persona" ? "assistant" : "user",
-          content: entry.body,
-        })),
-      ],
-      max_tokens: 300,
-      temperature: 0.8,
-    }),
-  });
+  );
+  let result: Record<string, unknown> | null = null;
   if (!completion.ok) {
     const errorText = await completion.text();
-    let providerMessage = "";
+    let providerMessage = errorText;
     try {
       const errorBody = JSON.parse(errorText);
-      providerMessage = String(errorBody.error?.message ?? "");
+      providerMessage = (errorBody.errors ?? [])
+        .map((item: { message?: string }) => String(item.message ?? ""))
+        .join(" ");
     } catch {
       providerMessage = errorText;
     }
-    console.error("OpenAI chat request failed", completion.status, providerMessage.slice(0, 500));
+    console.error("Cloudflare Workers AI request failed", completion.status, providerMessage.slice(0, 300));
+    const normalizedError = providerMessage.toLowerCase();
     const error = completion.status === 401 || completion.status === 403
-      ? "OpenAI API key was rejected"
+      ? "cloudflare_token_rejected"
       : completion.status === 429
-        ? "OpenAI API quota or rate limit was reached"
-        : "AI reply service failed";
+        || normalizedError.includes("daily limit")
+        || normalizedError.includes("neuron")
+        || normalizedError.includes("quota")
+        ? "cloudflare_limit_reached"
+        : "cloudflare_ai_failed";
     return json({ error }, 502);
   }
-  const result = await completion.json();
-  const reply = String(result.choices?.[0]?.message?.content ?? "").trim();
+  try {
+    result = await completion.json();
+  } catch {
+    return json({ error: "cloudflare_ai_invalid_response" }, 502);
+  }
+  if (result?.success === false) {
+    console.error("Cloudflare Workers AI returned an error", JSON.stringify(result.errors ?? []).slice(0, 300));
+    return json({ error: "cloudflare_ai_failed" }, 502);
+  }
+  const resultBody = result?.result as Record<string, unknown> | undefined;
+  const reply = String(resultBody?.response ?? "").trim();
   if (!reply) return json({ error: "AI returned an empty reply" }, 502);
 
   const { error: saveError } = await admin.from(messageTable).insert({
