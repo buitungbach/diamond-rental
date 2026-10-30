@@ -123,6 +123,15 @@ Deno.serve(async (request) => {
   if (existingReplyError) return json({ error: "Could not check existing AI reply" }, 500);
   if (existingReply) return json({ success: true, already_replied: true });
 
+  const { data: withinQuota, error: quotaError } = await admin.rpc("consume_ai_chat_quota", {
+    p_user_id: userData.user.id,
+  });
+  if (quotaError) {
+    console.error("Could not check AI chat rate limit", quotaError.message);
+    return json({ error: "Could not verify chat rate limit" }, 500);
+  }
+  if (withinQuota !== true) return json({ error: "chat_rate_limited" }, 429);
+
   const { data: recent, error: historyError } = await admin
     .from(messageTable)
     .select("sender_kind,body")

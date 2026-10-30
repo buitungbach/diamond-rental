@@ -110,6 +110,37 @@ Object.assign(T, {
   chat_send: ["Gửi", "Send", "送信"],
   chat_human: ["Tin nhắn được lưu trực tuyến và chỉ hai bên trong đơn thuê có thể truy cập.", "Messages are stored online and accessible only to the booking participants.", "メッセージはオンラインに保存され、予約の参加者のみが閲覧できます。"],
   notice: ["Nhân vật AI là hư cấu và chỉ có trải nghiệm chat trực tuyến, không gặp ngoài đời. Hồ sơ người thật do người dùng tự khai báo; hãy xác minh tuổi, thông tin và điều kiện gặp trước khi thanh toán.", "AI characters are fictional and available for online chat only, with no in-person meetings. Human profiles are self-reported; verify age, details, and meeting arrangements before paying.", "AIキャラクターは架空で、オンラインチャットのみ利用でき、対面はありません。人間のプロフィールは自己申告です。支払い前に年齢、情報、待ち合わせ条件を確認してください。"],
+  social_attr: ["Ảnh minh họa Pinterest, không phải ảnh nhân vật.", "Illustrative Pinterest image, not a depiction of the character.", "Pinterestのイメージ写真（キャラクター本人ではありません）。"],
+  social_upload_rights: ["Chỉ đăng ảnh/video bạn sở hữu hoặc có quyền sử dụng. Bài đăng sẽ chờ quản trị viên duyệt.", "Only upload media you own or have permission to use. Posts await admin approval.", "所有または使用許可のあるメディアのみ投稿してください。投稿は管理者の承認待ちです。"],
+  social_upload_failed: ["Không thể tải media lên.", "Could not upload media.", "メディアをアップロードできませんでした。"],
+  social_posted: ["Đã gửi bài để quản trị viên duyệt.", "Post submitted for admin review.", "投稿を管理者の確認に送信しました。"],
+  social_report_reason: ["Mô tả lý do báo cáo (tối thiểu 10 ký tự):", "Describe the reason for the report (at least 10 characters):", "報告理由を入力してください（10文字以上）："],
+  social_comments_empty: ["Chưa có bình luận.", "No comments yet.", "コメントはまだありません。"],
+  social_login_required: ["Đăng nhập để sử dụng tính năng này.", "Sign in to use this feature.", "この機能を使うにはログインしてください。"],
+  admin_expansion: ["Bảng điều khiển", "Dashboard", "ダッシュボード"],
+  admin_moderation: ["Nội dung chờ duyệt", "Pending content", "承認待ちコンテンツ"],
+  admin_reports: ["Báo cáo bài viết", "Post reports", "投稿の報告"],
+  admin_verification: ["Hồ sơ chờ xác minh", "Profiles to verify", "確認待ちプロフィール"],
+  admin_approve: ["Duyệt", "Approve", "承認"],
+  admin_reject: ["Từ chối", "Reject", "却下"],
+  admin_verify: ["Xác minh", "Verify", "確認"],
+  admin_unverify: ["Bỏ xác minh", "Remove verification", "確認を解除"],
+  admin_load_failed: ["Không tải được dữ liệu quản trị.", "Could not load admin data.", "管理データを読み込めませんでした。"],
+  acct_privacy: ["Quyền riêng tư và dữ liệu", "Privacy and data", "プライバシーとデータ"],
+  acct_email_notifications: ["Nhận thông báo qua email", "Receive email notifications", "メール通知を受け取る"],
+  acct_export: ["Tải dữ liệu tài khoản", "Export account data", "アカウントデータをエクスポート"],
+  acct_delete: ["Xóa tài khoản và dữ liệu", "Delete account and data", "アカウントとデータを削除"],
+  acct_delete_confirm: ["Xóa vĩnh viễn tài khoản và dữ liệu liên quan? Thao tác này không thể hoàn tác.", "Permanently delete your account and related data? This cannot be undone.", "アカウントと関連データを完全に削除しますか？この操作は取り消せません。"],
+  acct_privacy_failed: ["Không thể hoàn tất yêu cầu quyền riêng tư.", "Could not complete the privacy request.", "プライバシー要求を完了できませんでした。"],
+  acct_deleted: ["Tài khoản và dữ liệu đã được xóa.", "Account and data deleted.", "アカウントとデータを削除しました。"],
+  gallery_pending_notice: ["Ảnh sẽ hiển thị sau khi quản trị viên duyệt.", "Photos appear after admin approval.", "管理者の承認後に写真が表示されます。"],
+  gallery_remove: ["Xóa", "Remove", "削除"],
+  booking_reschedule: ["Đổi lịch", "Reschedule", "予約を変更"],
+  booking_cancel: ["Hủy lịch", "Cancel booking", "予約をキャンセル"],
+  booking_cancel_confirm: ["Bạn có chắc chắn muốn hủy lịch này? Hoàn tiền cho đơn đã thanh toán do quản trị viên xử lý riêng.", "Cancel this booking? Refunds for paid bookings are handled separately by the administrator.", "この予約をキャンセルしますか？支払い済み予約の返金は管理者が別途処理します。"],
+  booking_rescheduled: ["Đã gửi yêu cầu đổi lịch.", "Booking rescheduled.", "予約を変更しました。"],
+  booking_cancelled: ["Đã hủy lịch. Nếu đã thanh toán, hãy liên hệ quản trị viên để đối soát hoàn tiền.", "Booking cancelled. If paid, contact the administrator about the refund.", "予約をキャンセルしました。支払い済みの場合は返金について管理者にお問い合わせください。"],
+  booking_change_failed: ["Không thể thay đổi lịch. Kiểm tra thời hạn và khung giờ còn trống.", "Could not change the booking. Check the deadline and availability.", "予約を変更できません。期限と空き状況を確認してください。"],
 });
 
 const sbConfig = window.DIAMOND_SUPABASE_CONFIG || {};
@@ -207,6 +238,7 @@ function rowToRenter(row) {
     profileType: row.persona_mode === "ai" ? "ai" : "real",
     catalogKey: row.catalog_key || null,
     ownerId: row.owner_id,
+    isVerified: row.is_verified === true,
     avatarUrl: row.avatar_url,
     active: row.is_active,
     chatBackgroundUrl: row.chat_background_url || "",
@@ -309,6 +341,7 @@ async function hydrateSession(user) {
     dob: data.date_of_birth,
     phone: data.phone,
     email: data.email || user.email || "",
+    emailNotificationsEnabled: data.email_notifications_enabled !== false,
   };
   S.activeAccountId = remoteAccount.id;
   if (remoteAccount.role === "renter") {
@@ -369,6 +402,9 @@ function subscribeToNotifications() {
   if (!sb || !remoteAccount) return;
   if (notificationsChannel) sb.removeChannel(notificationsChannel);
   notificationsChannel = sb.channel(`messages:${remoteAccount.id}`)
+    .on("postgres_changes", { event: "INSERT", schema: "public", table: "app_notifications", filter: `user_id=eq.${remoteAccount.id}` }, () => {
+      if (view === "account") loadAccountNotifications();
+    })
     .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" }, (event) => {
       if (event.new.sender_id !== remoteAccount.id) {
         toast("Tin nhắn mới trong cuộc trò chuyện đã thanh toán.");
@@ -571,7 +607,8 @@ function renderAccount() {
     </div>
     ${account.role === "renter" ? `<div class="panel"><h3>${t("acct_girl")}</h3>
       <button class="btn sm" onclick="openAdd()">${t(S.custom.some((profile) => profile.ownerId === account.id) ? "acct_edit_profile" : "acct_add_profile")}</button>
-      ${S.custom.some((profile) => profile.ownerId === account.id) ? `<button class="btn ghost sm" onclick="openAvailabilityEditor()">${t("renter_availability")}</button>` : ""}</div>` : ""}
+      ${S.custom.some((profile) => profile.ownerId === account.id) ? `<button class="btn ghost sm" onclick="openAvailabilityEditor()">${t("renter_availability")}</button>
+      <button class="btn ghost sm" onclick="chooseGalleryUpload()">${t("addphoto")}</button><p class="muted">${t("gallery_pending_notice")}</p><div id="renterGallery"></div>` : ""}</div>` : ""}
     ${account.role === "admin" ? `<div class="panel"><h3>Quản lý nhân vật AI</h3>
       <p class="muted">Tạo hồ sơ nhân vật hư cấu để dùng trong website.</p>
       <button class="btn sm" onclick="openAdd()">+ Thêm nhân vật AI</button>
@@ -583,11 +620,334 @@ function renderAccount() {
         <button class="btn sm" onclick="openAdminChat('${esc(profile.id)}')">${t("admin_chat_open")}</button>
       </div>`).join("") || `<p class="muted">${t("admin_chat_empty")}</p>`}</div>` : ""}
     ${account.role === "admin" ? `<div class="panel" id="chatReports"><h3>${t("chat_reports_title")}</h3><p class="muted">${t("processing")}</p></div>` : ""}
+    ${account.role === "admin" ? `<div class="panel" id="adminExpansion"><h3>${t("admin_expansion")}</h3><p class="muted">${t("processing")}</p></div>` : ""}
     ${account.role === "renter" ? `<div id="adminChatInbox"></div>` : ""}
+    <div class="panel"><h3>${t("acct_privacy")}</h3>
+      <label class="row"><input id="emailNotificationsEnabled" type="checkbox" ${account.emailNotificationsEnabled ? "checked" : ""} onchange="updateEmailNotifications(this.checked)"> ${t("acct_email_notifications")}</label>
+      ${account.role !== "admin" ? `<div class="row" style="margin-top:10px">
+        <button class="btn ghost sm" onclick="exportAccountData()">${t("acct_export")}</button>
+        <button class="btn ghost sm" onclick="deleteAccountData()">${t("acct_delete")}</button>
+      </div>` : ""}<p id="privacyStatus" class="muted"></p></div>
+    <div class="panel" id="appNotifications"><h3>Thông báo</h3><p class="muted">${t("processing")}</p></div>
     <div class="panel"><h3>${t("ord_t")}</h3><button class="btn ghost sm" onclick="go('orders')">${t("chat_inbox")}</button></div>`;
   if (account.role === "renter") loadRenterAdminChats();
-  if (account.role === "admin") loadChatReports();
+  if (account.role === "renter" && S.custom.some((profile) => profile.ownerId === account.id)) loadRenterGallery();
+  if (account.role === "admin") {
+    loadChatReports();
+    loadAdminExpansionData();
+  }
+  loadAccountNotifications();
 }
+
+window.loadRenterGallery = async function() {
+  const account = activeAccount();
+  const profile = S.custom.find((item) => item.ownerId === account?.id && item.profileType === "real");
+  const panel = $("renterGallery");
+  if (!panel || !profile) return;
+  const { data, error } = await sb.from("renter_gallery")
+    .select("id,media_url,media_type,caption,status,created_at")
+    .eq("renter_profile_id", profile.id).order("created_at", { ascending: false });
+  if (error) {
+    console.error("Could not load renter gallery", error.message);
+    panel.innerHTML = `<p class="err">${esc(error.message)}</p>`;
+    return;
+  }
+  panel.innerHTML = (data || []).map((item) => `<div class="row" style="justify-content:space-between;margin:8px 0">
+    <span>${esc(item.caption || item.media_type)} · ${esc(item.status)}</span>
+    <button class="btn ghost sm" onclick="deleteGalleryItem('${esc(item.id)}','${esc(item.media_url)}')">${t("gallery_remove")}</button>
+  </div>`).join("") || `<p class="muted">${t("social_empty")}</p>`;
+};
+
+window.chooseGalleryUpload = function() {
+  const account = activeAccount();
+  const profile = S.custom.find((item) => item.ownerId === account?.id && item.profileType === "real");
+  if (!sb || !profile) return toast(t("acct_access_denied"));
+  const picker = document.createElement("input");
+  picker.type = "file";
+  picker.accept = "image/jpeg,image/png,image/webp,video/mp4,video/webm";
+  picker.onchange = async () => {
+    const file = picker.files?.[0];
+    if (!file) return;
+    if (!["image/jpeg", "image/png", "image/webp", "video/mp4", "video/webm"].includes(file.type)
+      || file.size > 50 * 1024 * 1024) return toast(t("social_upload_failed"));
+    const caption = prompt(t("social_caption")) || "";
+    const ext = file.name.split(".").pop()?.toLowerCase().replace(/[^a-z0-9]/g, "") || "bin";
+    const path = `${profile.id}/gallery/${crypto.randomUUID()}.${ext}`;
+    try {
+      const { error: uploadError } = await sb.storage.from("renter-social-media").upload(path, file, {
+        contentType: file.type, cacheControl: "3600", upsert: false,
+      });
+      if (uploadError) throw uploadError;
+      const { data: urlData } = sb.storage.from("renter-social-media").getPublicUrl(path);
+      const { error } = await sb.from("renter_gallery").insert({
+        renter_profile_id: profile.id,
+        media_url: urlData.publicUrl,
+        media_type: file.type.startsWith("video/") ? "video" : "image",
+        caption,
+      });
+      if (error) {
+        const { error: cleanupError } = await sb.storage.from("renter-social-media").remove([path]);
+        if (cleanupError) console.error("Could not remove media after gallery insert failed", cleanupError.message);
+        throw error;
+      }
+      await loadRenterGallery();
+      toast(t("gallery_pending_notice"));
+    } catch (error) {
+      console.error("Could not save gallery media", error.message);
+      toast(error.message || t("social_upload_failed"));
+    }
+  };
+  picker.click();
+};
+
+window.deleteGalleryItem = async function(id, mediaUrl) {
+  const account = activeAccount();
+  const profile = S.custom.find((item) => item.ownerId === account?.id && item.profileType === "real");
+  if (!sb || !profile) return toast(t("acct_access_denied"));
+  const { error } = await sb.from("renter_gallery").delete().eq("id", id).eq("renter_profile_id", profile.id);
+  if (error) {
+    console.error("Could not delete gallery item", error.message);
+    return toast(error.message);
+  }
+  let cleanupError = null;
+  try {
+    const url = new URL(mediaUrl);
+    const marker = "/storage/v1/object/public/renter-social-media/";
+    const index = url.pathname.indexOf(marker);
+    if (index >= 0) {
+      const path = decodeURIComponent(url.pathname.slice(index + marker.length));
+      const { error: removeError } = await sb.storage.from("renter-social-media").remove([path]);
+      if (removeError) cleanupError = removeError;
+    }
+  } catch (error) {
+    cleanupError = error;
+  }
+  await loadRenterGallery();
+  if (cleanupError) {
+    console.error("Could not remove deleted gallery media", cleanupError.message);
+    return toast(`Ảnh đã gỡ khỏi hồ sơ nhưng tệp lưu trữ chưa xóa được: ${cleanupError.message}`);
+  }
+};
+
+async function resolveSocialMediaUrl(mediaUrl) {
+  const marker = "/storage/v1/object/public/renter-social-media/";
+  const parsed = new URL(mediaUrl);
+  const markerIndex = parsed.pathname.indexOf(marker);
+  if (markerIndex < 0) return mediaUrl;
+  const encodedPath = parsed.pathname.slice(markerIndex + marker.length);
+  const path = decodeURIComponent(encodedPath);
+  const { data, error } = await sb.storage.from("renter-social-media").createSignedUrl(path, 3600);
+  if (error || !data?.signedUrl) throw error || new Error("Could not sign private social media");
+  return data.signedUrl;
+}
+
+async function loadProfileGallery(displayProfileId, databaseProfileId, index) {
+  const { data, error } = await sb.from("renter_gallery")
+    .select("media_url,media_type,source_url,source_credit")
+    .eq("renter_profile_id", databaseProfileId).eq("status", "published")
+    .order("created_at", { ascending: false }).limit(50);
+  if (error) {
+    console.error("Could not load profile gallery", error.message);
+    return;
+  }
+  if (curP !== displayProfileId || $("ov").hidden) return;
+  S.gallery[displayProfileId] = await Promise.all((data || []).map(async (item) => {
+    try {
+      return { ...item, media_url: await resolveSocialMediaUrl(item.media_url) };
+    } catch (mediaError) {
+      console.error("Could not sign profile gallery media", mediaError.message);
+      return { ...item, media_url: "" };
+    }
+  }));
+  localOpenProfile(displayProfileId, Math.max(0, Math.min(index || 0, pics(getG(displayProfileId)).length - 1)));
+  appendProfileNotice(displayProfileId);
+}
+
+function appendProfileNotice(id) {
+  const profile = getG(id);
+  const account = activeAccount();
+  if (!profile || $("ov").hidden) return;
+  const real = profile.profileType === "real";
+  const verification = profile.isVerified ? `<span class="st-b ok">${t("verified_badge")}</span>` : "";
+  $("box").insertAdjacentHTML("beforeend", `${verification}<p class="notice">${real ? t("acct_renter_note") : t("chat_ai")}</p>${real && account?.id === profile.ownerId ? `<button class="btn ghost sm" onclick="openAdd()">${t("acct_edit_profile")}</button>` : ""}`);
+  guardProfileEditControls();
+}
+
+window.loadAdminExpansionData = async function() {
+  const panel = $("adminExpansion");
+  if (!panel || !sb || activeAccount()?.role !== "admin") return;
+  const { data, error } = await sb.rpc("list_admin_expansion_data");
+  if (error) {
+    console.error("Could not load expansion dashboard", error.message);
+    panel.innerHTML = `<h3>${t("admin_expansion")}</h3><p class="err">${t("admin_load_failed")}</p><small>${esc(error.message)}</small>`;
+    return;
+  }
+  const content = await Promise.all((data?.pending_content || []).map(async (item) => {
+    try {
+      return { ...item, display_media_url: await resolveSocialMediaUrl(item.media_url) };
+    } catch (mediaError) {
+      console.error("Could not sign pending moderation media", mediaError.message);
+      return { ...item, display_media_url: "" };
+    }
+  }));
+  const verification = data?.unverified_profiles || [];
+  const reports = data?.open_social_reports_list || [];
+  panel.innerHTML = `<h3>${t("admin_expansion")}</h3>
+    <div class="r2">
+      <div class="notice">Chờ thanh toán: <b>${Number(data.pending_payments) || 0}</b></div>
+      <div class="notice">Lịch đã thanh toán: <b>${Number(data.active_bookings) || 0}</b></div>
+      <div class="notice">${t("admin_moderation")}: <b>${content.length}</b></div>
+      <div class="notice">Báo cáo chat/bài viết: <b>${(Number(data.open_chat_reports) || 0) + (Number(data.open_social_reports) || 0)}</b></div>
+    </div>
+    <h4>${t("admin_moderation")}</h4>
+    ${content.length ? content.map((item) => `<article class="report-card">
+      <b>${esc(item.profile_name)} · ${item.type === "post" ? "Bài viết" : "Thư viện"}</b>
+      <p>${esc(item.caption || "")}</p>
+      ${!item.display_media_url ? `<p class="err">${t("social_upload_failed")}</p>` : item.media_type === "video" ? `<video src="${esc(item.display_media_url)}" controls preload="metadata" style="max-width:100%;max-height:300px"></video>` : `<img src="${esc(item.display_media_url)}" alt="" loading="lazy" style="max-width:100%;max-height:300px;border-radius:12px">`}
+      <div class="row"><button class="btn sm" onclick="moderateSocialContent('${esc(item.type)}','${esc(item.id)}','published')">${t("admin_approve")}</button>
+      <button class="btn ghost sm" onclick="moderateSocialContent('${esc(item.type)}','${esc(item.id)}','rejected')">${t("admin_reject")}</button></div>
+    </article>`).join("") : `<p class="muted">${t("social_empty")}</p>`}
+    <h4>${t("admin_verification")}</h4>
+    ${verification.length ? verification.map((profile) => `<div class="row" style="justify-content:space-between;margin:8px 0">
+      <span>${esc(profile.display_name)}</span>
+      <button class="btn ghost sm" onclick="setRenterVerification('${esc(profile.id)}',true)">${t("admin_verify")}</button>
+    </div>`).join("") : `<p class="muted">Không có hồ sơ chờ xác minh.</p>`}
+    <h4>${t("admin_reports")}</h4>
+    ${reports.length ? reports.map((report) => `<article class="report-card">
+      <p>${esc(report.caption || "")}</p><p class="muted">${esc(report.reason)}</p>
+      <button class="btn ghost sm" onclick="moderateSocialContent('post','${esc(report.post_id)}','rejected')">${t("admin_reject")}</button>
+      <button class="btn ghost sm" onclick="resolveSocialReport('${esc(report.id)}','resolved')">${t("chat_report_resolve")}</button>
+      <button class="btn ghost sm" onclick="resolveSocialReport('${esc(report.id)}','dismissed')">${t("chat_report_dismiss")}</button>
+    </article>`).join("") : `<p class="muted">${t("chat_report_empty")}</p>`}
+    <h4>Đơn gần đây</h4>
+    ${(data.recent_bookings || []).slice(0, 10).map((booking) => `<p class="muted">${esc(booking.code)} · ${esc(booking.renter_name)} · ${esc(booking.status)} · ${Number(booking.total_vnd).toLocaleString("vi-VN")} ₫</p>`).join("") || `<p class="muted">${t("ord_none")}</p>`}`;
+};
+
+window.moderateSocialContent = async function(type, id, decision) {
+  if (!sb || activeAccount()?.role !== "admin") return toast(t("acct_access_denied"));
+  const { data, error } = await sb.rpc("moderate_social_content", {
+    p_content_type: type, p_content_id: id, p_decision: decision,
+  });
+  if (error) {
+    console.error("Could not moderate social content", error.message);
+    return toast(error.message);
+  }
+  if (data !== true) return toast(t("admin_load_failed"));
+  await loadAdminExpansionData();
+  toast(decision === "published" ? t("admin_approve") : t("admin_reject"));
+};
+
+window.setRenterVerification = async function(profileId, verified) {
+  if (!sb || activeAccount()?.role !== "admin") return toast(t("acct_access_denied"));
+  const { data, error } = await sb.rpc("set_renter_verification", {
+    p_profile_id: profileId, p_verified: verified,
+  });
+  if (error) {
+    console.error("Could not update renter verification", error.message);
+    return toast(error.message);
+  }
+  if (data !== true) return toast(t("admin_load_failed"));
+  await loadRenterProfiles();
+  await loadAdminExpansionData();
+  renderAll();
+};
+
+window.resolveSocialReport = async function(reportId, status) {
+  if (!sb || activeAccount()?.role !== "admin") return toast(t("acct_access_denied"));
+  const { data, error } = await sb.rpc("resolve_social_report", { p_report_id: reportId, p_status: status });
+  if (error) {
+    console.error("Could not resolve social report", error.message);
+    return toast(error.message);
+  }
+  if (data !== true) return toast(t("admin_load_failed"));
+  await loadAdminExpansionData();
+};
+
+window.loadAccountNotifications = async function() {
+  const panel = $("appNotifications");
+  const account = activeAccount();
+  if (!panel || !sb || !account) return;
+  const { data, error } = await sb.from("app_notifications")
+    .select("id,notification_type,title,body,reference_code,read_at,created_at")
+    .eq("user_id", account.id).order("created_at", { ascending: false }).limit(20);
+  if (error) {
+    console.error("Could not load in-app notifications", error.message);
+    panel.innerHTML = `<h3>Thông báo</h3><p class="err">${esc(error.message)}</p>`;
+    return;
+  }
+  const unreadIds = (data || []).filter((item) => !item.read_at).map((item) => item.id);
+  panel.innerHTML = `<h3>Thông báo</h3>${data?.length ? data.map((item) => `<article class="report-card">
+    <b>${esc(item.title)}</b> ${item.read_at ? "" : `<span class="st-b wait">Mới</span>`}
+    <p>${esc(item.body)}${item.reference_code ? ` · ${esc(item.reference_code)}` : ""}</p>
+    <small class="muted">${new Date(item.created_at).toLocaleString()}</small>
+  </article>`).join("") : `<p class="muted">Chưa có thông báo.</p>`}
+    ${unreadIds.length ? `<button class="btn ghost sm" onclick="markNotificationsRead()">${t("chat_read")}</button>` : ""}`;
+};
+
+window.markNotificationsRead = async function() {
+  const account = activeAccount();
+  if (!sb || !account) return;
+  const { error } = await sb.from("app_notifications").update({ read_at: new Date().toISOString() })
+    .eq("user_id", account.id).is("read_at", null);
+  if (error) {
+    console.error("Could not mark notifications read", error.message);
+    return toast(error.message);
+  }
+  await loadAccountNotifications();
+};
+
+window.updateEmailNotifications = async function(enabled) {
+  const account = activeAccount();
+  if (!sb || !account) return;
+  const { data, error } = await sb.rpc("set_email_notifications_enabled", { p_enabled: enabled });
+  if (error) {
+    console.error("Could not update email notification preference", error.message);
+    const input = $("emailNotificationsEnabled");
+    if (input) input.checked = !enabled;
+    return toast(error.message);
+  }
+  if (data !== true) {
+    const input = $("emailNotificationsEnabled");
+    if (input) input.checked = !enabled;
+    return toast(t("acct_privacy_failed"));
+  }
+  account.emailNotificationsEnabled = enabled;
+};
+
+window.exportAccountData = async function() {
+  if (!sb || !activeAccount()) return toast(t("social_login_required"));
+  const status = $("privacyStatus");
+  if (status) status.textContent = t("processing");
+  const { data, error } = await sb.functions.invoke("account-privacy", { body: { action: "export" } });
+  if (error) {
+    console.error("Could not export account data", error.message);
+    if (status) status.textContent = error.message || t("acct_privacy_failed");
+    return;
+  }
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `diamond-rental-data-${new Date().toISOString().slice(0, 10)}.json`;
+  link.click();
+  URL.revokeObjectURL(url);
+  if (status) status.textContent = t("acct_export");
+};
+
+window.deleteAccountData = async function() {
+  if (!sb || !activeAccount() || !confirm(t("acct_delete_confirm"))) return;
+  const status = $("privacyStatus");
+  if (status) status.textContent = t("processing");
+  const { error } = await sb.functions.invoke("account-privacy", { body: { action: "delete" } });
+  if (error) {
+    console.error("Could not delete account data", error.message);
+    if (status) status.textContent = error.message || t("acct_privacy_failed");
+    return;
+  }
+  await sb.auth.signOut();
+  toast(t("acct_deleted"));
+  go("account");
+};
 
 window.loadChatReports = async function() {
   const panel = $("chatReports");
@@ -595,7 +955,7 @@ window.loadChatReports = async function() {
   const { data, error } = await sb.rpc("list_chat_reports");
   if (error) {
     console.error("Could not load chat reports", error.message);
-    panel.innerHTML = `<h3>${t("chat_reports_title")}</h3><p class="err">${t("chat_reports_load_error")}</p>`;
+    panel.innerHTML = `<h3>${t("chat_reports_title")}</h3><p class="err">${t("chat_reports_load_error")}</p><p class="muted">${esc(error.message)}</p>`;
     return;
   }
   panel.innerHTML = `<h3>${t("chat_reports_title")}</h3>${data?.length ? data.map((report) => `
@@ -827,6 +1187,7 @@ window.renderAll = function() {
   if (view === "account") renderAccount();
   else if (view === "chat") renderChatPage();
   else if (view === "orders") renderRemoteOrders();
+  else if (view === "social") renderSocialFeed();
   else if (view === "list") {
     renderList();
     const addButton = document.querySelector('.tb-row button[onclick="openAdd()"]');
@@ -836,6 +1197,171 @@ window.renderAll = function() {
   else if (view === "rank") renderRank();
   else if (view === "vip") renderVip();
   else if (view === "checkout" && ck) renderCk();
+};
+
+let socialRequest = 0;
+window.renderSocialFeed = async function() {
+  const app = $("app");
+  if (!sb) {
+    app.innerHTML = `<h2>${t("social_title")}</h2><p class="notice">${t("acct_config_required")}</p>`;
+    return;
+  }
+  const requestId = ++socialRequest;
+  const account = activeAccount();
+  const canPost = account?.role === "renter" && S.custom.some((profile) => profile.ownerId === account.id);
+  const composer = canPost ? `<section class="panel"><h3>${t("social_compose")}</h3>
+    <p class="muted">${t("social_upload_rights")}</p>
+    <label class="field">${t("social_caption")}<textarea id="socialCaption" maxlength="2000"></textarea></label>
+    <label class="field">${t("social_media")}<input id="socialFile" type="file" accept="image/jpeg,image/png,image/webp,video/mp4,video/webm"></label>
+    <button class="btn sm" onclick="submitSocialPost()">${t("social_send")}</button><span id="socialUploadStatus" class="muted"></span></section>` : "";
+  app.innerHTML = `<h2>${t("social_title")}</h2><p class="muted">${t("social_subtitle")}</p>${composer}<p class="muted">${t("processing")}</p>`;
+  const { data: posts, error } = await sb.from("social_posts")
+    .select("id,renter_profile_id,caption,media_url,media_type,source_url,source_credit,is_ai_generated,published_at,renter_profiles(display_name,is_verified)")
+    .eq("status", "published").lte("published_at", new Date().toISOString())
+    .order("published_at", { ascending: false }).limit(30);
+  if (requestId !== socialRequest || view !== "social") return;
+  if (error) {
+    console.error("Could not load social feed", error.message);
+    app.innerHTML = `<h2>${t("social_title")}</h2>${composer}<p class="err">${esc(error.message || t("social_empty"))}</p>`;
+    return;
+  }
+  const resolvedPosts = await Promise.all((posts ?? []).map(async (post) => {
+    try {
+      return { ...post, display_media_url: await resolveSocialMediaUrl(post.media_url) };
+    } catch (mediaError) {
+      console.error("Could not sign social post media", mediaError.message);
+      return { ...post, display_media_url: "" };
+    }
+  }));
+  if (requestId !== socialRequest || view !== "social") return;
+  const ids = resolvedPosts.map((post) => post.id);
+  if (!ids.length) {
+    app.innerHTML = `<h2>${t("social_title")}</h2><p class="sub">${t("social_empty")}</p>${composer}`;
+    return;
+  }
+  const [likesResult, commentsResult, myLikesResult] = await Promise.all([
+    sb.from("social_likes").select("post_id").in("post_id", ids),
+    sb.from("social_comments").select("id,post_id,author_label,body,created_at").in("post_id", ids)
+      .order("created_at", { ascending: true }).limit(300),
+    account ? sb.rpc("get_my_social_likes", { p_post_ids: ids })
+      : Promise.resolve({ data: [], error: null }),
+  ]);
+  if (requestId !== socialRequest || view !== "social") return;
+  const queryError = likesResult.error || commentsResult.error || myLikesResult.error;
+  if (queryError) {
+    console.error("Could not load social interactions", queryError.message);
+    app.innerHTML = `<h2>${t("social_title")}</h2>${composer}<p class="err">${esc(queryError.message)}</p>`;
+    return;
+  }
+  const likeCounts = new Map();
+  (likesResult.data ?? []).forEach((like) => likeCounts.set(like.post_id, (likeCounts.get(like.post_id) || 0) + 1));
+  const myLikes = new Set((myLikesResult.data ?? []).map((like) => like.post_id));
+  const commentsByPost = new Map();
+  (commentsResult.data ?? []).forEach((comment) => {
+    const list = commentsByPost.get(comment.post_id) || [];
+    list.push(comment);
+    commentsByPost.set(comment.post_id, list);
+  });
+  app.innerHTML = `<h2>${t("social_title")}</h2><p class="muted">${t("social_subtitle")}</p>${composer}
+    <div class="social-feed">${resolvedPosts.map((post) => {
+      const profile = Array.isArray(post.renter_profiles) ? post.renter_profiles[0] : post.renter_profiles;
+      const comments = commentsByPost.get(post.id) || [];
+      const media = !post.display_media_url ? `<p class="err">${t("social_upload_failed")}</p>` : post.media_type === "video"
+        ? `<video src="${esc(post.display_media_url)}" controls playsinline preload="metadata" style="width:100%;max-height:520px;object-fit:contain;border-radius:14px"></video>`
+        : `<img src="${esc(post.display_media_url)}" alt="${esc(post.caption)}" loading="lazy" style="width:100%;max-height:520px;object-fit:contain;border-radius:14px">`;
+      return `<article class="panel social-card"><div class="row" style="justify-content:space-between"><b>${esc(profile?.display_name || "Diamond")}${profile?.is_verified ? " ✓" : ""}</b><small class="muted">${new Date(post.published_at).toLocaleString()}</small></div>
+        ${media}<p>${esc(post.caption)}</p>
+        ${post.source_credit ? `<small class="muted">${esc(post.source_credit)}${post.source_url ? ` · <a href="${esc(post.source_url)}" target="_blank" rel="noopener noreferrer">Pinterest</a>` : ""}</small>` : post.is_ai_generated ? `<small class="muted">${t("social_attr")}</small>` : ""}
+        <div class="row" style="margin-top:10px">
+          ${account ? `<button class="btn ${myLikes.has(post.id) ? "" : "ghost"} sm" onclick="toggleSocialLike('${esc(post.id)}',${myLikes.has(post.id)})">♥ ${t("social_like")} · ${likeCounts.get(post.id) || 0}</button>` : `<span class="muted">♥ ${likeCounts.get(post.id) || 0}</span>`}
+          ${account ? `<button class="btn ghost sm" onclick="reportSocialPost('${esc(post.id)}')">${t("social_report")}</button>` : ""}
+        </div>
+        <div class="social-comments">${comments.length ? comments.map((comment) => `<p class="muted"><b>${esc(comment.author_label)}</b> ${esc(comment.body)}</p>`).join("") : `<p class="muted">${t("social_comments_empty")}</p>`}
+          ${account ? `<div class="row"><input class="inp" id="comment-${esc(post.id)}" maxlength="500" placeholder="${esc(t("social_comment"))}" onkeydown="if(event.key==='Enter')submitSocialComment('${esc(post.id)}')"><button class="btn ghost sm" onclick="submitSocialComment('${esc(post.id)}')">${t("social_send")}</button></div>` : `<p class="muted">${t("social_signin")}</p>`}
+        </div></article>`;
+    }).join("")}</div>`;
+};
+
+window.submitSocialPost = async function() {
+  const account = activeAccount();
+  const profile = S.custom.find((item) => item.ownerId === account?.id && item.profileType === "real");
+  const file = $("socialFile")?.files?.[0];
+  const caption = $("socialCaption")?.value.trim();
+  const status = $("socialUploadStatus");
+  if (!sb || account?.role !== "renter" || !profile) return toast(t("acct_access_denied"));
+  if (!file || !caption) return toast(t("social_upload_failed"));
+  if (!["image/jpeg", "image/png", "image/webp", "video/mp4", "video/webm"].includes(file.type) || file.size > 50 * 1024 * 1024) {
+    return toast(t("social_upload_failed"));
+  }
+  const button = $("socialFile")?.closest(".panel")?.querySelector("button");
+  if (button) button.disabled = true;
+  if (status) status.textContent = t("processing");
+  try {
+    const ext = file.name.split(".").pop()?.toLowerCase().replace(/[^a-z0-9]/g, "") || "bin";
+    const path = `${profile.id}/posts/${crypto.randomUUID()}.${ext}`;
+    const { error: uploadError } = await sb.storage.from("renter-social-media").upload(path, file, {
+      contentType: file.type, cacheControl: "3600", upsert: false,
+    });
+    if (uploadError) throw uploadError;
+    const { data: urlData } = sb.storage.from("renter-social-media").getPublicUrl(path);
+    const { error: postError } = await sb.from("social_posts").insert({
+      renter_profile_id: profile.id, caption, media_url: urlData.publicUrl,
+      media_type: file.type.startsWith("video/") ? "video" : "image",
+    });
+    if (postError) {
+      await sb.storage.from("renter-social-media").remove([path]);
+      throw postError;
+    }
+    toast(t("social_posted"));
+    await renderSocialFeed();
+  } catch (error) {
+    console.error("Could not submit social post", error.message);
+    if (status) status.textContent = error.message || t("social_upload_failed");
+  } finally {
+    if (button) button.disabled = false;
+  }
+};
+
+window.toggleSocialLike = async function(postId, liked) {
+  const account = activeAccount();
+  if (!sb || !account) return toast(t("social_login_required"));
+  const query = liked
+    ? sb.from("social_likes").delete().eq("post_id", postId).eq("user_id", account.id)
+    : sb.from("social_likes").insert({ post_id: postId, user_id: account.id });
+  const { error } = await query;
+  if (error && error.code !== "23505") {
+    console.error("Could not update social like", error.message);
+    return toast(error.message);
+  }
+  await renderSocialFeed();
+};
+
+window.submitSocialComment = async function(postId) {
+  const account = activeAccount();
+  const input = $(`comment-${postId}`);
+  const body = input?.value.trim();
+  if (!sb || !account) return toast(t("social_login_required"));
+  if (!body) return;
+  const { error } = await sb.from("social_comments").insert({
+    post_id: postId, author_id: account.id, body,
+  });
+  if (error) {
+    console.error("Could not submit social comment", error.message);
+    return toast(error.message);
+  }
+  await renderSocialFeed();
+};
+
+window.reportSocialPost = async function(postId) {
+  if (!activeAccount()) return toast(t("social_login_required"));
+  const reason = prompt(t("social_report_reason"));
+  if (reason === null) return;
+  const { error } = await sb.rpc("report_social_post", { p_post_id: postId, p_reason: reason.trim() });
+  if (error) {
+    console.error("Could not report social post", error.message);
+    return toast(error.message);
+  }
+  toast(t("chat_report_sent"));
 };
 
 async function renderAdminPaymentReview() {
@@ -907,11 +1433,17 @@ window.openProfile = function(id, index) {
   const addPhoto = [...box.querySelectorAll(".thumbs button")]
     .find((button) => button.textContent.includes(t("addphoto")));
   if (addPhoto) addPhoto.remove();
+  appendProfileNotice(id);
+  const profile = getG(id);
+  const databaseProfileId = profile?.backendId || profile?.id;
+  if (sb && /^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(databaseProfileId || "")) {
+    loadProfileGallery(id, databaseProfileId, index);
+  }
 };
 
 window.chImg = function() { toast("Ảnh hồ sơ được quản lý trong mục Tài khoản."); };
-window.addPic = function() { toast("Thư viện ảnh chưa được kết nối backend."); };
-window.delPic = function() { toast("Thư viện ảnh chưa được kết nối backend."); };
+window.addPic = function() { toast(t("acct_access_denied")); };
+window.delPic = function() { toast(t("acct_access_denied")); };
 window.delChar = function() { toast("Hãy quản lý hồ sơ trong mục Tài khoản."); };
 
 window.startCk = function(id) {
@@ -1097,12 +1629,19 @@ window.renderRemoteOrders = async function() {
       const label = expired ? t("booking_expired_short") : order.status === "paid" ? t("paid")
         : order.status === "done" ? t("st_done")
           : order.status === "cancelled" ? t("st_can") : t("pay_pending");
+      const account = activeAccount();
+      const isParticipant = account?.role === "customer"
+        || (account?.role === "renter" && order.renterOwnerId === account.id);
+      const canChange = isParticipant && ["pending", "paid"].includes(order.status);
       return `<div class="ord"><div class="top"><div class="av" style="${getG(order.id) ? bg(getG(order.id)) : ""}"></div>
         <div style="flex:1;min-width:0"><b>${esc(order.renterName)}</b><div class="muted">${esc(order.code)} · ${order.hours} ${t("hrs")}</div></div>
         <div style="text-align:right"><b>${Number(order.totalVnd).toLocaleString("vi-VN")} ₫</b><div class="st-b ${order.status === "paid" || order.status === "done" ? "ok" : expired ? "bad" : "wait"}">${esc(label)}</div></div></div>
         <p class="muted">${esc(order.place)}</p>
+        <p class="muted">${(order.sessions || []).map((session) => `${esc(session.d)} ${esc(session.t)}`).join(" · ")}</p>
         <div class="acts"><button class="btn ghost sm" onclick="openInvoice('${esc(order.code)}')">${t("invoice")}</button>
         ${["paid", "done"].includes(order.status) ? `<button class="btn sm" onclick="openChat('${esc(order.code)}')">${t("chat_open")}</button>` : ""}
+        ${canChange && Number(order.raw.change_count || 0) < 1 ? `<button class="btn ghost sm" onclick="openRescheduleBooking('${esc(order.code)}')">${t("booking_reschedule")}</button>` : ""}
+        ${canChange ? `<button class="btn ghost sm" onclick="cancelRemoteBooking('${esc(order.code)}')">${t("booking_cancel")}</button>` : ""}
         ${order.status === "paid" && bookingEndPassed(order) ? `<button class="btn ghost sm" onclick="confirmBookingComplete('${esc(order.code)}')">${t("booking_complete_confirm")}</button>` : ""}
         ${customer && order.status === "done" && !order.reviewed ? `<button class="btn ghost sm" onclick="openReview('${esc(order.code)}')">${t("rv_send")}</button>` : ""}
         ${customer && order.status === "pending" && !expired ? `<button class="btn sm" onclick="openPayForBooking('${esc(order.code)}')">${t("pay")}</button>` : ""}</div>
@@ -1112,6 +1651,60 @@ window.renderRemoteOrders = async function() {
     console.error("Could not render bookings", error.message);
     app.innerHTML = `<h2>${t("ord_t")}</h2><p class="err">${esc(error.message || "Không tải được đơn.")}</p>`;
   }
+};
+
+window.openRescheduleBooking = function(code) {
+  const order = mapRemoteOrder(code);
+  const account = activeAccount();
+  const participant = account?.role === "customer"
+    || (account?.role === "renter" && order?.renterOwnerId === account.id);
+  if (!order || !participant || !["pending", "paid"].includes(order.status)
+    || Number(order.raw.change_count || 0) >= 1) return toast(t("booking_change_failed"));
+  openBox(`<h2>${t("booking_reschedule")}</h2><p class="muted">${esc(order.code)} · ${t("booking_change_failed")}</p>
+    ${(order.sessions || []).map((session, index) => `<div class="r2">
+      <label class="field">Ngày<input id="rescheduleDate${index}" type="date" value="${esc(session.d)}" required></label>
+      <label class="field">Giờ<input id="rescheduleTime${index}" type="time" value="${esc(session.t)}" required></label>
+    </div>`).join("")}
+    <div id="rescheduleError" class="err"></div>
+    <button class="btn sm" onclick="submitBookingReschedule('${esc(order.code)}',${order.sessions.length})">${t("booking_reschedule")}</button>`);
+};
+
+window.submitBookingReschedule = async function(code, count) {
+  const order = mapRemoteOrder(code);
+  if (!sb || !order || !Number.isInteger(count) || count !== order.sessions.length) return toast(t("booking_change_failed"));
+  const sessions = [];
+  for (let index = 0; index < count; index++) {
+    const date = $(`rescheduleDate${index}`)?.value;
+    const time = $(`rescheduleTime${index}`)?.value;
+    if (!date || !time) return showError("rescheduleError", t("booking_change_failed"));
+    sessions.push({ d: date, t: time });
+  }
+  const { error } = await sb.rpc("reschedule_booking", { p_code: code, p_sessions: sessions });
+  if (error) {
+    console.error("Could not reschedule booking", error.message);
+    return showError("rescheduleError", error.message || t("booking_change_failed"));
+  }
+  closeBox();
+  await loadBookingRows();
+  await renderRemoteOrders();
+  toast(t("booking_rescheduled"));
+};
+
+window.cancelRemoteBooking = async function(code) {
+  const order = mapRemoteOrder(code);
+  const account = activeAccount();
+  const participant = account?.role === "customer"
+    || (account?.role === "renter" && order?.renterOwnerId === account.id);
+  if (!sb || !order || !participant || !["pending", "paid"].includes(order.status)) return toast(t("booking_change_failed"));
+  if (!confirm(t("booking_cancel_confirm"))) return;
+  const { error } = await sb.rpc("cancel_booking", { p_code: code });
+  if (error) {
+    console.error("Could not cancel booking", error.message);
+    return toast(error.message || t("booking_change_failed"));
+  }
+  await loadBookingRows();
+  await renderRemoteOrders();
+  toast(t("booking_cancelled"));
 };
 
 function bookingEndPassed(order) {
@@ -1395,6 +1988,7 @@ async function requestAiReply(body, messageId, refreshMessages) {
     }
     }
     const message = detail === "cloudflare_limit_reached" ? t("chat_ai_quota_exceeded")
+      : detail === "chat_rate_limited" ? t("chat_ai_rate_limited")
       : detail === "cloudflare_token_rejected" ? t("chat_ai_key_rejected")
         : detail === "cloudflare_ai_not_configured" || detail === "cloudflare_ai_model_invalid" ? t("chat_ai_secret_missing")
           : detail === "cloudflare_network_error" ? t("chat_ai_network_error")

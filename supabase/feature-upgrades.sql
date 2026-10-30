@@ -630,8 +630,8 @@ set search_path = ''
 as $$
 begin
   if not exists (
-    select 1 from public.profiles
-    where id = (select auth.uid()) and role = 'admin'
+    select 1 from public.profiles profile
+    where profile.id = (select auth.uid()) and profile.role = 'admin'
   ) then
     raise exception 'Administrator access required';
   end if;

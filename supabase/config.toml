@@ -3,3 +3,12 @@ verify_jwt = false
 
 [functions.ai-chat-reply]
 verify_jwt = true
+
+[functions.ai-social-autopost]
+verify_jwt = false
+
+[functions.dispatch-email-notifications]
+verify_jwt = false
+
+[functions.account-privacy]
+verify_jwt = true

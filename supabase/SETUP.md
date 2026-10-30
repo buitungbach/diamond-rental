@@ -15,14 +15,19 @@ hosting location.
    chat block/report tools, and read receipts. Run
    `supabase/chat-backgrounds.sql` so a renter can set a shared chat
    background. For manual Agribank transfers, also run
-   `supabase/manual-payment.sql`.
+   `supabase/manual-payment.sql`. To enable rescheduling/cancellation,
+   social posts and gallery moderation, account privacy export/deletion,
+   notifications, per-user AI chat rate limits (10 requests/minute and 60/hour),
+   and the admin dashboard, run
+   `supabase/product-expansion.sql` after those migrations.
 
    For an existing project, run migrations in this order: `schema.sql` (only
    if the base schema has not been installed), `pricing-vnd.sql`,
-   `admin-direct-chat.sql`, `manual-payment.sql`, then
-   `feature-upgrades.sql`. The last migration assumes the admin chat tables
-   already exist. Do not advertise the new booking, review, or chat-safety
-   features as enabled until the SQL Editor reports that migration succeeded.
+   `admin-direct-chat.sql`, `manual-payment.sql`, `feature-upgrades.sql`,
+   `chat-backgrounds.sql`, then `product-expansion.sql`. The feature migration
+   assumes the admin chat tables already exist. Do not advertise these
+   features as enabled until the SQL Editor reports that each migration
+   succeeded.
 2. Put the project URL and **anon/public** key in `supabase-config.js`.
    Never put the service-role key in that file or in the HTML.
 3. In **Authentication → URL Configuration**, set **Site URL** to
@@ -188,6 +193,57 @@ and remain inactive until the Cloudflare secrets are configured. To activate tho
 five after setting the key, run the activation SQL from step 5 in the
 Supabase SQL Editor. New characters created from the admin account are
 connected automatically by the site.
+
+## Social feed and Pinterest images
+
+The AI autopost function reads images from one Pinterest board through the
+official Pinterest API; it does not scrape Pinterest search or download pins
+from arbitrary users. Use only a board and images you own or have permission
+to reuse. A Pinterest pin or credit link does not itself grant image rights.
+Posts identify the image as illustrative and link back to its pin.
+
+1. Register a Pinterest developer app and obtain an access token authorized
+   to read the board and its pins. The Pinterest account used for the token
+   must be able to access the board. Obtain the board ID from Pinterest's
+   official API; a human-readable board URL is not necessarily the board ID.
+2. In Supabase **Edge Function Secrets**, set `PINTEREST_ACCESS_TOKEN` and
+   `PINTEREST_BOARD_ID`. Also ensure the existing Cloudflare AI secrets and
+   Supabase-provided service-role secret are available to Edge Functions.
+   Never commit or share the access token.
+3. Apply `supabase/product-expansion.sql` in the SQL Editor. For an existing
+   deployment where this migration has already run, run it again after
+   updating it so the Pinterest-only publishing function is replaced.
+4. Deploy the changed functions from PowerShell in the repository folder.
+   The update includes the AI chat quota check and the privacy export/delete
+   endpoint:
+
+   ```powershell
+   npx.cmd supabase functions deploy ai-chat-reply --project-ref tsojexeevcsizazservy
+   npx.cmd supabase functions deploy account-privacy --project-ref tsojexeevcsizazservy
+   npx.cmd supabase functions deploy ai-social-autopost --project-ref tsojexeevcsizazservy
+   npx.cmd supabase functions deploy dispatch-email-notifications --project-ref tsojexeevcsizazservy
+   ```
+
+5. To send email notifications, configure `RESEND_API_KEY` and
+   `RESEND_FROM_EMAIL` in Supabase Edge Function Secrets. The sender address
+   must be verified with Resend. Without these, in-app notifications still
+   work but email delivery does not.
+6. In Supabase **Database → Extensions**, enable `pg_cron`, `pg_net`, and
+   Vault. Generate two different random secrets and add them to Edge Function
+   Secrets as `AI_SOCIAL_SCHEDULER_SECRET` and
+   `NOTIFICATION_SCHEDULER_SECRET`. In
+   `supabase/product-expansion-schedule.sql`, replace each matching
+   `REPLACE_WITH_...` placeholder with its secret, then run that SQL in the
+   SQL Editor. Do not commit the edited SQL or send either secret in chat.
+
+The scheduler checks daily, while each AI profile is due only once every three
+days. The Pinterest board must have readable, unused image pins; only pins in
+the first 100 board results are checked on each run. Human renter posts remain
+pending until an administrator approves them.
+Uploaded social media is stored in a private bucket; the website only creates
+short-lived viewing URLs for published content (or for the owning renter and
+administrators during review). Re-run `product-expansion.sql` to apply this
+private-bucket policy to an existing installation.
 
 ## GitHub Pages preview
 

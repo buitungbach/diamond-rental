@@ -9,8 +9,8 @@
 <style>
 /* Layout: a calm boutique-agency look. Deep ink + ice surfaces, one rose accent used for actions and the diamond mark. */
 :root{
-  --bg:#f5f3f8; --surface:#ffffff; --surface2:#edeaf3; --fg:#1d1a2e; --muted:#675f7d; --line:#ddd8e8;
-  --accent:#c2255c; --accent-fg:#ffffff; --accent-soft:#fbe3ec; --ice:#2b62d9; --ice-soft:#e3ebfc;
+  --bg:#fff8f1; --surface:#ffffff; --surface2:#fff0e4; --fg:#32213b; --muted:#78687f; --line:#f0d9ce;
+  --accent:#ec5d79; --accent-fg:#ffffff; --accent-soft:#ffe2e7; --ice:#3486d8; --ice-soft:#e3f3ff;
   --gold:#9a6a00; --gold-soft:#fbefcf; --ok:#12805c; --ok-soft:#dcf3ea; --bad:#c92a2a; --bad-soft:#fde4e4;
   --shadow:0 8px 28px rgba(29,26,46,.09);
   --f-display:"Playfair Display",Georgia,"Times New Roman",serif;
@@ -27,7 +27,7 @@
   --gold:#f2b93b; --gold-soft:#3a2f12; --ok:#47dca0; --ok-soft:#12332a; --bad:#ff8080; --bad-soft:#3d1a1a;
   --shadow:0 8px 28px rgba(0,0,0,.45); color-scheme:dark}
 *{box-sizing:border-box}
-body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15px;line-height:1.5}
+body{background:radial-gradient(ellipse at 8% 2%,rgba(255,215,185,.38),transparent 30rem),radial-gradient(ellipse at 95% 24%,rgba(255,218,234,.33),transparent 32rem),var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15px;line-height:1.5}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--surface)}
 button,input,select,textarea{font:inherit;color:inherit}
 button{cursor:pointer;transition:transform .18s ease,box-shadow .18s ease}
@@ -35,7 +35,7 @@ button{cursor:pointer;transition:transform .18s ease,box-shadow .18s ease}
 :focus-visible{outline:2px solid var(--ice);outline-offset:2px}
 
 /* header */
-.hd{background:var(--surface);border-bottom:1px solid var(--line)}
+.hd{background:color-mix(in srgb,var(--surface) 88%,#ffe4cf);border-bottom:1px solid var(--line);box-shadow:0 6px 24px rgba(181,112,86,.07)}
 .hd-in{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding-block:14px}
 .logo{display:flex;align-items:center;gap:10px;min-width:0}
 .logo svg{flex:none}
@@ -78,7 +78,7 @@ h3{font-size:1.1rem;margin:0 0 10px}
 .sec-h h2{margin:0}
 .sec-h .pr{font-weight:700}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(235px,1fr));gap:16px}
-.card{background:var(--surface);border-radius:16px;overflow:hidden;box-shadow:var(--shadow);display:flex;flex-direction:column;min-width:0}
+.card{background:linear-gradient(155deg,var(--surface),color-mix(in srgb,var(--surface) 92%,#ffe7ee));border-radius:20px;overflow:hidden;box-shadow:var(--shadow);display:flex;flex-direction:column;min-width:0;border:1px solid color-mix(in srgb,var(--line) 75%,#fff)}
 .ph{background-size:cover;background-position:center top;background-color:var(--surface2);position:relative}
 .card .ph{aspect-ratio:4/5;width:100%}
 .ph .tl,.ph .tr{position:absolute;top:10px}
@@ -223,7 +223,8 @@ button:not(:disabled):active{transform:scale(.98)}
 /* ================= I18N ================= */
 const T={
 tag:["Dịch vụ bạn gái thuê · trang fan-made","Rental girlfriend service · fan-made site","レンタル彼女サービス · ファンサイト"],
-tab_list:["Danh sách","Girls","一覧"],tab_rank:["Xếp hạng","Ranking","ランキング"],tab_orders:["Lịch thuê","Bookings","予約"],tab_vip:["Thành viên","Membership","会員"],tab_account:["Tài khoản","Account","アカウント"],
+tab_list:["Danh sách","Girls","一覧"],tab_rank:["Xếp hạng","Ranking","ランキング"],tab_orders:["Lịch thuê","Bookings","予約"],tab_vip:["Thành viên","Membership","会員"],tab_account:["Tài khoản","Account","アカウント"],tab_social:["Cộng đồng","Community","コミュニティ"],
+social_title:["Nhật ký Diamond","Diamond Social","ダイヤモンド日記"],social_subtitle:["Khoảnh khắc mới từ các hồ sơ bạn gái thuê","Fresh moments from renter profiles","レンタルプロフィールの新しい投稿"],social_empty:["Chưa có bài đăng. Ghé lại sau nhé!","No posts yet. Check back soon!","投稿はまだありません。"],social_signin:["Đăng nhập để thả tim hoặc bình luận.","Sign in to like or comment.","ログインして「いいね」やコメントをしてください。"],social_like:["Thích","Like","いいね"],social_comment:["Bình luận","Comment","コメント"],social_send:["Gửi","Send","送信"],social_report:["Báo cáo bài viết","Report post","投稿を報告"],social_pending:["Đã gửi bài; bài sẽ hiển thị sau khi quản trị viên duyệt.","Post submitted; it will appear after admin review.","投稿しました。管理者の承認後に表示されます。"],social_pending_badge:["Đang chờ duyệt","Pending review","承認待ち"],social_compose:["Chia sẻ khoảnh khắc","Share a moment","投稿を作成"],social_caption:["Viết caption","Write a caption","キャプションを書く"],social_media:["Chọn ảnh hoặc video","Choose a photo or video","写真または動画を選択"],social_attr:["Ảnh minh họa từ Pinterest — không phải ảnh nhân vật AI.","Illustrative Pinterest image — not a depiction of the AI character.","Pinterestのイメージ写真（AIキャラクター本人ではありません）"],verified_badge:["Đã xác minh hồ sơ","Verified profile","確認済みプロフィール"],unverified_badge:["Hồ sơ chưa xác minh","Unverified profile","未確認プロフィール"],privacy_export:["Tải dữ liệu của tôi","Export my data","自分のデータをダウンロード"],privacy_delete:["Xóa tài khoản và dữ liệu","Delete account and data","アカウントとデータを削除"],
 notice:["Đây là dịch vụ đặt lịch và thanh toán chuyển khoản thủ công. Kiểm tra kỹ thông tin đơn và chỉ chuyển đúng số tiền, nội dung trên mã QR; quản trị viên xác nhận sau khi tiền vào tài khoản. Dữ liệu tài khoản được lưu trên hệ thống Supabase; không gửi thông tin nhạy cảm trong chat.","This site supports real bookings and manually verified bank transfers. Check the booking details and transfer only the exact amount and reference shown in the QR; an administrator confirms after funds arrive. Account data is stored in Supabase; do not share sensitive information in chat.","このサイトでは予約と手動確認の銀行振込を扱います。予約内容を確認し、QRに表示された正確な金額と振込内容を使用してください。入金後に管理者が確認します。アカウント情報はSupabaseに保存されます。チャットで機密情報を共有しないでください。"],
 search_ph:["Tìm theo tên hoặc tag","Search by name or tag","名前・タグで検索"],
 all:["Tất cả","All","すべて"],fav_only:["Yêu thích","Favorites","お気に入り"],sort:["Sắp xếp","Sort","並び替え"],
@@ -339,7 +340,7 @@ const girls=()=>{
   const catalog=new Map(S.custom.filter(g=>g.catalogKey).map(g=>[g.catalogKey,g]));
   return BASE.map(g=>{
     const linked=catalog.get(g.id);
-    return linked?{...g,backendId:linked.id,profileType:linked.profileType}:g;
+    return linked?{...g,backendId:linked.id,profileType:linked.profileType,ownerId:linked.ownerId,isVerified:linked.isVerified,avatarUrl:linked.avatarUrl,chatBackgroundUrl:linked.chatBackgroundUrl}:g;
   }).concat(S.custom.filter(g=>!g.catalogKey));
 };
 const getG=id=>girls().find(g=>g.id===id||g.backendId===id);
@@ -409,7 +410,7 @@ function renderChrome(){
   document.documentElement.lang=LN[L()];
   $("tag").textContent=t("tag");
   const up=S.orders.filter(o=>o.status==="paid"||o.status==="cash").length;
-  $("nav").innerHTML=[["list","tab_list"],["rank","tab_rank"],["orders","tab_orders"],["vip","tab_vip"]].map(([v,k])=>`<button class="${view===v?"on":""}" onclick="go('${v}')">${t(k)}${v==="orders"&&up?`<span class="badge-n">${up}</span>`:""}</button>`).join("");
+  $("nav").innerHTML=[["list","tab_list"],["social","tab_social"],["rank","tab_rank"],["orders","tab_orders"],["vip","tab_vip"]].map(([v,k])=>`<button class="${view===v?"on":""}" onclick="go('${v}')">${t(k)}${v==="orders"&&up?`<span class="badge-n">${up}</span>`:""}</button>`).join("");
   $("ctl").innerHTML=`
     <select class="sel" id="langSel" aria-label="Language" onchange="setLang(this.value)">${LN.map((l,i)=>`<option value="${l}" ${i===L()?"selected":""}>${["Tiếng Việt","English","日本語"][i]}</option>`).join("")}</select>
     <button class="ib" id="thBtn" aria-label="Theme" onclick="toggleTheme()">◐</button>`;
@@ -502,7 +503,7 @@ function openBox(h){$("box").innerHTML=`<button class="x" aria-label="Close" onc
 function closeBox(){$("ov").hidden=true}
 $("ov").addEventListener("click",e=>{if(e.target===$("ov"))closeBox()});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"){if(!$("lb").hidden)$("lb").hidden=true;else closeBox()}});
-function pics(g){const a=[];const b=IMG[g.id];if(b||S.imgs[g.id])a.push({u:S.imgs[g.id]||b,own:false});(S.gallery[g.id]||[]).forEach((u,i)=>a.push({u,own:true,i}));return a}
+function pics(g){const a=[];const b=IMG[g.id];if(b||S.imgs[g.id])a.push({u:S.imgs[g.id]||b,mediaType:"image",own:false});(S.gallery[g.id]||[]).forEach((item,i)=>{const entry=typeof item==="string"?{u:item,mediaType:"image"}:{u:item.media_url||item.u,mediaType:item.media_type||item.mediaType||"image",sourceUrl:item.source_url||item.sourceUrl,sourceCredit:item.source_credit||item.sourceCredit};if(entry.u)a.push({...entry,own:true,i})});return a}
 function openProfile(id,idx){
   curP=id;const g=getG(id),e=eff(g),ps=pics(g);pidx=Math.min(idx||0,Math.max(0,ps.length-1));
   const canBook=!!g.custom||!!g.backendId;
@@ -513,9 +514,10 @@ function openProfile(id,idx){
   const dayN=WK[L()];
   openBox(`
     <div class="gal">
-      ${cur?`<button class="main" style="background-image:url('${cur.u}')" aria-label="Zoom" onclick="zoom(${pidx})"></button>`:`<div class="main" style="${bg(g)};cursor:default"></div>`}
-      <div class="thumbs">${ps.map((x,i)=>`<div class="th ${i===pidx?"on":""}" style="background-image:url('${x.u}')"><button class="th-b" aria-label="Photo ${i+1}" onclick="openProfile('${id}',${i})"></button>${x.own?`<button class="del" aria-label="Delete" onclick="delPic('${id}',${x.i})">×</button>`:""}</div>`).join("")}
+      ${cur?cur.mediaType==="video"?`<video class="main profile-video" src="${esc(cur.u)}" controls playsinline></video>`:`<button class="main" style="background-image:url('${esc(cur.u)}')" aria-label="Zoom" onclick="zoom(${pidx})"></button>`:`<div class="main" style="${bg(g)};cursor:default"></div>`}
+      <div class="thumbs">${ps.map((x,i)=>`<div class="th ${i===pidx?"on":""}" style="${x.mediaType==="video"?"background:var(--fg)":`background-image:url('${esc(x.u)}')`}"><button class="th-b" aria-label="${x.mediaType==="video"?"Video":"Photo"} ${i+1}" onclick="openProfile('${id}',${i})">${x.mediaType==="video"?"▶":""}</button>${x.own?`<button class="del" aria-label="Delete" onclick="delPic('${id}',${x.i})">×</button>`:""}</div>`).join("")}
         <button class="btn ghost sm" style="flex:none;height:62px" onclick="addPic('${id}')">+ ${t("addphoto")}</button></div>
+      ${cur?.sourceCredit?`<small class="muted">${esc(cur.sourceCredit)}${cur.sourceUrl?` · <a href="${esc(cur.sourceUrl)}" target="_blank" rel="noopener noreferrer">Pinterest</a>`:""}</small>`:""}
     </div>
     <h2>${esc(g.name)}</h2>
     ${g.profileType==="ai"?`<p class="notice">${t("ai_booking_notice")}</p>`:""}
@@ -791,8 +793,8 @@ function openInvoice(c){
 
 /* ================= BOOT ================= */
 if(S.theme)document.documentElement.setAttribute("data-theme",S.theme);
-(function(){const h=(location.hash||"").slice(1);if(["list","rank","orders","vip"].includes(h))view=h})();
-window.addEventListener("hashchange",()=>{const h=location.hash.slice(1);if(["list","rank","orders","vip"].includes(h)&&h!==view){view=h;ck=null;renderAll()}});
+(function(){const h=(location.hash||"").slice(1);if(["list","social","rank","orders","vip"].includes(h))view=h})();
+window.addEventListener("hashchange",()=>{const h=location.hash.slice(1);if(["list","social","rank","orders","vip"].includes(h)&&h!==view){view=h;ck=null;renderAll()}});
 renderAll();
 
 /* ================= LOCAL-ONLY ACCOUNT, PROFILE, CHAT AND PAYMENT PREVIEW ================= */
@@ -819,7 +821,7 @@ window.renderChrome=function(){
   $("ctl").insertAdjacentHTML("beforeend",`<button class="btn ghost sm" onclick="go('account')">${a?esc(a.name):t("tab_account")}</button>`);
 };
 window.go=function(v){
-  if(!["list","rank","orders","vip","account","chat","checkout"].includes(v))return;
+  if(!["list","social","rank","orders","vip","account","chat","checkout"].includes(v))return;
   view=v;
   if(v!=="checkout")ck=null;
   try{if(location.hash!=="#"+v)location.hash=v}catch(e){}
@@ -833,7 +835,7 @@ window.renderAll=function(){
 };
 window.addEventListener("hashchange",()=>{
   const h=location.hash.slice(1);
-  if(["list","rank","orders","vip","account","chat"].includes(h)&&h!==view){view=h;ck=null;renderAll()}
+  if(["list","social","rank","orders","vip","account","chat"].includes(h)&&h!==view){view=h;ck=null;renderAll()}
 });
 function accountForm(mode){
   $("app").innerHTML=`<h2>${t("acct_title")}</h2><p class="notice">${t("acct_demo")}</p>

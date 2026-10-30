@@ -569,7 +569,10 @@ revoke all on public.profiles, public.renter_profiles, public.bookings,
 grant select on public.profiles, public.bookings, public.messages to authenticated;
 grant select on public.renter_profiles to anon, authenticated;
 grant update (full_name, date_of_birth, phone) on public.profiles to authenticated;
-grant insert, update on public.renter_profiles to authenticated;
+grant insert (owner_id, display_name, section, tags, bio, avatar_url, persona_mode)
+  on public.renter_profiles to authenticated;
+grant update (owner_id, display_name, section, tags, bio, avatar_url, persona_mode, availability, chat_background_url)
+  on public.renter_profiles to authenticated;
 grant insert on public.messages to authenticated;
 revoke all on public.renter_personas from public, anon, authenticated;
 grant select on public.renter_personas to service_role;
