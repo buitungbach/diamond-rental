@@ -618,25 +618,28 @@ function renderAccount() {
       ${S.custom.some((profile) => profile.ownerId === account.id) ? `<button class="btn ghost sm" onclick="openAvailabilityEditor()">${t("renter_availability")}</button>
       <h4>${t("gallery")}</h4><p class="muted">${t("gallery_human_help")}</p>
       <button class="btn ghost sm" onclick="chooseGalleryUpload()">${t("addphoto")}</button><div id="renterGallery"><p class="muted">${t("processing")}</p></div>` : ""}</div>` : ""}
-    ${account.role === "admin" ? `<div class="panel"><h3>Quản lý nhân vật AI</h3>
-      <p class="muted">Tạo hồ sơ nhân vật hư cấu để dùng trong website.</p>
-      <button class="btn sm" onclick="openAdd()">+ Thêm nhân vật AI</button>
-      <button class="btn ghost sm" onclick="go('orders')">${t("manual_payment_title")}</button>
+    ${account.role === "admin" ? `<details class="panel admin-section"><summary><b>Quản lý nhân vật AI</b></summary>
+      <div class="row" style="margin-top:12px"><button class="btn sm" onclick="openAdd()">+ Thêm nhân vật AI</button>
+      <button class="btn ghost sm" onclick="go('orders')">${t("manual_payment_title")}</button></div>
       <h4>${t("gallery")}</h4><p class="muted">${t("gallery_admin_help")}</p>
-      <div id="adminAiGalleries">${S.custom.filter((profile) => profile.profileType === "ai").map((profile) => `
-        <section class="panel" style="margin:10px 0">
-          <div class="row" style="justify-content:space-between"><b>${esc(profile.name)}</b>
-            <button class="btn ghost sm" onclick="chooseAiGalleryUpload('${esc(profile.id)}')">${t("addphoto")}</button>
-          </div><div id="aiGallery-${esc(profile.id)}"><p class="muted">${t("processing")}</p></div>
-        </section>`).join("") || `<p class="muted">${t("gallery_empty")}</p>`}</div></div>` : ""}
-    ${account.role === "admin" ? `<div class="panel"><h3>${t("admin_chat_title")}</h3>
+      <div class="row"><label class="field" style="flex:1">Nhân vật
+        <select id="adminAiGalleryProfile" onchange="loadAdminAiGallery(this.value)">
+          <option value="">Chọn nhân vật AI</option>
+          ${S.custom.filter((profile) => profile.profileType === "ai").map((profile) => `<option value="${esc(profile.id)}">${esc(profile.name)}</option>`).join("")}
+        </select></label>
+        <button id="adminAiGalleryUpload" class="btn ghost sm" disabled onclick="chooseAiGalleryUpload($('adminAiGalleryProfile').value)">${t("addphoto")}</button>
+      </div>
+      <div id="adminAiGalleryItems"><p class="muted">${t("gallery_empty")}</p></div>
+    </details>` : ""}
+    ${account.role === "admin" ? `<details class="panel admin-section"><summary><b>${t("admin_chat_title")}</b></summary>
+      <div style="margin-top:12px">
       <p class="muted">${t("admin_chat_intro")}</p>
       ${S.custom.filter((profile) => profile.active !== false).map((profile) => `<div class="row" style="justify-content:space-between;margin:8px 0">
         <span>${esc(profile.name)} · ${profile.profileType === "ai" ? "AI" : "Bạn gái thuê"}</span>
         <button class="btn sm" onclick="openAdminChat('${esc(profile.id)}')">${t("admin_chat_open")}</button>
-      </div>`).join("") || `<p class="muted">${t("admin_chat_empty")}</p>`}</div>` : ""}
-    ${account.role === "admin" ? `<div class="panel" id="chatReports"><h3>${t("chat_reports_title")}</h3><p class="muted">${t("processing")}</p></div>` : ""}
-    ${account.role === "admin" ? `<div class="panel" id="adminExpansion"><h3>${t("admin_expansion")}</h3><p class="muted">${t("processing")}</p></div>` : ""}
+      </div>`).join("") || `<p class="muted">${t("admin_chat_empty")}</p>`}</div></details>` : ""}
+    ${account.role === "admin" ? `<details class="panel admin-section"><summary><b>${t("chat_reports_title")}</b></summary><div id="chatReports"><p class="muted">${t("processing")}</p></div></details>` : ""}
+    ${account.role === "admin" ? `<details class="panel admin-section"><summary><b>${t("admin_expansion")}</b></summary><div id="adminExpansion"><p class="muted">${t("processing")}</p></div></details>` : ""}
     ${account.role === "renter" ? `<div id="adminChatInbox"></div>` : ""}
     <div class="panel"><h3>${t("acct_privacy")}</h3>
       <label class="row"><input id="emailNotificationsEnabled" type="checkbox" ${account.emailNotificationsEnabled ? "checked" : ""} onchange="updateEmailNotifications(this.checked)"> ${t("acct_email_notifications")}</label>
@@ -648,11 +651,7 @@ function renderAccount() {
     <div class="panel"><h3>${t("ord_t")}</h3><button class="btn ghost sm" onclick="go('orders')">${t("chat_inbox")}</button></div>`;
   if (account.role === "renter") loadRenterAdminChats();
   if (account.role === "renter" && S.custom.some((profile) => profile.ownerId === account.id)) loadRenterGallery();
-  if (account.role === "admin") {
-    S.custom.filter((profile) => profile.profileType === "ai").forEach((profile) => loadAdminAiGallery(profile.id));
-    loadChatReports();
-    loadAdminExpansionData();
-  }
+  if (account.role === "admin") { loadChatReports(); loadAdminExpansionData(); }
   loadAccountNotifications();
 }
 
@@ -684,12 +683,23 @@ window.loadRenterGallery = async function() {
 
 window.loadAdminAiGallery = async function(profileId) {
   const account = activeAccount();
+  const selector = $("adminAiGalleryProfile");
+  const panel = $("adminAiGalleryItems");
+  const uploadButton = $("adminAiGalleryUpload");
   const profile = S.custom.find((item) => item.id === profileId && item.profileType === "ai");
-  const panel = $(`aiGallery-${profileId}`);
-  if (!sb || account?.role !== "admin" || !profile || !panel) return;
+  if (!sb || account?.role !== "admin" || !selector || !panel) return;
+  if (!profile) {
+    if (uploadButton) uploadButton.disabled = true;
+    panel.innerHTML = `<p class="muted">${t("gallery_empty")}</p>`;
+    return;
+  }
+  selector.value = profileId;
+  if (uploadButton) uploadButton.disabled = false;
+  panel.innerHTML = `<p class="muted">${t("processing")}</p>`;
   const { data, error } = await sb.from("renter_gallery")
     .select("id,media_url,media_type,caption,status")
     .eq("renter_profile_id", profile.id).order("created_at", { ascending: false });
+  if (selector.value !== profileId) return;
   if (error) {
     console.error("Could not load AI character gallery", error.message);
     panel.innerHTML = `<p class="err">${esc(error.message)}</p>`;
@@ -701,7 +711,7 @@ window.loadAdminAiGallery = async function(profileId) {
   } catch (mediaError) {
     console.error("Could not sign AI character gallery media", mediaError.message);
   }
-  if (activeAccount()?.role !== "admin" || !panel.isConnected) return;
+  if (activeAccount()?.role !== "admin" || !panel.isConnected || selector.value !== profileId) return;
   panel.innerHTML = (data || []).map((item, index) => `<div class="row" style="justify-content:space-between;margin:8px 0;padding:8px;border:1px solid var(--line);border-radius:12px">
     <div class="row">${item.media_type === "image" && urls[index] ? `<img src="${esc(urls[index])}" alt="" loading="lazy" style="width:72px;height:72px;object-fit:cover;border-radius:8px">` : ""}
       <span>${esc(item.caption || item.media_type)}</span>
@@ -744,7 +754,7 @@ window.chooseAiGalleryUpload = function(profileId) {
         if (cleanupError) console.error("Could not remove media after AI gallery insert failed", cleanupError.message);
         throw error;
       }
-      await loadAdminAiGallery(profile.id);
+      if ($("adminAiGalleryProfile")?.value === profile.id) await loadAdminAiGallery(profile.id);
       toast(t("gallery_saved"));
     } catch (error) {
       console.error("Could not save AI character gallery media", error.message);
@@ -943,7 +953,7 @@ window.loadAdminExpansionData = async function() {
   const { data, error } = await sb.rpc("list_admin_expansion_data");
   if (error) {
     console.error("Could not load expansion dashboard", error.message);
-    panel.innerHTML = `<h3>${t("admin_expansion")}</h3><p class="err">${t("admin_load_failed")}</p><small>${esc(error.message)}</small>`;
+    panel.innerHTML = `<p class="err">${t("admin_load_failed")}</p><small>${esc(error.message)}</small>`;
     return;
   }
   const content = await Promise.all((data?.pending_content || []).map(async (item) => {
@@ -956,8 +966,7 @@ window.loadAdminExpansionData = async function() {
   }));
   const verification = data?.unverified_profiles || [];
   const reports = data?.open_social_reports_list || [];
-  panel.innerHTML = `<h3>${t("admin_expansion")}</h3>
-    <div class="r2">
+  panel.innerHTML = `<div class="r2">
       <div class="notice">Chờ thanh toán: <b>${Number(data.pending_payments) || 0}</b></div>
       <div class="notice">Lịch đã thanh toán: <b>${Number(data.active_bookings) || 0}</b></div>
       <div class="notice">${t("admin_moderation")}: <b>${content.length}</b></div>
@@ -1119,10 +1128,10 @@ window.loadChatReports = async function() {
   const { data, error } = await sb.rpc("list_chat_reports");
   if (error) {
     console.error("Could not load chat reports", error.message);
-    panel.innerHTML = `<h3>${t("chat_reports_title")}</h3><p class="err">${t("chat_reports_load_error")}</p><p class="muted">${esc(error.message)}</p>`;
+    panel.innerHTML = `<p class="err">${t("chat_reports_load_error")}</p><p class="muted">${esc(error.message)}</p>`;
     return;
   }
-  panel.innerHTML = `<h3>${t("chat_reports_title")}</h3>${data?.length ? data.map((report) => `
+  panel.innerHTML = `${data?.length ? data.map((report) => `
     <article class="report-card">
       <div class="row" style="justify-content:space-between"><b>${esc(report.renter_name || "")}</b>
         <span class="st-b ${report.status === "open" ? "wait" : "ok"}">${esc(report.status)}</span></div>
