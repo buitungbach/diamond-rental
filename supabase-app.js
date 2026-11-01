@@ -618,28 +618,37 @@ function renderAccount() {
       ${S.custom.some((profile) => profile.ownerId === account.id) ? `<button class="btn ghost sm" onclick="openAvailabilityEditor()">${t("renter_availability")}</button>
       <h4>${t("gallery")}</h4><p class="muted">${t("gallery_human_help")}</p>
       <button class="btn ghost sm" onclick="chooseGalleryUpload()">${t("addphoto")}</button><div id="renterGallery"><p class="muted">${t("processing")}</p></div>` : ""}</div>` : ""}
-    ${account.role === "admin" ? `<details class="panel admin-section"><summary><b>Quản lý nhân vật AI</b></summary>
-      <div class="row" style="margin-top:12px"><button class="btn sm" onclick="openAdd()">+ Thêm nhân vật AI</button>
-      <button class="btn ghost sm" onclick="go('orders')">${t("manual_payment_title")}</button></div>
-      <h4>${t("gallery")}</h4><p class="muted">${t("gallery_admin_help")}</p>
-      <div class="row"><label class="field" style="flex:1">Nhân vật
-        <select id="adminAiGalleryProfile" onchange="loadAdminAiGallery(this.value)">
-          <option value="">Chọn nhân vật AI</option>
-          ${S.custom.filter((profile) => profile.profileType === "ai").map((profile) => `<option value="${esc(profile.id)}">${esc(profile.name)}</option>`).join("")}
-        </select></label>
-        <button id="adminAiGalleryUpload" class="btn ghost sm" disabled onclick="chooseAiGalleryUpload($('adminAiGalleryProfile').value)">${t("addphoto")}</button>
+    ${account.role === "admin" ? `<div class="panel admin-tools">
+      <h3>Khu quản lý</h3>
+      <div class="row admin-tool-buttons">
+        <button class="btn ghost sm" aria-expanded="false" onclick="toggleAdminSection('adminAiGallerySection',this)">Ảnh nhân vật AI</button>
+        <button class="btn ghost sm" aria-expanded="false" onclick="toggleAdminSection('adminAiChatSection',this)">${t("admin_chat_title")}</button>
+        <button class="btn ghost sm" aria-expanded="false" onclick="toggleAdminSection('adminChatReportsSection',this)">${t("chat_reports_title")}</button>
+        <button class="btn ghost sm" aria-expanded="false" onclick="toggleAdminSection('adminExpansionSection',this)">${t("admin_expansion")}</button>
       </div>
-      <div id="adminAiGalleryItems"><p class="muted">${t("gallery_empty")}</p></div>
-    </details>` : ""}
-    ${account.role === "admin" ? `<details class="panel admin-section"><summary><b>${t("admin_chat_title")}</b></summary>
-      <div style="margin-top:12px">
-      <p class="muted">${t("admin_chat_intro")}</p>
-      ${S.custom.filter((profile) => profile.active !== false).map((profile) => `<div class="row" style="justify-content:space-between;margin:8px 0">
-        <span>${esc(profile.name)} · ${profile.profileType === "ai" ? "AI" : "Bạn gái thuê"}</span>
-        <button class="btn sm" onclick="openAdminChat('${esc(profile.id)}')">${t("admin_chat_open")}</button>
-      </div>`).join("") || `<p class="muted">${t("admin_chat_empty")}</p>`}</div></details>` : ""}
-    ${account.role === "admin" ? `<details class="panel admin-section"><summary><b>${t("chat_reports_title")}</b></summary><div id="chatReports"><p class="muted">${t("processing")}</p></div></details>` : ""}
-    ${account.role === "admin" ? `<details class="panel admin-section"><summary><b>${t("admin_expansion")}</b></summary><div id="adminExpansion"><p class="muted">${t("processing")}</p></div></details>` : ""}
+      <section id="adminAiGallerySection" class="admin-tool-content" hidden>
+        <div class="row" style="margin-top:12px"><button class="btn sm" onclick="openAdd()">+ Thêm nhân vật AI</button>
+        <button class="btn ghost sm" onclick="go('orders')">${t("manual_payment_title")}</button></div>
+        <h4>${t("gallery")}</h4><p class="muted">${t("gallery_admin_help")}</p>
+        <div class="row"><label class="field" style="flex:1">Nhân vật
+          <select id="adminAiGalleryProfile" onchange="loadAdminAiGallery(this.value)">
+            <option value="">Chọn nhân vật AI</option>
+            ${S.custom.filter((profile) => profile.profileType === "ai").map((profile) => `<option value="${esc(profile.id)}">${esc(profile.name)}</option>`).join("")}
+          </select></label>
+          <button id="adminAiGalleryUpload" class="btn ghost sm" disabled onclick="chooseAiGalleryUpload($('adminAiGalleryProfile').value)">${t("addphoto")}</button>
+        </div>
+        <div id="adminAiGalleryItems"><p class="muted">${t("gallery_empty")}</p></div>
+      </section>
+      <section id="adminAiChatSection" class="admin-tool-content" hidden>
+        <p class="muted">${t("admin_chat_intro")}</p>
+        ${S.custom.filter((profile) => profile.active !== false).map((profile) => `<div class="row" style="justify-content:space-between;margin:8px 0">
+          <span>${esc(profile.name)} · ${profile.profileType === "ai" ? "AI" : "Bạn gái thuê"}</span>
+          <button class="btn sm" onclick="openAdminChat('${esc(profile.id)}')">${t("admin_chat_open")}</button>
+        </div>`).join("") || `<p class="muted">${t("admin_chat_empty")}</p>`}
+      </section>
+      <section id="adminChatReportsSection" class="admin-tool-content" hidden><div id="chatReports"><p class="muted">${t("processing")}</p></div></section>
+      <section id="adminExpansionSection" class="admin-tool-content" hidden><div id="adminExpansion"><p class="muted">${t("processing")}</p></div></section>
+    </div>` : ""}
     ${account.role === "renter" ? `<div id="adminChatInbox"></div>` : ""}
     <div class="panel"><h3>${t("acct_privacy")}</h3>
       <label class="row"><input id="emailNotificationsEnabled" type="checkbox" ${account.emailNotificationsEnabled ? "checked" : ""} onchange="updateEmailNotifications(this.checked)"> ${t("acct_email_notifications")}</label>
@@ -679,6 +688,15 @@ window.loadRenterGallery = async function() {
       <span>${esc(item.caption || item.media_type)} · ${t(item.status === "published" ? "gallery_published" : item.status === "rejected" ? "gallery_rejected" : "gallery_pending")}</span>
     </div><button class="btn ghost sm" onclick="deleteGalleryItem('${esc(item.id)}','${esc(item.media_url)}')">${t("gallery_remove")}</button>
   </div>`).join("") || `<p class="muted">${t("gallery_empty")}</p>`;
+};
+
+window.toggleAdminSection = function(sectionId, button) {
+  if (activeAccount()?.role !== "admin") return toast(t("acct_access_denied"));
+  const section = $(sectionId);
+  if (!section) return;
+  const opening = section.hidden;
+  section.hidden = !opening;
+  button.setAttribute("aria-expanded", String(opening));
 };
 
 window.loadAdminAiGallery = async function(profileId) {
