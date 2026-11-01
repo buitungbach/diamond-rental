@@ -1,5 +1,7 @@
 /* Supabase-backed accounts, bookings, payments and chat for Diamond Rental. */
 Object.assign(T, {
+  theme_light: ["Chuyển sang giao diện sáng", "Switch to light theme", "ライトテーマに切り替え"],
+  theme_dark: ["Chuyển sang giao diện tối", "Switch to dark theme", "ダークテーマに切り替え"],
   acct_password: ["Mật khẩu", "Password", "パスワード"],
   acct_config_required: ["Cần cấu hình Supabase để đăng nhập và lưu dữ liệu trực tuyến.", "Configure Supabase to sign in and store data online.", "オンラインでログインしてデータを保存するにはSupabaseの設定が必要です。"],
   acct_backend_pending: ["Backend chưa được khởi tạo. Để bảo vệ dữ liệu của bạn, đăng ký, đặt lịch và thanh toán đang tạm khóa. Hãy chạy supabase/schema.sql theo hướng dẫn trong supabase/SETUP.md.", "The backend is not initialized. Registration, booking, and payment are disabled to protect your data. Run supabase/schema.sql as described in supabase/SETUP.md.", "バックエンドが初期化されていません。データ保護のため登録、予約、支払いを停止しています。supabase/SETUP.md の手順に従い supabase/schema.sql を実行してください。"],
@@ -21,8 +23,7 @@ Object.assign(T, {
   profile_preview: ["Hồ sơ mẫu · chưa nhận đặt lịch", "Sample profile · not available to book", "サンプルプロフィール・予約不可"],
   ai_badge: ["Nhân vật AI · hư cấu", "Fictional AI character", "架空のAIキャラクター"],
   ai_book: ["Thuê ngay", "Book now", "今すぐ予約"],
-  ai_booking_notice: ["Đây là nhân vật AI hư cấu. Lịch đặt chỉ dành cho trải nghiệm chat trực tuyến; không có cuộc gặp ngoài đời. Tin nhắn được gửi tới Cloudflare Workers AI để tạo câu trả lời; vui lòng không gửi thông tin nhạy cảm.", "This is a fictional AI character. Bookings are for online chat only; no in-person meeting is available. Messages are sent to Cloudflare Workers AI to generate replies; do not share sensitive information.", "架空のAIキャラクターです。予約はオンラインチャットのみで、対面はありません。返信生成のためメッセージはCloudflare Workers AIに送信されます。機密情報を送らないでください。"],
-  ck_agree: ["Tôi đủ 18 tuổi và hiểu đây là nhân vật AI hư cấu; dịch vụ chỉ chat trực tuyến, không có cuộc gặp ngoài đời.", "I am 18 or older and understand this is a fictional AI character for online chat only, with no in-person meeting.", "私は18歳以上で、架空のAIキャラクターとのオンラインチャットのみであり、対面はないことを理解しています。"],
+  ck_agree: ["Tôi đủ 18 tuổi và hiểu đây là trải nghiệm chat với nhân vật AI, không có gặp mặt trực tiếp.", "I am 18 or older and understand this is an AI chat experience with no in-person meeting.", "私は18歳以上で、対面のないAIチャット体験であることを理解しています。"],
   pay_transfer_note: ["Nội dung chuyển khoản", "Transfer description", "振込内容"],
   pay_transfer_hint: ["Chuyển khoản đúng số tiền và giữ nguyên nội dung. Quản trị viên sẽ đối chiếu sao kê Agribank trước khi xác nhận; không gửi ảnh biên lai thay cho tiền đã vào tài khoản.", "Transfer the exact amount and keep the payment description unchanged. An administrator will verify the Agribank statement before confirming; a receipt image does not replace funds received.", "正確な金額を振り込み、振込内容を変更しないでください。管理者が入金明細を確認してから確定します。振込画面の画像だけでは確認できません。"],
   pay_window: ["Đơn chỉ giữ khung giờ trong 15 phút. Nếu quá thời hạn, vui lòng tạo đơn mới và không chuyển tiền theo mã QR cũ.", "The booking holds its time slot for 15 minutes. If it expires, create a new booking and do not pay using the old QR.", "予約枠の確保は15分間です。期限切れの場合は新しい予約を作成し、古いQRで振り込まないでください。"],
@@ -44,7 +45,7 @@ Object.assign(T, {
   demo: ["Chuyển khoản Agribank đang được quản trị viên đối chiếu thủ công; đơn và chat chỉ được mở sau khi xác nhận nhận đủ tiền.", "Agribank transfers are verified manually; bookings and chat unlock only after the funds are confirmed.", "Agribankへの振込は手動で確認されます。全額入金の確認後に予約とチャットが有効になります。"],
   chat_failed: ["Không tải được cuộc trò chuyện.", "Could not load the conversation.", "会話を読み込めませんでした。"],
   chat_send_failed: ["Không gửi được tin nhắn.", "Could not send the message.", "メッセージを送信できませんでした。"],
-  chat_ai: ["Bạn đang trò chuyện với nhân vật AI hư cấu. Tin nhắn được gửi tới Cloudflare Workers AI để tạo câu trả lời; không gửi thông tin nhạy cảm.", "You are chatting with a fictional AI persona. Messages are sent to Cloudflare Workers AI to generate replies; do not share sensitive information.", "架空のAIキャラクターとの会話です。返信生成のためメッセージはCloudflare Workers AIに送信されます。機密情報を送らないでください。"],
+  chat_ai: ["Chat với nhân vật AI; tin nhắn được xử lý bằng Cloudflare Workers AI. Không gửi thông tin nhạy cảm.", "Chat with an AI character; messages are processed by Cloudflare Workers AI. Do not share sensitive information.", "AIキャラクターとのチャットです。メッセージはCloudflare Workers AIで処理されます。機密情報を送信しないでください。"],
   chat_ai_typing: ["Nhân vật đang soạn câu trả lời…", "The character is typing…", "キャラクターが入力中…"],
   chat_empty: ["Chưa có tin nhắn. Hãy bắt đầu trò chuyện nhé!", "No messages yet. Start the conversation!", "メッセージはまだありません。会話を始めましょう！"],
   chat_ai_not_deployed: ["Chưa triển khai dịch vụ trả lời AI trên Supabase. Hãy chạy lệnh deploy ai-chat-reply.", "The AI reply function is not deployed. Deploy ai-chat-reply to Supabase.", "AI返信機能が未デプロイです。ai-chat-replyをSupabaseにデプロイしてください。"],
@@ -110,7 +111,6 @@ Object.assign(T, {
   chat_send: ["Gửi", "Send", "送信"],
   chat_human: ["Tin nhắn được lưu trực tuyến và chỉ hai bên trong đơn thuê có thể truy cập.", "Messages are stored online and accessible only to the booking participants.", "メッセージはオンラインに保存され、予約の参加者のみが閲覧できます。"],
   notice: ["Nhân vật AI là hư cấu và chỉ có trải nghiệm chat trực tuyến, không gặp ngoài đời. Hồ sơ người thật do người dùng tự khai báo; hãy xác minh tuổi, thông tin và điều kiện gặp trước khi thanh toán.", "AI characters are fictional and available for online chat only, with no in-person meetings. Human profiles are self-reported; verify age, details, and meeting arrangements before paying.", "AIキャラクターは架空で、オンラインチャットのみ利用でき、対面はありません。人間のプロフィールは自己申告です。支払い前に年齢、情報、待ち合わせ条件を確認してください。"],
-  social_attr: ["Ảnh minh họa Pinterest, không phải ảnh nhân vật.", "Illustrative Pinterest image, not a depiction of the character.", "Pinterestのイメージ写真（キャラクター本人ではありません）。"],
   social_upload_rights: ["Chỉ đăng ảnh/video bạn sở hữu hoặc có quyền sử dụng. Bài đăng sẽ chờ quản trị viên duyệt.", "Only upload media you own or have permission to use. Posts await admin approval.", "所有または使用許可のあるメディアのみ投稿してください。投稿は管理者の承認待ちです。"],
   social_upload_failed: ["Không thể tải media lên.", "Could not upload media.", "メディアをアップロードできませんでした。"],
   social_posted: ["Đã gửi bài để quản trị viên duyệt.", "Post submitted for admin review.", "投稿を管理者の確認に送信しました。"],
@@ -445,9 +445,9 @@ window.enableMessageNotifications = async function() {
 
 function notifyIncomingMessage() {
   if (!("Notification" in window) || Notification.permission !== "granted" || !document.hidden) return;
-  new Notification("Diamond Rental", {
+  new Notification("VELORA", {
     body: "Bạn có tin nhắn mới. Đăng nhập để xem.",
-    icon: "favicon.ico",
+    icon: "velora-logo.png",
   });
 }
 
@@ -769,7 +769,7 @@ function appendProfileNotice(id) {
   if (!profile || $("ov").hidden) return;
   const real = profile.profileType === "real";
   const verification = profile.isVerified ? `<span class="st-b ok">${t("verified_badge")}</span>` : "";
-  $("box").insertAdjacentHTML("beforeend", `${verification}<p class="notice">${real ? t("acct_renter_note") : t("chat_ai")}</p>${real && account?.id === profile.ownerId ? `<button class="btn ghost sm" onclick="openAdd()">${t("acct_edit_profile")}</button>` : ""}`);
+  $("box").insertAdjacentHTML("beforeend", `${verification}${real ? `<p class="notice">${t("acct_renter_note")}</p>` : `<span class="pill">${t("ai_badge")}</span>`}${real && account?.id === profile.ownerId ? `<button class="btn ghost sm" onclick="openAdd()">${t("acct_edit_profile")}</button>` : ""}`);
   guardProfileEditControls();
 }
 
@@ -1200,6 +1200,7 @@ window.renderAll = function() {
 };
 
 let socialRequest = 0;
+let socialFeedCache = null;
 window.renderSocialFeed = async function() {
   const app = $("app");
   if (!sb) {
@@ -1208,6 +1209,11 @@ window.renderSocialFeed = async function() {
   }
   const requestId = ++socialRequest;
   const account = activeAccount();
+  const cacheKey = `${account?.id || "anonymous"}:${account?.role || "none"}:${L()}`;
+  if (socialFeedCache?.key === cacheKey && Date.now() - socialFeedCache.createdAt < 60000) {
+    app.innerHTML = socialFeedCache.html;
+    return;
+  }
   const canPost = account?.role === "renter" && S.custom.some((profile) => profile.ownerId === account.id);
   const composer = canPost ? `<section class="panel"><h3>${t("social_compose")}</h3>
     <p class="muted">${t("social_upload_rights")}</p>
@@ -1237,6 +1243,7 @@ window.renderSocialFeed = async function() {
   const ids = resolvedPosts.map((post) => post.id);
   if (!ids.length) {
     app.innerHTML = `<h2>${t("social_title")}</h2><p class="sub">${t("social_empty")}</p>${composer}`;
+    socialFeedCache = { key: cacheKey, html: app.innerHTML, createdAt: Date.now() };
     return;
   }
   const [likesResult, commentsResult, myLikesResult] = await Promise.all([
@@ -1267,19 +1274,20 @@ window.renderSocialFeed = async function() {
       const profile = Array.isArray(post.renter_profiles) ? post.renter_profiles[0] : post.renter_profiles;
       const comments = commentsByPost.get(post.id) || [];
       const media = !post.display_media_url ? `<p class="err">${t("social_upload_failed")}</p>` : post.media_type === "video"
-        ? `<video src="${esc(post.display_media_url)}" controls playsinline preload="metadata" style="width:100%;max-height:520px;object-fit:contain;border-radius:14px"></video>`
-        : `<img src="${esc(post.display_media_url)}" alt="${esc(post.caption)}" loading="lazy" style="width:100%;max-height:520px;object-fit:contain;border-radius:14px">`;
+        ? `<video class="social-media" src="${esc(post.display_media_url)}" controls playsinline preload="metadata"></video>`
+        : `<img class="social-media" src="${esc(post.display_media_url)}" alt="${esc(post.caption)}" loading="lazy">`;
       return `<article class="panel social-card"><div class="row" style="justify-content:space-between"><b>${esc(profile?.display_name || "Diamond")}${profile?.is_verified ? " ✓" : ""}</b><small class="muted">${new Date(post.published_at).toLocaleString()}</small></div>
         ${media}<p>${esc(post.caption)}</p>
-        ${post.source_credit ? `<small class="muted">${esc(post.source_credit)}${post.source_url ? ` · <a href="${esc(post.source_url)}" target="_blank" rel="noopener noreferrer">Pinterest</a>` : ""}</small>` : post.is_ai_generated ? `<small class="muted">${t("social_attr")}</small>` : ""}
+        ${post.source_credit ? `<small class="muted">${esc(post.source_credit)}${post.source_url ? ` · <a href="${esc(post.source_url)}" target="_blank" rel="noopener noreferrer">Nguồn ảnh</a>` : ""}</small>` : ""}
         <div class="row" style="margin-top:10px">
-          ${account ? `<button class="btn ${myLikes.has(post.id) ? "" : "ghost"} sm" onclick="toggleSocialLike('${esc(post.id)}',${myLikes.has(post.id)})">♥ ${t("social_like")} · ${likeCounts.get(post.id) || 0}</button>` : `<span class="muted">♥ ${likeCounts.get(post.id) || 0}</span>`}
+          ${account ? `<button class="btn ${myLikes.has(post.id) ? "" : "ghost"} sm" data-social-like="${esc(post.id)}" data-liked="${myLikes.has(post.id)}" data-like-count="${likeCounts.get(post.id) || 0}" onclick="toggleSocialLike('${esc(post.id)}',this.dataset.liked==='true')">♥ ${t("social_like")} · ${likeCounts.get(post.id) || 0}</button>` : `<span class="muted">♥ ${likeCounts.get(post.id) || 0}</span>`}
           ${account ? `<button class="btn ghost sm" onclick="reportSocialPost('${esc(post.id)}')">${t("social_report")}</button>` : ""}
         </div>
-        <div class="social-comments">${comments.length ? comments.map((comment) => `<p class="muted"><b>${esc(comment.author_label)}</b> ${esc(comment.body)}</p>`).join("") : `<p class="muted">${t("social_comments_empty")}</p>`}
+        <div class="social-comments" id="comments-${esc(post.id)}">${comments.length ? comments.map((comment) => `<p class="muted"><b>${esc(comment.author_label)}</b> ${esc(comment.body)}</p>`).join("") : `<p class="muted social-empty-comments">${t("social_comments_empty")}</p>`}
           ${account ? `<div class="row"><input class="inp" id="comment-${esc(post.id)}" maxlength="500" placeholder="${esc(t("social_comment"))}" onkeydown="if(event.key==='Enter')submitSocialComment('${esc(post.id)}')"><button class="btn ghost sm" onclick="submitSocialComment('${esc(post.id)}')">${t("social_send")}</button></div>` : `<p class="muted">${t("social_signin")}</p>`}
         </div></article>`;
     }).join("")}</div>`;
+  socialFeedCache = { key: cacheKey, html: app.innerHTML, createdAt: Date.now() };
 };
 
 window.submitSocialPost = async function() {
@@ -1312,6 +1320,7 @@ window.submitSocialPost = async function() {
       await sb.storage.from("renter-social-media").remove([path]);
       throw postError;
     }
+    socialFeedCache = null;
     toast(t("social_posted"));
     await renderSocialFeed();
   } catch (error) {
@@ -1329,11 +1338,24 @@ window.toggleSocialLike = async function(postId, liked) {
     ? sb.from("social_likes").delete().eq("post_id", postId).eq("user_id", account.id)
     : sb.from("social_likes").insert({ post_id: postId, user_id: account.id });
   const { error } = await query;
-  if (error && error.code !== "23505") {
+  if (error?.code === "23505") {
+    socialFeedCache = null;
+    await renderSocialFeed();
+    return;
+  }
+  if (error) {
     console.error("Could not update social like", error.message);
     return toast(error.message);
   }
-  await renderSocialFeed();
+  const button = [...document.querySelectorAll("[data-social-like]")].find((item) => item.dataset.socialLike === postId);
+  if (!button) return;
+  const isLiked = !liked;
+  const count = Math.max(0, Number(button.dataset.likeCount || 0) + (isLiked ? 1 : -1));
+  button.dataset.liked = String(isLiked);
+  button.dataset.likeCount = String(count);
+  button.classList.toggle("ghost", !isLiked);
+  button.textContent = `♥ ${t("social_like")} · ${count}`;
+  if (socialFeedCache) socialFeedCache = { ...socialFeedCache, html: $("app").innerHTML, createdAt: Date.now() };
 };
 
 window.submitSocialComment = async function(postId) {
@@ -1342,14 +1364,26 @@ window.submitSocialComment = async function(postId) {
   const body = input?.value.trim();
   if (!sb || !account) return toast(t("social_login_required"));
   if (!body) return;
-  const { error } = await sb.from("social_comments").insert({
+  const { data: comment, error } = await sb.from("social_comments").insert({
     post_id: postId, author_id: account.id, body,
-  });
+  }).select("author_label,body").single();
   if (error) {
     console.error("Could not submit social comment", error.message);
     return toast(error.message);
   }
-  await renderSocialFeed();
+  const comments = $(`comments-${postId}`);
+  const inputAfterInsert = $(`comment-${postId}`);
+  if (!comments || !comment) return;
+  comments.querySelector(".social-empty-comments")?.remove();
+  const row = document.createElement("p");
+  row.className = "muted";
+  const author = document.createElement("b");
+  author.textContent = comment.author_label;
+  row.append(author, document.createTextNode(` ${comment.body}`));
+  const composer = inputAfterInsert?.parentElement;
+  comments.insertBefore(row, composer || null);
+  if (inputAfterInsert) inputAfterInsert.value = "";
+  if (socialFeedCache) socialFeedCache = { ...socialFeedCache, html: $("app").innerHTML, createdAt: Date.now() };
 };
 
 window.reportSocialPost = async function(postId) {
@@ -1779,7 +1813,7 @@ window.openInvoice = function(code) {
   const order = mapRemoteOrder(code);
   if (!order) return toast("Không tìm thấy hóa đơn.");
   const invoice = [
-    "DIAMOND RENTAL",
+    "VELORA",
     t("receipt_label"),
     `Biên nhận: ${order.invoiceNumber}`,
     `Mã đơn: ${order.code}`,

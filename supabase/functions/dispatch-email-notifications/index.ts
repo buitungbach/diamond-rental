@@ -32,7 +32,7 @@ function template(event: string, code: string, recipient: string) {
     new_message: `Bạn có tin nhắn mới. Đăng nhập website để xem; nội dung chat không được đính kèm trong email.`,
   };
   return {
-    subject: event === "new_message" ? "Diamond Rental: bạn có tin nhắn mới" : "Diamond Rental: cập nhật đơn đặt lịch",
+    subject: event === "new_message" ? "VELORA: bạn có tin nhắn mới" : "VELORA: cập nhật đơn đặt lịch",
     text: `Xin chào ${recipient || "bạn"},\n\n${messages[event] ?? "Tài khoản của bạn có cập nhật mới."}${detail}\n\nĐăng nhập tại https://buitungbach.github.io/diamond-rental/ để xem chi tiết.\n\nĐây là email thông báo tự động.`,
   };
 }

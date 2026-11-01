@@ -1,5 +1,6 @@
 -- Requires schema.sql, admin-direct-chat.sql, manual-payment.sql, and
--- feature-upgrades.sql. Run once in the Supabase SQL Editor.
+-- feature-upgrades.sql. Run in the Supabase SQL Editor; safe to rerun after
+-- updating this migration.
 
 alter table public.renter_profiles
   add column if not exists is_verified boolean not null default false,
@@ -494,96 +495,6 @@ end;
 $$;
 revoke all on function public.report_social_post(uuid, text) from public, anon;
 grant execute on function public.report_social_post(uuid, text) to authenticated;
-
-create table if not exists public.ai_social_schedule (
-  renter_profile_id uuid primary key references public.renter_profiles(id) on delete cascade,
-  next_post_at timestamptz not null default now(),
-  last_posted_at timestamptz,
-  last_error text
-);
-insert into public.ai_social_schedule (renter_profile_id)
-select renter.id from public.renter_profiles renter
-where renter.persona_mode = 'ai' and renter.is_active
-on conflict (renter_profile_id) do nothing;
-alter table public.ai_social_schedule enable row level security;
-revoke all on public.ai_social_schedule from public, anon, authenticated;
-
-create or replace function public.ensure_ai_social_schedule()
-returns trigger
-language plpgsql
-security definer
-set search_path = ''
-as $$
-begin
-  if new.persona_mode = 'ai' and new.is_active then
-    insert into public.ai_social_schedule (renter_profile_id)
-    values (new.id)
-    on conflict (renter_profile_id) do nothing;
-  end if;
-  return new;
-end;
-$$;
-revoke all on function public.ensure_ai_social_schedule() from public, anon, authenticated;
-drop trigger if exists ensure_ai_social_schedule_after_profile_write on public.renter_profiles;
-create trigger ensure_ai_social_schedule_after_profile_write
-  after insert or update of persona_mode, is_active on public.renter_profiles
-  for each row execute function public.ensure_ai_social_schedule();
-
-create or replace function public.publish_ai_social_post(
-  p_renter_profile_id uuid,
-  p_caption text,
-  p_media_url text,
-  p_source_url text,
-  p_source_credit text
-)
-returns boolean
-language plpgsql
-security definer
-set search_path = ''
-as $$
-declare
-  v_gallery_id uuid;
-begin
-  if auth.role() <> 'service_role' then
-    raise exception 'Service role required';
-  end if;
-  if char_length(trim(coalesce(p_caption, ''))) not between 1 and 2000
-    or p_media_url is null
-    or p_media_url !~ '^https://i\.pinimg\.com/'
-    or p_source_url is null
-    or p_source_url !~ '^https://www\.pinterest\.com/pin/[0-9]+/?$' then
-    raise exception 'Invalid Pinterest image, pin, or caption';
-  end if;
-  if not exists (
-    select 1 from public.renter_profiles renter
-    where renter.id = p_renter_profile_id and renter.is_active and renter.persona_mode = 'ai'
-  ) then
-    raise exception 'Active AI profile required';
-  end if;
-  insert into public.renter_gallery (
-    renter_profile_id, media_url, media_type, caption, source_url,
-    source_credit, is_ai_generated, status, moderated_at
-  ) values (
-    p_renter_profile_id, p_media_url, 'image', p_caption, p_source_url,
-    left(p_source_credit, 200), true, 'published', now()
-  )
-  on conflict (renter_profile_id, source_url) do nothing
-  returning id into v_gallery_id;
-  if v_gallery_id is null then
-    return false;
-  end if;
-  insert into public.social_posts (
-    renter_profile_id, caption, media_url, media_type, source_url,
-    source_credit, is_ai_generated, status, published_at, moderated_at
-  ) values (
-    p_renter_profile_id, left(trim(p_caption), 2000), p_media_url, 'image', p_source_url,
-    left(p_source_credit, 200), true, 'published', now(), now()
-  );
-  return true;
-end;
-$$;
-revoke all on function public.publish_ai_social_post(uuid, text, text, text, text) from public, anon, authenticated;
-grant execute on function public.publish_ai_social_post(uuid, text, text, text, text) to service_role;
 
 create table if not exists public.app_notifications (
   id uuid primary key default gen_random_uuid(),
@@ -1089,58 +1000,6 @@ $$;
 revoke all on function public.erase_my_account_data() from public, anon;
 grant execute on function public.erase_my_account_data() to authenticated;
 
-create or replace function public.claim_due_ai_social_profiles(p_limit integer default 20)
-returns table (renter_profile_id uuid)
-language plpgsql
-security definer
-set search_path = ''
-as $$
-begin
-  if auth.role() <> 'service_role' then
-    raise exception 'Service role required';
-  end if;
-  return query
-  with candidates as (
-    select schedule.renter_profile_id
-    from public.ai_social_schedule schedule
-    join public.renter_profiles renter on renter.id = schedule.renter_profile_id
-    where schedule.next_post_at <= now() and renter.is_active and renter.persona_mode = 'ai'
-    order by schedule.next_post_at
-    limit greatest(1, least(coalesce(p_limit, 20), 100))
-    for update of schedule skip locked
-  )
-  update public.ai_social_schedule schedule
-  set next_post_at = now() + interval '3 days',
-      last_posted_at = now(),
-      last_error = null
-  from candidates
-  where schedule.renter_profile_id = candidates.renter_profile_id
-  returning schedule.renter_profile_id;
-end;
-$$;
-revoke all on function public.claim_due_ai_social_profiles(integer) from public, anon, authenticated;
-grant execute on function public.claim_due_ai_social_profiles(integer) to service_role;
-
-create or replace function public.set_ai_social_post_error(p_renter_profile_id uuid, p_error text)
-returns boolean
-language plpgsql
-security definer
-set search_path = ''
-as $$
-begin
-  if auth.role() <> 'service_role' then
-    raise exception 'Service role required';
-  end if;
-  update public.ai_social_schedule
-  set next_post_at = now() + interval '6 hours',
-      last_error = left(coalesce(p_error, 'Unknown error'), 1000)
-  where renter_profile_id = p_renter_profile_id;
-  return found;
-end;
-$$;
-revoke all on function public.set_ai_social_post_error(uuid, text) from public, anon, authenticated;
-grant execute on function public.set_ai_social_post_error(uuid, text) to service_role;
-
 create extension if not exists pgcrypto;
 create or replace function public.can_access_renter_social_media(p_object_name text)
 returns boolean
@@ -1225,3 +1084,10 @@ create index if not exists booking_change_events_booking_created_idx
   on public.booking_change_events (booking_id, created_at desc);
 create index if not exists social_reports_status_created_idx
   on public.social_reports (status, created_at desc);
+
+drop trigger if exists ensure_ai_social_schedule_after_profile_write on public.renter_profiles;
+drop function if exists public.ensure_ai_social_schedule();
+drop function if exists public.publish_ai_social_post(uuid, text, text, text, text);
+drop function if exists public.claim_due_ai_social_profiles(integer);
+drop function if exists public.set_ai_social_post_error(uuid, text);
+drop table if exists public.ai_social_schedule;

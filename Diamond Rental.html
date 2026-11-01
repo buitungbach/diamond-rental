@@ -1,5 +1,6 @@
 <!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
-<title>Diamond Rental</title>
+<title>VELORA</title>
+<link rel="icon" type="image/png" href="velora-logo.png">
 <meta name="claude:viewport-fit-sides" content="cover">
 <script src="supabase-config.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -38,7 +39,7 @@ button{cursor:pointer;transition:transform .18s ease,box-shadow .18s ease}
 .hd{background:color-mix(in srgb,var(--surface) 88%,#ffe4cf);border-bottom:1px solid var(--line);box-shadow:0 6px 24px rgba(181,112,86,.07)}
 .hd-in{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding-block:14px}
 .logo{display:flex;align-items:center;gap:10px;min-width:0}
-.logo svg{flex:none}
+.logo img{flex:none;width:48px;height:48px;object-fit:cover;border-radius:12px}
 .logo b{font-family:var(--f-display);font-size:1.55rem;letter-spacing:.14em}
 .logo small{display:block;color:var(--muted);font-size:.72rem;letter-spacing:.04em}
 .ctl{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
@@ -203,12 +204,21 @@ button:not(:disabled):active{transform:scale(.98)}
 @media (max-width:820px){.ck{grid-template-columns:minmax(0,1fr)}.sum{position:static}}
 @media (max-width:420px){.r2{grid-template-columns:1fr}.rr{gap:10px}.rr .sc{font-size:1.15rem}.availability-row{grid-template-columns:1fr 1fr}.availability-row>label:first-child{grid-column:1/-1}.ov{padding-inline:8px}.box{padding:18px 14px}.ord .top{align-items:flex-start}.ord .top .av{width:44px;height:44px}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+.social-feed{display:grid;grid-template-columns:minmax(0,720px);justify-content:center;gap:12px}
+.social-card{padding:12px;margin-bottom:0}
+.social-media{display:block;width:100%;max-height:360px;object-fit:contain;border-radius:12px;background:var(--surface2)}
+.social-comments{font-size:.9rem}
+.social-comments p{margin:6px 0}
+.social-comments .row{align-items:center}
+.social-comments .inp{min-width:0}
+@keyframes view-enter{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+#app>*,.social-card{animation:view-enter .16s ease both}
 </style>
 
 <header class="hd"><div class="wrap hd-in">
   <div class="logo">
-    <svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true"><path d="M7 4h20l6 9-16 18L1 13z" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round"/><path d="M1 13h32M12 4l5 9 5-9M17 13v18" fill="none" stroke="var(--accent)" stroke-width="1.4" stroke-linejoin="round"/></svg>
-    <div><b>DIAMOND</b><small id="tag"></small></div>
+    <img src="velora-logo.png" alt="VELORA">
+    <div><b>VELORA</b><small id="tag"></small></div>
   </div>
   <div class="ctl" id="ctl"></div>
 </div></header>
@@ -224,7 +234,7 @@ button:not(:disabled):active{transform:scale(.98)}
 const T={
 tag:["Dịch vụ bạn gái thuê · trang fan-made","Rental girlfriend service · fan-made site","レンタル彼女サービス · ファンサイト"],
 tab_list:["Danh sách","Girls","一覧"],tab_rank:["Xếp hạng","Ranking","ランキング"],tab_orders:["Lịch thuê","Bookings","予約"],tab_vip:["Thành viên","Membership","会員"],tab_account:["Tài khoản","Account","アカウント"],tab_social:["Cộng đồng","Community","コミュニティ"],
-social_title:["Nhật ký Diamond","Diamond Social","ダイヤモンド日記"],social_subtitle:["Khoảnh khắc mới từ các hồ sơ bạn gái thuê","Fresh moments from renter profiles","レンタルプロフィールの新しい投稿"],social_empty:["Chưa có bài đăng. Ghé lại sau nhé!","No posts yet. Check back soon!","投稿はまだありません。"],social_signin:["Đăng nhập để thả tim hoặc bình luận.","Sign in to like or comment.","ログインして「いいね」やコメントをしてください。"],social_like:["Thích","Like","いいね"],social_comment:["Bình luận","Comment","コメント"],social_send:["Gửi","Send","送信"],social_report:["Báo cáo bài viết","Report post","投稿を報告"],social_pending:["Đã gửi bài; bài sẽ hiển thị sau khi quản trị viên duyệt.","Post submitted; it will appear after admin review.","投稿しました。管理者の承認後に表示されます。"],social_pending_badge:["Đang chờ duyệt","Pending review","承認待ち"],social_compose:["Chia sẻ khoảnh khắc","Share a moment","投稿を作成"],social_caption:["Viết caption","Write a caption","キャプションを書く"],social_media:["Chọn ảnh hoặc video","Choose a photo or video","写真または動画を選択"],social_attr:["Ảnh minh họa từ Pinterest — không phải ảnh nhân vật AI.","Illustrative Pinterest image — not a depiction of the AI character.","Pinterestのイメージ写真（AIキャラクター本人ではありません）"],verified_badge:["Đã xác minh hồ sơ","Verified profile","確認済みプロフィール"],unverified_badge:["Hồ sơ chưa xác minh","Unverified profile","未確認プロフィール"],privacy_export:["Tải dữ liệu của tôi","Export my data","自分のデータをダウンロード"],privacy_delete:["Xóa tài khoản và dữ liệu","Delete account and data","アカウントとデータを削除"],
+social_title:["Cộng đồng VELORA","VELORA Community","VELORAコミュニティ"],social_subtitle:["Khoảnh khắc mới từ các hồ sơ bạn gái thuê","Fresh moments from renter profiles","レンタルプロフィールの新しい投稿"],social_empty:["Chưa có bài đăng. Ghé lại sau nhé!","No posts yet. Check back soon!","投稿はまだありません。"],social_signin:["Đăng nhập để thả tim hoặc bình luận.","Sign in to like or comment.","ログインして「いいね」やコメントをしてください。"],social_like:["Thích","Like","いいね"],social_comment:["Bình luận","Comment","コメント"],social_send:["Gửi","Send","送信"],social_report:["Báo cáo bài viết","Report post","投稿を報告"],social_pending:["Đã gửi bài; bài sẽ hiển thị sau khi quản trị viên duyệt.","Post submitted; it will appear after admin review.","投稿しました。管理者の承認後に表示されます。"],social_pending_badge:["Đang chờ duyệt","Pending review","承認待ち"],social_compose:["Chia sẻ khoảnh khắc","Share a moment","投稿を作成"],social_caption:["Viết caption","Write a caption","キャプションを書く"],social_media:["Chọn ảnh hoặc video","Choose a photo or video","写真または動画を選択"],verified_badge:["Đã xác minh hồ sơ","Verified profile","確認済みプロフィール"],unverified_badge:["Hồ sơ chưa xác minh","Unverified profile","未確認プロフィール"],privacy_export:["Tải dữ liệu của tôi","Export my data","自分のデータをダウンロード"],privacy_delete:["Xóa tài khoản và dữ liệu","Delete account and data","アカウントとデータを削除"],
 notice:["Đây là dịch vụ đặt lịch và thanh toán chuyển khoản thủ công. Kiểm tra kỹ thông tin đơn và chỉ chuyển đúng số tiền, nội dung trên mã QR; quản trị viên xác nhận sau khi tiền vào tài khoản. Dữ liệu tài khoản được lưu trên hệ thống Supabase; không gửi thông tin nhạy cảm trong chat.","This site supports real bookings and manually verified bank transfers. Check the booking details and transfer only the exact amount and reference shown in the QR; an administrator confirms after funds arrive. Account data is stored in Supabase; do not share sensitive information in chat.","このサイトでは予約と手動確認の銀行振込を扱います。予約内容を確認し、QRに表示された正確な金額と振込内容を使用してください。入金後に管理者が確認します。アカウント情報はSupabaseに保存されます。チャットで機密情報を共有しないでください。"],
 search_ph:["Tìm theo tên hoặc tag","Search by name or tag","名前・タグで検索"],
 all:["Tất cả","All","すべて"],fav_only:["Yêu thích","Favorites","お気に入り"],sort:["Sắp xếp","Sort","並び替え"],
@@ -413,14 +423,25 @@ function renderChrome(){
   $("nav").innerHTML=[["list","tab_list"],["social","tab_social"],["rank","tab_rank"],["orders","tab_orders"],["vip","tab_vip"]].map(([v,k])=>`<button class="${view===v?"on":""}" onclick="go('${v}')">${t(k)}${v==="orders"&&up?`<span class="badge-n">${up}</span>`:""}</button>`).join("");
   $("ctl").innerHTML=`
     <select class="sel" id="langSel" aria-label="Language" onchange="setLang(this.value)">${LN.map((l,i)=>`<option value="${l}" ${i===L()?"selected":""}>${["Tiếng Việt","English","日本語"][i]}</option>`).join("")}</select>
-    <button class="ib" id="thBtn" aria-label="Theme" onclick="toggleTheme()">◐</button>`;
+    <button class="ib" id="thBtn" aria-label="Chuyển giao diện" title="Chuyển giao diện" onclick="toggleTheme()">☾</button>`;
+  updateThemeButton();
   $("foot").innerHTML=`<p>${t("ft")}</p>`;
 }
 function setCur(c){S.cur=c;save();renderAll()}
 function setLang(l){S.lang=l;save();renderAll()}
+function activeTheme(){
+  return S.theme|| (matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light");
+}
+function updateThemeButton(){
+  const button=$("thBtn");if(!button)return;
+  const dark=activeTheme()==="dark";
+  button.textContent=dark?"☀":"☾";
+  button.setAttribute("aria-label",t(dark?"theme_light":"theme_dark"));
+  button.title=t(dark?"theme_light":"theme_dark");
+}
 function toggleTheme(){
-  const cur=document.documentElement.getAttribute("data-theme")||(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light");
-  const n=cur==="dark"?"light":"dark";S.theme=n;document.documentElement.setAttribute("data-theme",n);save();
+  const n=activeTheme()==="dark"?"light":"dark";
+  S.theme=n;document.documentElement.setAttribute("data-theme",n);save();updateThemeButton();
 }
 function go(v){view=v;ck=null;try{if(location.hash!=="#"+v)location.hash=v}catch(e){}renderAll();window.scrollTo(0,0)}
 function renderAll(){renderChrome();
@@ -517,7 +538,7 @@ function openProfile(id,idx){
       ${cur?cur.mediaType==="video"?`<video class="main profile-video" src="${esc(cur.u)}" controls playsinline></video>`:`<button class="main" style="background-image:url('${esc(cur.u)}')" aria-label="Zoom" onclick="zoom(${pidx})"></button>`:`<div class="main" style="${bg(g)};cursor:default"></div>`}
       <div class="thumbs">${ps.map((x,i)=>`<div class="th ${i===pidx?"on":""}" style="${x.mediaType==="video"?"background:var(--fg)":`background-image:url('${esc(x.u)}')`}"><button class="th-b" aria-label="${x.mediaType==="video"?"Video":"Photo"} ${i+1}" onclick="openProfile('${id}',${i})">${x.mediaType==="video"?"▶":""}</button>${x.own?`<button class="del" aria-label="Delete" onclick="delPic('${id}',${x.i})">×</button>`:""}</div>`).join("")}
         <button class="btn ghost sm" style="flex:none;height:62px" onclick="addPic('${id}')">+ ${t("addphoto")}</button></div>
-      ${cur?.sourceCredit?`<small class="muted">${esc(cur.sourceCredit)}${cur.sourceUrl?` · <a href="${esc(cur.sourceUrl)}" target="_blank" rel="noopener noreferrer">Pinterest</a>`:""}</small>`:""}
+      ${cur?.sourceCredit?`<small class="muted">${esc(cur.sourceCredit)}${cur.sourceUrl?` · <a href="${esc(cur.sourceUrl)}" target="_blank" rel="noopener noreferrer">Nguồn ảnh</a>`:""}</small>`:""}
     </div>
     <h2>${esc(g.name)}</h2>
     ${g.profileType==="ai"?`<p class="notice">${t("ai_booking_notice")}</p>`:""}
@@ -599,7 +620,7 @@ function ordStatus(o){return o.status==="done"?`<span class="st-b ok">${t("st_do
 function gcal(o,s){
   const g=getG(o.id),st=new Date(s.d+"T"+s.t+":00"),en=new Date(st.getTime()+o.hours*36e5);
   const f=x=>x.getFullYear()+p2(x.getMonth()+1)+p2(x.getDate())+"T"+p2(x.getHours())+p2(x.getMinutes())+"00";
-  return "https://calendar.google.com/calendar/render?action=TEMPLATE&text="+encodeURIComponent("Diamond: "+(g?g.name:""))+"&dates="+f(st)+"/"+f(en)+"&details="+encodeURIComponent(o.code+" · "+o.svcName)+"&location="+encodeURIComponent(o.place);
+  return "https://calendar.google.com/calendar/render?action=TEMPLATE&text="+encodeURIComponent("VELORA: "+(g?g.name:""))+"&dates="+f(st)+"/"+f(en)+"&details="+encodeURIComponent(o.code+" · "+o.svcName)+"&location="+encodeURIComponent(o.place);
 }
 function renderOrders(){
   const a=S.orders.slice().reverse();
@@ -774,7 +795,7 @@ function confirmPay(){
 }
 function invText(o){
   const g=getG(o.id),q=o.q,L2=[];
-  L2.push("DIAMOND - "+t("invoice").toUpperCase(),"----------------------------","#"+o.code+"  "+o.created,"",
+  L2.push("VELORA - "+t("invoice").toUpperCase(),"----------------------------","#"+o.code+"  "+o.created,"",
    g?g.name:"","svc: "+o.svcName+" · "+o.hours+" "+t("hrs"),
    ...o.sessions.map((s,i)=>t("ck_sn",{i:i+1})+": "+s.d.split("-").reverse().join("/")+" "+s.t),
    "@ "+o.place,"",o.cust.name+" · "+o.cust.phone+" · "+o.cust.email,"",
@@ -793,6 +814,7 @@ function openInvoice(c){
 
 /* ================= BOOT ================= */
 if(S.theme)document.documentElement.setAttribute("data-theme",S.theme);
+updateThemeButton();
 (function(){const h=(location.hash||"").slice(1);if(["list","social","rank","orders","vip"].includes(h))view=h})();
 window.addEventListener("hashchange",()=>{const h=location.hash.slice(1);if(["list","social","rank","orders","vip"].includes(h)&&h!==view){view=h;ck=null;renderAll()}});
 renderAll();
@@ -822,10 +844,11 @@ window.renderChrome=function(){
 };
 window.go=function(v){
   if(!["list","social","rank","orders","vip","account","chat","checkout"].includes(v))return;
+  if(v===view){if(v==="social"&&(!socialFeedCache||Date.now()-socialFeedCache.createdAt>=60000))renderAll();return}
   view=v;
   if(v!=="checkout")ck=null;
   try{if(location.hash!=="#"+v)location.hash=v}catch(e){}
-  renderAll();window.scrollTo(0,0);
+  renderAll();window.scrollTo({top:0,behavior:"smooth"});
 };
 window.renderAll=function(){
   if(view==="account"){renderChrome();renderAccount()}
@@ -1045,7 +1068,7 @@ window.confirmPay=function(){
 };
 window.invText=function(o){
   const g=getG(o.id);
-  return ["DIAMOND - "+t("invoice").toUpperCase(),"----------------------------","#"+o.code+"  "+o.created,"",g?g.name:"","svc: "+o.svcName+" · "+o.hours+" "+t("hrs"),...o.sessions.map((s,i)=>t("ck_sn",{i:i+1})+": "+s.d.split("-").reverse().join("/")+" "+s.t),"@ "+o.place,"",o.cust.name+" · "+o.cust.phone+" · "+o.cust.email,"",t("q_tot")+": "+fmt(o.total),t("booking_request"),t("pay_pending"),"",t("demo")].join("\n");
+  return ["VELORA - "+t("invoice").toUpperCase(),"----------------------------","#"+o.code+"  "+o.created,"",g?g.name:"","svc: "+o.svcName+" · "+o.hours+" "+t("hrs"),...o.sessions.map((s,i)=>t("ck_sn",{i:i+1})+": "+s.d.split("-").reverse().join("/")+" "+s.t),"@ "+o.place,"",o.cust.name+" · "+o.cust.phone+" · "+o.cust.email,"",t("q_tot")+": "+fmt(o.total),t("booking_request"),t("pay_pending"),"",t("demo")].join("\n");
 };
 if(["list","rank","orders","vip","account","chat"].includes((location.hash||"").slice(1)))view=location.hash.slice(1);
 renderAll();

@@ -194,56 +194,38 @@ five after setting the key, run the activation SQL from step 5 in the
 Supabase SQL Editor. New characters created from the admin account are
 connected automatically by the site.
 
-## Social feed and Pinterest images
+## Social feed and renter gallery
 
-The AI autopost function reads images from one Pinterest board through the
-official Pinterest API; it does not scrape Pinterest search or download pins
-from arbitrary users. Use only a board and images you own or have permission
-to reuse. A Pinterest pin or credit link does not itself grant image rights.
-Posts identify the image as illustrative and link back to its pin.
+Renters can upload photos and videos they own or are authorized to use.
+Submitted posts are held for administrator approval before appearing in the
+feed. The site does not scrape Google Images or automatically publish images
+from Pinterest or another external source. The expansion migration removes
+the unused AI image-post scheduler and its database functions.
 
-1. Register a Pinterest developer app and obtain an access token authorized
-   to read the board and its pins. The Pinterest account used for the token
-   must be able to access the board. Obtain the board ID from Pinterest's
-   official API; a human-readable board URL is not necessarily the board ID.
-2. In Supabase **Edge Function Secrets**, set `PINTEREST_ACCESS_TOKEN` and
-   `PINTEREST_BOARD_ID`. Also ensure the existing Cloudflare AI secrets and
-   Supabase-provided service-role secret are available to Edge Functions.
-   Never commit or share the access token.
-3. Apply `supabase/product-expansion.sql` in the SQL Editor. For an existing
-   deployment where this migration has already run, run it again after
-   updating it so the Pinterest-only publishing function is replaced.
-4. Deploy the changed functions from PowerShell in the repository folder.
-   The update includes the AI chat quota check and the privacy export/delete
-   endpoint:
+The social-media bucket is private. The website creates short-lived viewing
+URLs for published content and for the owning renter or administrators during
+review.
+
+The account privacy and AI-chat updates use these Edge Functions:
 
    ```powershell
    npx.cmd supabase functions deploy ai-chat-reply --project-ref tsojexeevcsizazservy
    npx.cmd supabase functions deploy account-privacy --project-ref tsojexeevcsizazservy
-   npx.cmd supabase functions deploy ai-social-autopost --project-ref tsojexeevcsizazservy
-   npx.cmd supabase functions deploy dispatch-email-notifications --project-ref tsojexeevcsizazservy
    ```
 
-5. To send email notifications, configure `RESEND_API_KEY` and
-   `RESEND_FROM_EMAIL` in Supabase Edge Function Secrets. The sender address
-   must be verified with Resend. Without these, in-app notifications still
-   work but email delivery does not.
-6. In Supabase **Database → Extensions**, enable `pg_cron`, `pg_net`, and
-   Vault. Generate two different random secrets and add them to Edge Function
-   Secrets as `AI_SOCIAL_SCHEDULER_SECRET` and
-   `NOTIFICATION_SCHEDULER_SECRET`. In
-   `supabase/product-expansion-schedule.sql`, replace each matching
-   `REPLACE_WITH_...` placeholder with its secret, then run that SQL in the
-   SQL Editor. Do not commit the edited SQL or send either secret in chat.
+To enable optional email delivery, configure `RESEND_API_KEY` and
+`RESEND_FROM_EMAIL` in Supabase Edge Function Secrets; the sender address must
+be verified with Resend. Deploy `dispatch-email-notifications`, then enable
+`pg_cron`, `pg_net`, and Vault if they are not already enabled. Set
+`NOTIFICATION_SCHEDULER_SECRET` in Edge Function Secrets and Vault, replace
+the matching placeholder in `supabase/product-expansion-schedule.sql`, and
+run that SQL in the SQL Editor. Do not commit the edited SQL or share the
+secret. In-app notifications work without email.
 
-The scheduler checks daily, while each AI profile is due only once every three
-days. The Pinterest board must have readable, unused image pins; only pins in
-the first 100 board results are checked on each run. Human renter posts remain
-pending until an administrator approves them.
-Uploaded social media is stored in a private bucket; the website only creates
-short-lived viewing URLs for published content (or for the owning renter and
-administrators during review). Re-run `product-expansion.sql` to apply this
-private-bucket policy to an existing installation.
+Because `product-expansion.sql` has already been applied, run its updated
+version once more to remove the obsolete AI image-post scheduler from the
+database. This does not delete existing renter posts, gallery items, or
+uploaded media.
 
 ## GitHub Pages preview
 
