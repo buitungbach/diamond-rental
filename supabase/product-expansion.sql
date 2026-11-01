@@ -245,7 +245,7 @@ create table if not exists public.renter_gallery (
 alter table public.renter_gallery enable row level security;
 revoke all on public.renter_gallery from public, anon, authenticated;
 grant select on public.renter_gallery to anon, authenticated;
-grant insert (renter_profile_id, media_url, media_type, caption) on public.renter_gallery to authenticated;
+grant insert (renter_profile_id, media_url, media_type, caption, status, is_ai_generated) on public.renter_gallery to authenticated;
 grant delete on public.renter_gallery to authenticated;
 drop policy if exists "Public read published renter gallery" on public.renter_gallery;
 create policy "Public read published renter gallery"
@@ -261,15 +261,17 @@ create policy "Public read published renter gallery"
     )
   );
 drop policy if exists "Renters submit own gallery media" on public.renter_gallery;
-create policy "Renters submit own gallery media"
+drop policy if exists "Renters publish own profile gallery" on public.renter_gallery;
+create policy "Renters publish own profile gallery"
   on public.renter_gallery for insert to authenticated
   with check (
-    status = 'pending' and not is_ai_generated and
+    status = 'published' and not is_ai_generated and
     exists (
       select 1 from public.renter_profiles renter
       join public.profiles profile on profile.id = (select auth.uid())
       where renter.id = renter_gallery.renter_profile_id
         and renter.owner_id = (select auth.uid())
+        and renter.persona_mode = 'human'
         and profile.role = 'renter'
     )
   );

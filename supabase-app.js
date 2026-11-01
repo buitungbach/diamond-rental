@@ -133,7 +133,7 @@ Object.assign(T, {
   acct_delete_confirm: ["Xóa vĩnh viễn tài khoản và dữ liệu liên quan? Thao tác này không thể hoàn tác.", "Permanently delete your account and related data? This cannot be undone.", "アカウントと関連データを完全に削除しますか？この操作は取り消せません。"],
   acct_privacy_failed: ["Không thể hoàn tất yêu cầu quyền riêng tư.", "Could not complete the privacy request.", "プライバシー要求を完了できませんでした。"],
   acct_deleted: ["Tài khoản và dữ liệu đã được xóa.", "Account and data deleted.", "アカウントとデータを削除しました。"],
-  gallery_pending_notice: ["Ảnh trong thư viện hồ sơ sẽ hiển thị sau khi quản trị viên duyệt.", "Profile gallery photos appear after admin approval.", "プロフィール写真は管理者の承認後に表示されます。"],
+  gallery_pending_notice: ["Ảnh bạn thêm sẽ hiển thị ngay trong hồ sơ của mình.", "Photos you add appear on your profile immediately.", "追加した写真はプロフィールにすぐ表示されます。"],
   gallery_remove: ["Xóa ảnh", "Remove photo", "写真を削除"],
   gallery_admin_help: ["Ảnh bạn thêm cho nhân vật AI sẽ hiển thị ngay trong hồ sơ.", "Photos you add to AI characters appear on their profile immediately.", "AIキャラクターに追加した写真はプロフィールにすぐ表示されます。"],
   gallery_pending: ["Chờ duyệt", "Pending", "承認待ち"],
@@ -142,6 +142,7 @@ Object.assign(T, {
   gallery_empty: ["Chưa có ảnh trong thư viện.", "No gallery photos yet.", "ギャラリー写真はまだありません。"],
   gallery_caption_prompt: ["Chú thích ảnh (không bắt buộc):", "Photo caption (optional):", "写真の説明（任意）："],
   gallery_saved: ["Đã thêm ảnh vào thư viện.", "Photo added to the gallery.", "写真をギャラリーに追加しました。"],
+  gallery_human_help: ["Bạn có thể tự thêm hoặc xóa ảnh trong hồ sơ của mình. Ảnh sẽ hiển thị ngay.", "You can add or remove photos on your own profile. Photos appear immediately.", "自分のプロフィール写真を追加・削除できます。写真はすぐに表示されます。"],
   booking_reschedule: ["Đổi lịch", "Reschedule", "予約を変更"],
   booking_cancel: ["Hủy lịch", "Cancel booking", "予約をキャンセル"],
   booking_cancel_confirm: ["Bạn có chắc chắn muốn hủy lịch này? Hoàn tiền cho đơn đã thanh toán do quản trị viên xử lý riêng.", "Cancel this booking? Refunds for paid bookings are handled separately by the administrator.", "この予約をキャンセルしますか？支払い済み予約の返金は管理者が別途処理します。"],
@@ -615,7 +616,7 @@ function renderAccount() {
     ${account.role === "renter" ? `<div class="panel"><h3>${t("acct_girl")}</h3>
       <button class="btn sm" onclick="openAdd()">${t(S.custom.some((profile) => profile.ownerId === account.id) ? "acct_edit_profile" : "acct_add_profile")}</button>
       ${S.custom.some((profile) => profile.ownerId === account.id) ? `<button class="btn ghost sm" onclick="openAvailabilityEditor()">${t("renter_availability")}</button>
-      <h4>${t("gallery")}</h4><p class="muted">${t("gallery_pending_notice")}</p>
+      <h4>${t("gallery")}</h4><p class="muted">${t("gallery_human_help")}</p>
       <button class="btn ghost sm" onclick="chooseGalleryUpload()">${t("addphoto")}</button><div id="renterGallery"><p class="muted">${t("processing")}</p></div>` : ""}</div>` : ""}
     ${account.role === "admin" ? `<div class="panel"><h3>Quản lý nhân vật AI</h3>
       <p class="muted">Tạo hồ sơ nhân vật hư cấu để dùng trong website.</p>
@@ -756,19 +757,20 @@ window.chooseAiGalleryUpload = function(profileId) {
 window.deleteAiGalleryItem = async function(profileId, itemId, mediaUrl) {
   const profile = S.custom.find((item) => item.id === profileId && item.profileType === "ai");
   if (!sb || activeAccount()?.role !== "admin" || !profile) return toast(t("acct_access_denied"));
-  const storagePath = galleryStoragePath(mediaUrl);
-  if (storagePath) {
-    const { error: removeError } = await sb.storage.from("renter-social-media").remove([storagePath]);
-    if (removeError) {
-      console.error("Could not remove AI gallery media", removeError.message);
-      return toast(removeError.message);
-    }
-  }
   const { error } = await sb.from("renter_gallery").delete()
     .eq("id", itemId).eq("renter_profile_id", profile.id);
   if (error) {
     console.error("Could not delete AI gallery entry", error.message);
     return toast(error.message);
+  }
+  const storagePath = galleryStoragePath(mediaUrl);
+  if (storagePath) {
+    const { error: removeError } = await sb.storage.from("renter-social-media").remove([storagePath]);
+    if (removeError) {
+      console.error("Could not remove AI gallery media", removeError.message);
+      await loadAdminAiGallery(profile.id);
+      return toast(`Ảnh đã gỡ khỏi hồ sơ nhưng tệp lưu trữ chưa xóa được: ${removeError.message}`);
+    }
   }
   await loadAdminAiGallery(profile.id);
 };
@@ -788,7 +790,7 @@ function galleryStoragePath(mediaUrl) {
 window.chooseGalleryUpload = function() {
   const account = activeAccount();
   const profile = S.custom.find((item) => item.ownerId === account?.id && item.profileType === "real");
-  if (!sb || !profile) return toast(t("acct_access_denied"));
+  if (!sb || account?.role !== "renter" || !profile) return toast(t("acct_access_denied"));
   const picker = document.createElement("input");
   picker.type = "file";
   picker.accept = "image/jpeg,image/png,image/webp,video/mp4,video/webm";
@@ -811,6 +813,8 @@ window.chooseGalleryUpload = function() {
         media_url: urlData.publicUrl,
         media_type: file.type.startsWith("video/") ? "video" : "image",
         caption,
+        status: "published",
+        is_ai_generated: false,
       });
       if (error) {
         const { error: cleanupError } = await sb.storage.from("renter-social-media").remove([path]);
@@ -818,7 +822,10 @@ window.chooseGalleryUpload = function() {
         throw error;
       }
       await loadRenterGallery();
-      toast(t("gallery_pending_notice"));
+      if (curP === profile.id && !$("ov").hidden) {
+        await loadProfileGallery(profile.id, profile.backendId || profile.id, 0);
+      }
+      toast(t("gallery_saved"));
     } catch (error) {
       console.error("Could not save gallery media", error.message);
       toast(error.message || t("social_upload_failed"));
@@ -831,20 +838,39 @@ window.deleteGalleryItem = async function(id, mediaUrl) {
   const account = activeAccount();
   const profile = S.custom.find((item) => item.ownerId === account?.id && item.profileType === "real");
   if (!sb || !profile) return toast(t("acct_access_denied"));
-  const storagePath = galleryStoragePath(mediaUrl);
-  if (storagePath) {
-    const { error: removeError } = await sb.storage.from("renter-social-media").remove([storagePath]);
-    if (removeError) {
-      console.error("Could not remove gallery media", removeError.message);
-      return toast(removeError.message);
-    }
-  }
   const { error } = await sb.from("renter_gallery").delete().eq("id", id).eq("renter_profile_id", profile.id);
   if (error) {
     console.error("Could not delete gallery item", error.message);
     return toast(error.message);
   }
+  const storagePath = galleryStoragePath(mediaUrl);
+  if (storagePath) {
+    const { error: removeError } = await sb.storage.from("renter-social-media").remove([storagePath]);
+    if (removeError) {
+      console.error("Could not remove gallery media", removeError.message);
+      await loadRenterGallery();
+      return toast(`Ảnh đã gỡ khỏi hồ sơ nhưng tệp lưu trữ chưa xóa được: ${removeError.message}`);
+    }
+  }
   await loadRenterGallery();
+};
+
+window.addPic = function(profileId) {
+  const account = activeAccount();
+  const profile = S.custom.find((item) => item.id === profileId && item.ownerId === account?.id && item.profileType === "real");
+  if (!profile || account?.role !== "renter") return toast(t("acct_access_denied"));
+  chooseGalleryUpload();
+};
+
+window.delPic = async function(profileId, galleryIndex) {
+  const account = activeAccount();
+  const profile = S.custom.find((item) => item.id === profileId && item.ownerId === account?.id && item.profileType === "real");
+  const item = S.gallery[profileId]?.[galleryIndex];
+  if (!sb || !profile || account?.role !== "renter" || !item?.id) return toast(t("acct_access_denied"));
+  await deleteGalleryItem(item.id, item.media_url);
+  if (curP === profileId && !$("ov").hidden) {
+    await loadProfileGallery(profileId, profile.backendId || profile.id, 0);
+  }
 };
 
 const signedMediaUrls = new Map();
@@ -905,8 +931,9 @@ function appendProfileNotice(id) {
   const account = activeAccount();
   if (!profile || $("ov").hidden) return;
   const real = profile.profileType === "real";
+  const canEditGallery = real && account?.role === "renter" && account.id === profile.ownerId;
   const verification = profile.isVerified ? `<span class="st-b ok">${t("verified_badge")}</span>` : "";
-  $("box").insertAdjacentHTML("beforeend", `${verification}${real ? `<p class="notice">${t("acct_renter_note")}</p>` : ""}${real && account?.id === profile.ownerId ? `<button class="btn ghost sm" onclick="openAdd()">${t("acct_edit_profile")}</button>` : ""}`);
+  $("box").insertAdjacentHTML("beforeend", `${verification}${real ? `<p class="notice">${t("acct_renter_note")}</p>` : ""}${canEditGallery ? `<div class="row"><button class="btn ghost sm" onclick="chooseGalleryUpload()">${t("addphoto")}</button><button class="btn ghost sm" onclick="openAdd()">${t("acct_edit_profile")}</button></div>` : ""}`);
   guardProfileEditControls();
 }
 
@@ -1615,8 +1642,6 @@ window.openProfile = function(id, index) {
 };
 
 window.chImg = function() { toast("Ảnh hồ sơ được quản lý trong mục Tài khoản."); };
-window.addPic = function() { toast(t("acct_access_denied")); };
-window.delPic = function() { toast(t("acct_access_denied")); };
 window.delChar = function() { toast("Hãy quản lý hồ sơ trong mục Tài khoản."); };
 
 window.startCk = function(id) {

@@ -984,10 +984,8 @@ function guardProfileEditControls(){
   if(!$("ov").hidden){
     const del=$("delc");if(del&&!canEdit)del.remove();
     if(!canEdit)$("box").querySelectorAll(".thumbs .del").forEach(b=>b.remove());
-    if(!canEdit){
-      const add=[...$("box").querySelectorAll(".thumbs button")].find(b=>b.textContent.includes(t("addphoto")));
-      if(add)add.remove();
-    }
+    const add=[...$("box").querySelectorAll(".thumbs button")].find(b=>b.textContent.includes(t("addphoto")));
+    if(add)add.remove();
   }
 }
 window.openProfile=function(id,idx){
