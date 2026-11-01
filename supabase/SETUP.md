@@ -20,6 +20,11 @@ hosting location.
    notifications, per-user AI chat rate limits (10 requests/minute and 60/hour),
    and the admin dashboard, run
    `supabase/product-expansion.sql` after those migrations.
+   To let administrators add and remove published photos in AI character
+   profiles, run `supabase/ai-character-gallery.sql` after
+   `supabase/product-expansion.sql`. Human renters continue to upload photos
+   for their own profiles; those photos remain hidden until an administrator
+   approves them.
 
    For an existing project, run migrations in this order: `schema.sql` (only
    if the base schema has not been installed), `pricing-vnd.sql`,
@@ -27,7 +32,8 @@ hosting location.
    `chat-backgrounds.sql`, then `product-expansion.sql`. The feature migration
    assumes the admin chat tables already exist. Do not advertise these
    features as enabled until the SQL Editor reports that each migration
-   succeeded.
+   succeeded. Run `ai-character-gallery.sql` after `product-expansion.sql`
+   to enable administrator-managed AI character photo galleries.
 2. Put the project URL and **anon/public** key in `supabase-config.js`.
    Never put the service-role key in that file or in the HTML.
 3. In **Authentication → URL Configuration**, set **Site URL** to

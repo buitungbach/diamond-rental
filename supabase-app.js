@@ -133,8 +133,15 @@ Object.assign(T, {
   acct_delete_confirm: ["Xóa vĩnh viễn tài khoản và dữ liệu liên quan? Thao tác này không thể hoàn tác.", "Permanently delete your account and related data? This cannot be undone.", "アカウントと関連データを完全に削除しますか？この操作は取り消せません。"],
   acct_privacy_failed: ["Không thể hoàn tất yêu cầu quyền riêng tư.", "Could not complete the privacy request.", "プライバシー要求を完了できませんでした。"],
   acct_deleted: ["Tài khoản và dữ liệu đã được xóa.", "Account and data deleted.", "アカウントとデータを削除しました。"],
-  gallery_pending_notice: ["Ảnh sẽ hiển thị sau khi quản trị viên duyệt.", "Photos appear after admin approval.", "管理者の承認後に写真が表示されます。"],
-  gallery_remove: ["Xóa", "Remove", "削除"],
+  gallery_pending_notice: ["Ảnh trong thư viện hồ sơ sẽ hiển thị sau khi quản trị viên duyệt.", "Profile gallery photos appear after admin approval.", "プロフィール写真は管理者の承認後に表示されます。"],
+  gallery_remove: ["Xóa ảnh", "Remove photo", "写真を削除"],
+  gallery_admin_help: ["Ảnh bạn thêm cho nhân vật AI sẽ hiển thị ngay trong hồ sơ.", "Photos you add to AI characters appear on their profile immediately.", "AIキャラクターに追加した写真はプロフィールにすぐ表示されます。"],
+  gallery_pending: ["Chờ duyệt", "Pending", "承認待ち"],
+  gallery_published: ["Đang hiển thị", "Published", "公開中"],
+  gallery_rejected: ["Đã từ chối", "Rejected", "却下済み"],
+  gallery_empty: ["Chưa có ảnh trong thư viện.", "No gallery photos yet.", "ギャラリー写真はまだありません。"],
+  gallery_caption_prompt: ["Chú thích ảnh (không bắt buộc):", "Photo caption (optional):", "写真の説明（任意）："],
+  gallery_saved: ["Đã thêm ảnh vào thư viện.", "Photo added to the gallery.", "写真をギャラリーに追加しました。"],
   booking_reschedule: ["Đổi lịch", "Reschedule", "予約を変更"],
   booking_cancel: ["Hủy lịch", "Cancel booking", "予約をキャンセル"],
   booking_cancel_confirm: ["Bạn có chắc chắn muốn hủy lịch này? Hoàn tiền cho đơn đã thanh toán do quản trị viên xử lý riêng.", "Cancel this booking? Refunds for paid bookings are handled separately by the administrator.", "この予約をキャンセルしますか？支払い済み予約の返金は管理者が別途処理します。"],
@@ -608,11 +615,19 @@ function renderAccount() {
     ${account.role === "renter" ? `<div class="panel"><h3>${t("acct_girl")}</h3>
       <button class="btn sm" onclick="openAdd()">${t(S.custom.some((profile) => profile.ownerId === account.id) ? "acct_edit_profile" : "acct_add_profile")}</button>
       ${S.custom.some((profile) => profile.ownerId === account.id) ? `<button class="btn ghost sm" onclick="openAvailabilityEditor()">${t("renter_availability")}</button>
-      <button class="btn ghost sm" onclick="chooseGalleryUpload()">${t("addphoto")}</button><p class="muted">${t("gallery_pending_notice")}</p><div id="renterGallery"></div>` : ""}</div>` : ""}
+      <h4>${t("gallery")}</h4><p class="muted">${t("gallery_pending_notice")}</p>
+      <button class="btn ghost sm" onclick="chooseGalleryUpload()">${t("addphoto")}</button><div id="renterGallery"><p class="muted">${t("processing")}</p></div>` : ""}</div>` : ""}
     ${account.role === "admin" ? `<div class="panel"><h3>Quản lý nhân vật AI</h3>
       <p class="muted">Tạo hồ sơ nhân vật hư cấu để dùng trong website.</p>
       <button class="btn sm" onclick="openAdd()">+ Thêm nhân vật AI</button>
-      <button class="btn ghost sm" onclick="go('orders')">${t("manual_payment_title")}</button></div>` : ""}
+      <button class="btn ghost sm" onclick="go('orders')">${t("manual_payment_title")}</button>
+      <h4>${t("gallery")}</h4><p class="muted">${t("gallery_admin_help")}</p>
+      <div id="adminAiGalleries">${S.custom.filter((profile) => profile.profileType === "ai").map((profile) => `
+        <section class="panel" style="margin:10px 0">
+          <div class="row" style="justify-content:space-between"><b>${esc(profile.name)}</b>
+            <button class="btn ghost sm" onclick="chooseAiGalleryUpload('${esc(profile.id)}')">${t("addphoto")}</button>
+          </div><div id="aiGallery-${esc(profile.id)}"><p class="muted">${t("processing")}</p></div>
+        </section>`).join("") || `<p class="muted">${t("gallery_empty")}</p>`}</div></div>` : ""}
     ${account.role === "admin" ? `<div class="panel"><h3>${t("admin_chat_title")}</h3>
       <p class="muted">${t("admin_chat_intro")}</p>
       ${S.custom.filter((profile) => profile.active !== false).map((profile) => `<div class="row" style="justify-content:space-between;margin:8px 0">
@@ -633,6 +648,7 @@ function renderAccount() {
   if (account.role === "renter") loadRenterAdminChats();
   if (account.role === "renter" && S.custom.some((profile) => profile.ownerId === account.id)) loadRenterGallery();
   if (account.role === "admin") {
+    S.custom.filter((profile) => profile.profileType === "ai").forEach((profile) => loadAdminAiGallery(profile.id));
     loadChatReports();
     loadAdminExpansionData();
   }
@@ -652,11 +668,122 @@ window.loadRenterGallery = async function() {
     panel.innerHTML = `<p class="err">${esc(error.message)}</p>`;
     return;
   }
-  panel.innerHTML = (data || []).map((item) => `<div class="row" style="justify-content:space-between;margin:8px 0">
-    <span>${esc(item.caption || item.media_type)} · ${esc(item.status)}</span>
-    <button class="btn ghost sm" onclick="deleteGalleryItem('${esc(item.id)}','${esc(item.media_url)}')">${t("gallery_remove")}</button>
-  </div>`).join("") || `<p class="muted">${t("social_empty")}</p>`;
+  let urls = [];
+  try {
+    urls = await resolveSocialMediaUrls((data || []).map((item) => item.media_url));
+  } catch (mediaError) {
+    console.error("Could not sign renter gallery media", mediaError.message);
+  }
+  panel.innerHTML = (data || []).map((item, index) => `<div class="row" style="justify-content:space-between;margin:8px 0;padding:8px;border:1px solid var(--line);border-radius:12px">
+    <div class="row">${item.media_type === "image" && urls[index] ? `<img src="${esc(urls[index])}" alt="" loading="lazy" style="width:72px;height:72px;object-fit:cover;border-radius:8px">` : ""}
+      <span>${esc(item.caption || item.media_type)} · ${t(item.status === "published" ? "gallery_published" : item.status === "rejected" ? "gallery_rejected" : "gallery_pending")}</span>
+    </div><button class="btn ghost sm" onclick="deleteGalleryItem('${esc(item.id)}','${esc(item.media_url)}')">${t("gallery_remove")}</button>
+  </div>`).join("") || `<p class="muted">${t("gallery_empty")}</p>`;
 };
+
+window.loadAdminAiGallery = async function(profileId) {
+  const account = activeAccount();
+  const profile = S.custom.find((item) => item.id === profileId && item.profileType === "ai");
+  const panel = $(`aiGallery-${profileId}`);
+  if (!sb || account?.role !== "admin" || !profile || !panel) return;
+  const { data, error } = await sb.from("renter_gallery")
+    .select("id,media_url,media_type,caption,status")
+    .eq("renter_profile_id", profile.id).order("created_at", { ascending: false });
+  if (error) {
+    console.error("Could not load AI character gallery", error.message);
+    panel.innerHTML = `<p class="err">${esc(error.message)}</p>`;
+    return;
+  }
+  let urls = [];
+  try {
+    urls = await resolveSocialMediaUrls((data || []).map((item) => item.media_url));
+  } catch (mediaError) {
+    console.error("Could not sign AI character gallery media", mediaError.message);
+  }
+  if (activeAccount()?.role !== "admin" || !panel.isConnected) return;
+  panel.innerHTML = (data || []).map((item, index) => `<div class="row" style="justify-content:space-between;margin:8px 0;padding:8px;border:1px solid var(--line);border-radius:12px">
+    <div class="row">${item.media_type === "image" && urls[index] ? `<img src="${esc(urls[index])}" alt="" loading="lazy" style="width:72px;height:72px;object-fit:cover;border-radius:8px">` : ""}
+      <span>${esc(item.caption || item.media_type)}</span>
+    </div><button class="btn ghost sm" onclick="deleteAiGalleryItem('${esc(profile.id)}','${esc(item.id)}','${esc(item.media_url)}')">${t("gallery_remove")}</button>
+  </div>`).join("") || `<p class="muted">${t("gallery_empty")}</p>`;
+};
+
+window.chooseAiGalleryUpload = function(profileId) {
+  const account = activeAccount();
+  const profile = S.custom.find((item) => item.id === profileId && item.profileType === "ai");
+  if (!sb || account?.role !== "admin" || !profile) return toast(t("acct_access_denied"));
+  const picker = document.createElement("input");
+  picker.type = "file";
+  picker.accept = "image/jpeg,image/png,image/webp";
+  picker.onchange = async () => {
+    const file = picker.files?.[0];
+    if (!file) return;
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type) || file.size > 50 * 1024 * 1024) {
+      return toast(t("social_upload_failed"));
+    }
+    const caption = prompt(t("gallery_caption_prompt")) || "";
+    const ext = file.name.split(".").pop()?.toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg";
+    const path = `${profile.id}/gallery/${crypto.randomUUID()}.${ext}`;
+    try {
+      const { error: uploadError } = await sb.storage.from("renter-social-media").upload(path, file, {
+        contentType: file.type, cacheControl: "3600", upsert: false,
+      });
+      if (uploadError) throw uploadError;
+      const { data: urlData } = sb.storage.from("renter-social-media").getPublicUrl(path);
+      const { error } = await sb.from("renter_gallery").insert({
+        renter_profile_id: profile.id,
+        media_url: urlData.publicUrl,
+        media_type: "image",
+        caption,
+        status: "published",
+        is_ai_generated: false,
+      });
+      if (error) {
+        const { error: cleanupError } = await sb.storage.from("renter-social-media").remove([path]);
+        if (cleanupError) console.error("Could not remove media after AI gallery insert failed", cleanupError.message);
+        throw error;
+      }
+      await loadAdminAiGallery(profile.id);
+      toast(t("gallery_saved"));
+    } catch (error) {
+      console.error("Could not save AI character gallery media", error.message);
+      toast(error.message || t("social_upload_failed"));
+    }
+  };
+  picker.click();
+};
+
+window.deleteAiGalleryItem = async function(profileId, itemId, mediaUrl) {
+  const profile = S.custom.find((item) => item.id === profileId && item.profileType === "ai");
+  if (!sb || activeAccount()?.role !== "admin" || !profile) return toast(t("acct_access_denied"));
+  const storagePath = galleryStoragePath(mediaUrl);
+  if (storagePath) {
+    const { error: removeError } = await sb.storage.from("renter-social-media").remove([storagePath]);
+    if (removeError) {
+      console.error("Could not remove AI gallery media", removeError.message);
+      return toast(removeError.message);
+    }
+  }
+  const { error } = await sb.from("renter_gallery").delete()
+    .eq("id", itemId).eq("renter_profile_id", profile.id);
+  if (error) {
+    console.error("Could not delete AI gallery entry", error.message);
+    return toast(error.message);
+  }
+  await loadAdminAiGallery(profile.id);
+};
+
+function galleryStoragePath(mediaUrl) {
+  try {
+    const url = new URL(mediaUrl);
+    const marker = "/storage/v1/object/public/renter-social-media/";
+    const index = url.pathname.indexOf(marker);
+    return index < 0 ? "" : decodeURIComponent(url.pathname.slice(index + marker.length));
+  } catch (error) {
+    console.error("Could not parse gallery media URL", error.message);
+    return "";
+  }
+}
 
 window.chooseGalleryUpload = function() {
   const account = activeAccount();
@@ -704,41 +831,52 @@ window.deleteGalleryItem = async function(id, mediaUrl) {
   const account = activeAccount();
   const profile = S.custom.find((item) => item.ownerId === account?.id && item.profileType === "real");
   if (!sb || !profile) return toast(t("acct_access_denied"));
+  const storagePath = galleryStoragePath(mediaUrl);
+  if (storagePath) {
+    const { error: removeError } = await sb.storage.from("renter-social-media").remove([storagePath]);
+    if (removeError) {
+      console.error("Could not remove gallery media", removeError.message);
+      return toast(removeError.message);
+    }
+  }
   const { error } = await sb.from("renter_gallery").delete().eq("id", id).eq("renter_profile_id", profile.id);
   if (error) {
     console.error("Could not delete gallery item", error.message);
     return toast(error.message);
   }
-  let cleanupError = null;
-  try {
-    const url = new URL(mediaUrl);
-    const marker = "/storage/v1/object/public/renter-social-media/";
-    const index = url.pathname.indexOf(marker);
-    if (index >= 0) {
-      const path = decodeURIComponent(url.pathname.slice(index + marker.length));
-      const { error: removeError } = await sb.storage.from("renter-social-media").remove([path]);
-      if (removeError) cleanupError = removeError;
-    }
-  } catch (error) {
-    cleanupError = error;
-  }
   await loadRenterGallery();
-  if (cleanupError) {
-    console.error("Could not remove deleted gallery media", cleanupError.message);
-    return toast(`Ảnh đã gỡ khỏi hồ sơ nhưng tệp lưu trữ chưa xóa được: ${cleanupError.message}`);
-  }
 };
 
-async function resolveSocialMediaUrl(mediaUrl) {
+const signedMediaUrls = new Map();
+async function resolveSocialMediaUrls(mediaUrls) {
   const marker = "/storage/v1/object/public/renter-social-media/";
-  const parsed = new URL(mediaUrl);
-  const markerIndex = parsed.pathname.indexOf(marker);
-  if (markerIndex < 0) return mediaUrl;
-  const encodedPath = parsed.pathname.slice(markerIndex + marker.length);
-  const path = decodeURIComponent(encodedPath);
-  const { data, error } = await sb.storage.from("renter-social-media").createSignedUrl(path, 3600);
-  if (error || !data?.signedUrl) throw error || new Error("Could not sign private social media");
-  return data.signedUrl;
+  const paths = new Map();
+  const resolved = mediaUrls.map((mediaUrl) => {
+    const parsed = new URL(mediaUrl);
+    const markerIndex = parsed.pathname.indexOf(marker);
+    if (markerIndex < 0) return { url: mediaUrl };
+    const path = decodeURIComponent(parsed.pathname.slice(markerIndex + marker.length));
+    const cached = signedMediaUrls.get(path);
+    if (cached && cached.expiresAt > Date.now()) return { url: cached.url };
+    if (cached) signedMediaUrls.delete(path);
+    paths.set(path, null);
+    return { path };
+  });
+  const pending = [...paths.keys()];
+  if (!pending.length) return resolved.map(({ url }) => url);
+  const { data, error } = await sb.storage.from("renter-social-media").createSignedUrls(pending, 3600);
+  if (error) throw error;
+  for (const item of data || []) {
+    if (!item.path || !item.signedUrl || item.error) continue;
+    signedMediaUrls.set(item.path, { url: item.signedUrl, expiresAt: Date.now() + 50 * 60 * 1000 });
+    paths.set(item.path, item.signedUrl);
+  }
+  return resolved.map(({ path, url }) => {
+    if (!path) return url;
+    const signedUrl = paths.get(path);
+    if (!signedUrl) console.error("Could not sign social media", path);
+    return signedUrl || "";
+  });
 }
 
 async function loadProfileGallery(displayProfileId, databaseProfileId, index) {
@@ -751,14 +889,13 @@ async function loadProfileGallery(displayProfileId, databaseProfileId, index) {
     return;
   }
   if (curP !== displayProfileId || $("ov").hidden) return;
-  S.gallery[displayProfileId] = await Promise.all((data || []).map(async (item) => {
-    try {
-      return { ...item, media_url: await resolveSocialMediaUrl(item.media_url) };
-    } catch (mediaError) {
-      console.error("Could not sign profile gallery media", mediaError.message);
-      return { ...item, media_url: "" };
-    }
-  }));
+  try {
+    const urls = await resolveSocialMediaUrls((data || []).map((item) => item.media_url));
+    S.gallery[displayProfileId] = (data || []).map((item, index) => ({ ...item, media_url: urls[index] || "" }));
+  } catch (mediaError) {
+    console.error("Could not sign profile gallery media", mediaError.message);
+    S.gallery[displayProfileId] = (data || []).map((item) => ({ ...item, media_url: "" }));
+  }
   localOpenProfile(displayProfileId, Math.max(0, Math.min(index || 0, pics(getG(displayProfileId)).length - 1)));
   appendProfileNotice(displayProfileId);
 }
@@ -769,7 +906,7 @@ function appendProfileNotice(id) {
   if (!profile || $("ov").hidden) return;
   const real = profile.profileType === "real";
   const verification = profile.isVerified ? `<span class="st-b ok">${t("verified_badge")}</span>` : "";
-  $("box").insertAdjacentHTML("beforeend", `${verification}${real ? `<p class="notice">${t("acct_renter_note")}</p>` : `<span class="pill">${t("ai_badge")}</span>`}${real && account?.id === profile.ownerId ? `<button class="btn ghost sm" onclick="openAdd()">${t("acct_edit_profile")}</button>` : ""}`);
+  $("box").insertAdjacentHTML("beforeend", `${verification}${real ? `<p class="notice">${t("acct_renter_note")}</p>` : ""}${real && account?.id === profile.ownerId ? `<button class="btn ghost sm" onclick="openAdd()">${t("acct_edit_profile")}</button>` : ""}`);
   guardProfileEditControls();
 }
 
@@ -1231,13 +1368,15 @@ window.renderSocialFeed = async function() {
     app.innerHTML = `<h2>${t("social_title")}</h2>${composer}<p class="err">${esc(error.message || t("social_empty"))}</p>`;
     return;
   }
-  const resolvedPosts = await Promise.all((posts ?? []).map(async (post) => {
-    try {
-      return { ...post, display_media_url: await resolveSocialMediaUrl(post.media_url) };
-    } catch (mediaError) {
-      console.error("Could not sign social post media", mediaError.message);
-      return { ...post, display_media_url: "" };
-    }
+  let mediaUrls = [];
+  try {
+    mediaUrls = await resolveSocialMediaUrls((posts ?? []).map((post) => post.media_url));
+  } catch (mediaError) {
+    console.error("Could not sign social post media", mediaError.message);
+  }
+  const resolvedPosts = (posts ?? []).map((post, index) => ({
+    ...post,
+    display_media_url: mediaUrls[index] || "",
   }));
   if (requestId !== socialRequest || view !== "social") return;
   const ids = resolvedPosts.map((post) => post.id);
