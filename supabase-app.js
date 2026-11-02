@@ -27,11 +27,18 @@ Object.assign(T, {
   pay_transfer_note: ["Nội dung chuyển khoản", "Transfer description", "振込内容"],
   pay_transfer_hint: ["Chuyển khoản đúng số tiền và giữ nguyên nội dung. Quản trị viên sẽ đối chiếu sao kê Agribank trước khi xác nhận; không gửi ảnh biên lai thay cho tiền đã vào tài khoản.", "Transfer the exact amount and keep the payment description unchanged. An administrator will verify the Agribank statement before confirming; a receipt image does not replace funds received.", "正確な金額を振り込み、振込内容を変更しないでください。管理者が入金明細を確認してから確定します。振込画面の画像だけでは確認できません。"],
   pay_window: ["Đơn chỉ giữ khung giờ trong 15 phút. Nếu quá thời hạn, vui lòng tạo đơn mới và không chuyển tiền theo mã QR cũ.", "The booking holds its time slot for 15 minutes. If it expires, create a new booking and do not pay using the old QR.", "予約枠の確保は15分間です。期限切れの場合は新しい予約を作成し、古いQRで振り込まないでください。"],
+  pay_cash_wait: ["Bạn thanh toán tiền mặt trực tiếp khi gặp. Chat chỉ mở sau khi quản trị viên xác nhận đã nhận tiền.", "Pay cash in person at the meeting. Chat opens only after an administrator confirms receipt.", "当日、対面で現金をお支払いください。管理者が受領を確認した後にチャットが開きます。"],
+  pay_cash_admin: ["Xác nhận đã nhận tiền mặt", "Confirm cash received", "現金受領を確認"],
+  pay_cash_admin_notice: ["Chỉ xác nhận sau khi đã trực tiếp nhận đủ tiền mặt từ khách.", "Confirm only after you have received the full cash payment from the customer in person.", "お客様から現金を全額直接受け取った後にのみ確認してください。"],
+  pay_cash_method: ["Tiền mặt khi gặp", "Cash at the meeting", "対面時に現金"],
+  pay_cash_create: ["Tạo đơn · thanh toán khi gặp", "Create booking · pay at the meeting", "予約を作成・当日支払い"],
+  pay_cash_confirm: ["Xác nhận đã nhận tiền mặt cho đơn {code} · {amount} ₫?", "Confirm cash received for booking {code} · {amount} ₫?", "予約{code}の現金 {amount} ₫ の受領を確認しますか？"],
+  pay_method_required: ["Vui lòng chọn phương thức thanh toán.", "Choose a payment method.", "支払い方法を選択してください。"],
   pay_wait: ["Đang chờ quản trị viên đối chiếu tiền vào tài khoản. Chat chỉ mở sau khi xác nhận.", "Waiting for an administrator to verify the funds in the bank account. Chat unlocks only after confirmation.", "口座への入金確認を管理者が行っています。確認後にチャットを利用できます。"],
   pay_create_info: ["Nhấn nút bên dưới để tạo đơn; mã QR chuyển khoản Agribank sẽ hiện sau khi đơn được lưu. Quản trị viên đối chiếu giao dịch thủ công, website không tự động trừ tiền.", "Create the booking below to display its Agribank transfer QR. An administrator verifies the transfer manually; the website does not charge your account automatically.", "下のボタンで予約を作成するとAgribank振込用QRが表示されます。入金は管理者が手動確認し、サイトが自動で引き落とすことはありません。"],
   pay_pricing_mismatch: ["Bảng giá trên máy chủ chưa được cập nhật. Đơn này đã được tạo nhưng vui lòng không chuyển tiền; chạy supabase/pricing-vnd.sql rồi tạo đơn mới.", "Server pricing is out of date. This booking was created, but do not transfer money; apply supabase/pricing-vnd.sql and create a new booking.", "サーバーの料金が未更新です。この予約は作成されましたが、送金しないでください。supabase/pricing-vnd.sqlを適用して新しい予約を作成してください。"],
   manual_payment_title: ["Đối soát chuyển khoản", "Manual bank transfer review", "銀行振込の手動確認"],
-  manual_payment_notice: ["Chỉ xác nhận sau khi tiền thực sự vào Agribank. Đối chiếu đúng số tiền và mã giao dịch trong sao kê; không dựa vào ảnh biên lai của khách.", "Confirm only after funds have arrived in Agribank. Match the exact amount and transaction reference in the bank statement; do not rely on a customer receipt image.", "Agribankへの実際の入金後にのみ確定してください。明細の金額と取引番号を照合し、顧客の振込画像だけを根拠にしないでください。"],
+  manual_payment_notice: ["Với QR, chỉ xác nhận sau khi tiền thực sự vào Agribank và đã đối chiếu sao kê. Với tiền mặt, chỉ xác nhận sau khi trực tiếp nhận đủ tiền từ khách.", "For QR, confirm only after funds arrive in Agribank and match the bank statement. For cash, confirm only after receiving the full amount in person.", "QRはAgribankへの入金と明細を確認してから確定してください。現金は対面で全額を受け取った後にのみ確定してください。"],
   manual_payment_reference: ["Mã giao dịch trong sao kê Agribank", "Transaction reference from the Agribank statement", "Agribank明細の取引番号"],
   manual_payment_confirm: ["Xác nhận đã nhận tiền", "Confirm funds received", "入金を確認"],
   manual_payment_empty: ["Không có đơn đang chờ thanh toán.", "No bookings are awaiting payment.", "支払い待ちの予約はありません。"],
@@ -303,7 +310,7 @@ async function loadBookingRows() {
       },
       note: row.note || "",
       coupon: row.coupon || "",
-      method: "qr",
+      method: row.payment_method || "qr",
       status: row.status === "completed" ? "done" : row.status,
       created: row.created_at,
       total: row.total_vnd,
@@ -1611,12 +1618,14 @@ async function renderAdminPaymentReview() {
           <div style="flex:1;min-width:0">
             <b>${esc(payment.customer_name)}</b>
             <div class="muted">${esc(payment.renter_name)} · ${esc(payment.code)}</div>
-            <div class="muted">Mã đối chiếu: <code>${esc(payment.transfer_reference)}</code> · ${esc(new Date(payment.created_at).toLocaleString("vi-VN"))}</div>
+            <div class="muted">${payment.payment_method === "cash" ? esc(t("pay_cash_method")) : `Mã đối chiếu: <code>${esc(payment.transfer_reference)}</code>`} · ${esc(new Date(payment.created_at).toLocaleString("vi-VN"))}</div>
           </div>
           <div style="text-align:right"><b>${Number(payment.total_vnd).toLocaleString("vi-VN")} ₫</b><div class="st-b wait">${t("pay_pending")}</div></div>
         </div>
-        <label class="field">${t("manual_payment_reference")}<input id="manualRef${index}" maxlength="160" autocomplete="off" required></label>
-        <button class="btn sm" onclick="confirmManualPayment(${index})">${t("manual_payment_confirm")}</button>
+        ${payment.payment_method === "cash" ? `<p class="muted">${t("pay_cash_admin_notice")}</p>
+          <button class="btn sm" onclick="confirmCashPayment(${index})">${t("pay_cash_admin")}</button>` : `
+          <label class="field">${t("manual_payment_reference")}<input id="manualRef${index}" maxlength="160" autocomplete="off" required></label>
+          <button class="btn sm" onclick="confirmManualPayment(${index})">${t("manual_payment_confirm")}</button>`}
       </div>`).join("") : `<p class="sub">${t("manual_payment_empty")}</p>`}`;
 }
 
@@ -1625,7 +1634,7 @@ window.confirmManualPayment = async function(index) {
   const payment = adminPendingPayments[index];
   const referenceInput = $(`manualRef${index}`);
   const reference = referenceInput?.value.trim() || "";
-  if (!sb || !backendReady || account?.role !== "admin" || !payment) {
+  if (!sb || !backendReady || account?.role !== "admin" || !payment || payment.payment_method !== "qr") {
     return toast(t("acct_access_denied"));
   }
   if (!reference || reference.length > 160) {
@@ -1648,6 +1657,26 @@ window.confirmManualPayment = async function(index) {
     return;
   }
   toast("Đã ghi nhận khoản tiền vào Agribank.");
+  await renderAdminPaymentReview();
+};
+
+window.confirmCashPayment = async function(index) {
+  const payment = adminPendingPayments[index];
+  if (!sb || !backendReady || activeAccount()?.role !== "admin" || !payment || payment.payment_method !== "cash") {
+    return toast(t("acct_access_denied"));
+  }
+  const amount = Number(payment.total_vnd).toLocaleString("vi-VN");
+  if (!window.confirm(t("pay_cash_confirm", { code: payment.code, amount }))) return;
+  const button = $("app").querySelectorAll(".ord")[index]?.querySelector("button");
+  if (button) button.disabled = true;
+  const { error } = await sb.rpc("confirm_manual_cash_payment", { p_code: payment.code });
+  if (error) {
+    console.error("Could not confirm cash payment", error.message);
+    toast(error.message);
+    if (button) button.disabled = false;
+    return;
+  }
+  toast(t("pay_cash_admin"));
   await renderAdminPaymentReview();
 };
 
@@ -1695,6 +1724,7 @@ window.startCk = function(id) {
     return;
   }
   coreStartCk(backendProfile.id);
+  ck.paymentMethod = "qr";
   ck.renterProfileId = backendProfile.id;
   ck.name = account.name;
   ck.phone = account.phone;
@@ -1740,6 +1770,10 @@ function renderQr(elementId, amountVnd, reference) {
 
 function paymentHtml(booking) {
   const amount = Number(booking.total_vnd ?? booking.totalVnd).toLocaleString("vi-VN");
+  if ((booking.payment_method || booking.method) === "cash") {
+    return `<p class="notice">${esc(t("pay_cash_wait"))}</p>
+      <p><b>${esc(t("pay_cash_method"))}:</b> ${amount} ₫</p>`;
+  }
   return `<div id="orderQr" class="qr-image" style="width:280px;height:280px;padding:8px" aria-label="VietQR thanh toán Agribank"></div>
     <p class="notice">${esc(t("pay_transfer_hint"))}</p>
     <p class="err">${esc(t("pay_window"))}</p>
@@ -1755,15 +1789,21 @@ window.openPay = function() {
   if (existing) {
     openBox(`<h2>${t("pm_t")}</h2><p>${esc(existing.renterName || getG(existing.renter_profile_id || ck.id)?.name || "")} · ${existing.sessions?.length || 0} ${t("sess")}</p>
       ${paymentHtml(existing)}<div class="row"><button class="btn ghost sm" onclick="closeBox();openInvoice('${esc(existing.code)}')">${t("invoice")}</button><button class="btn sm" onclick="closeBox();go('orders')">${t("view_ord")}</button></div>`);
-    renderQr("orderQr", Number(existing.total_vnd), existing.code);
+    if ((existing.payment_method || existing.method) !== "cash") {
+      renderQr("orderQr", Number(existing.total_vnd), existing.transfer_reference || existing.code);
+    }
     return;
   }
   const priceQuote = quote();
+  const isAi = getG(ck.id)?.profileType === "ai";
   openBox(`<h2>${t("pm_t")}</h2><p>${esc(getG(ck.id)?.name || "")} · ${ck.sessions.length} ${t("sess")} · ${ck.hours} ${t("hrs")}</p>
     <h2 style="margin:10px 0">${fmt(priceQuote.total)}</h2>
-    <p class="notice">${esc(t("pay_create_info"))}</p>
+    <p class="notice">${esc(ck.paymentMethod === "cash" ? t("pay_cash_wait") : t("pay_create_info"))}</p>
+    <button class="opt ${ck.paymentMethod === "qr" ? "on" : ""}" onclick="ck.paymentMethod='qr';openPay()">${t("pm_qr")}</button>
+    ${!isAi ? `<button class="opt ${ck.paymentMethod === "cash" ? "on" : ""}" onclick="ck.paymentMethod='cash';openPay()">${t("pay_cash_method")}</button>` : ""}
+    ${ck.paymentMethod === "cash" ? "" : `<p class="muted">${esc(t("pay_transfer_hint"))}</p>`}
     <div class="err" id="bookingErr"></div>
-    <button class="btn" id="payB" onclick="confirmPay()">${t("confirm_pay")} · ${fmt(priceQuote.total)}</button>`);
+    <button class="btn" id="payB" onclick="confirmPay()">${ck.paymentMethod === "cash" ? t("pay_cash_create") : t("confirm_pay")} · ${fmt(priceQuote.total)}</button>`);
 };
 
 window.confirmPay = async function() {
@@ -1788,10 +1828,15 @@ window.confirmPay = async function() {
     showError("bookingErr", "Hồ sơ này chưa được kết nối với hệ thống đặt lịch. Vui lòng tải lại trang hoặc chọn hồ sơ khác.");
     return;
   }
+  if (!["qr", "cash"].includes(ck.paymentMethod || "qr")
+    || (ck.paymentMethod === "cash" && profile.profileType === "ai")) {
+    showError("bookingErr", t("pay_method_required"));
+    return;
+  }
   button.disabled = true;
   button.textContent = t("processing");
   try {
-    const { data, error } = await sb.rpc("create_booking", {
+    const { data, error } = await sb.rpc("create_booking_with_payment_method", {
       p_renter_profile_id: profile.id,
       p_service_id: profile.profileType === "ai" ? "cafe" : ck.svc,
       p_hours: ck.hours,
@@ -1800,6 +1845,7 @@ window.confirmPay = async function() {
       p_meeting_place: [ck.place.trim(), ck.addr.trim()].filter(Boolean).join(" - "),
       p_note: ck.note.trim(),
       p_coupon: ck.coupon || "",
+      p_payment_method: ck.paymentMethod || "qr",
     });
     if (error) throw error;
     const booking = Array.isArray(data) ? data[0] : data;
@@ -1809,18 +1855,19 @@ window.confirmPay = async function() {
     if (Number(booking.total_vnd) !== Math.round(quote().total)) {
       showError("bookingErr", `${t("pay_pricing_mismatch")} (${booking.code})`);
       button.disabled = false;
-      button.textContent = `${t("confirm_pay")} · ${fmt(quote().total)}`;
+      button.textContent = `${ck.paymentMethod === "cash" ? t("pay_cash_create") : t("confirm_pay")} · ${fmt(quote().total)}`;
       return;
     }
     ck.remoteBooking = booking;
     ck.remoteBooking.renterName = profile.name;
+    ck.remoteBooking.method = ck.remoteBooking.payment_method || ck.paymentMethod || "qr";
     closeBox();
     openPay();
   } catch (error) {
     console.error("Could not create booking", error.message);
     showError("bookingErr", error.message || t("pay_booking_failed"));
     button.disabled = false;
-    button.textContent = `${t("confirm_pay")} · ${fmt(quote().total)}`;
+    button.textContent = `${ck.paymentMethod === "cash" ? t("pay_cash_create") : t("confirm_pay")} · ${fmt(quote().total)}`;
   }
 };
 
@@ -1850,7 +1897,8 @@ window.renderRemoteOrders = async function() {
     }
     app.innerHTML = `<h2>${t("ord_t")}</h2>${S.orders.length ? S.orders.map((order) => {
       const customer = activeAccount().role === "customer";
-      const expired = order.status === "pending" && Date.now() - new Date(order.created).getTime() >= 15 * 60 * 1000;
+      const expired = order.status === "pending" && order.method !== "cash"
+        && Date.now() - new Date(order.created).getTime() >= 15 * 60 * 1000;
       const label = expired ? t("booking_expired_short") : order.status === "paid" ? t("paid")
         : order.status === "done" ? t("st_done")
           : order.status === "cancelled" ? t("st_can") : t("pay_pending");
@@ -1861,7 +1909,7 @@ window.renderRemoteOrders = async function() {
       return `<div class="ord"><div class="top"><div class="av" style="${getG(order.id) ? bg(getG(order.id)) : ""}"></div>
         <div style="flex:1;min-width:0"><b>${esc(order.renterName)}</b><div class="muted">${esc(order.code)} · ${order.hours} ${t("hrs")}</div></div>
         <div style="text-align:right"><b>${Number(order.totalVnd).toLocaleString("vi-VN")} ₫</b><div class="st-b ${order.status === "paid" || order.status === "done" ? "ok" : expired ? "bad" : "wait"}">${esc(label)}</div></div></div>
-        <p class="muted">${esc(order.place)}</p>
+        <p class="muted">${esc(order.method === "cash" ? t("pay_cash_method") : t("pm_qr"))} · ${esc(order.place)}</p>
         <p class="muted">${(order.sessions || []).map((session) => `${esc(session.d)} ${esc(session.t)}`).join(" · ")}</p>
         <div class="acts"><button class="btn ghost sm" onclick="openInvoice('${esc(order.code)}')">${t("invoice")}</button>
         ${["paid", "done"].includes(order.status) ? `<button class="btn sm" onclick="openChat('${esc(order.code)}')">${t("chat_open")}</button>` : ""}
@@ -1995,9 +2043,9 @@ window.rvSend = async function() {
 window.openPayForBooking = function(code) {
   const order = mapRemoteOrder(code);
   if (!order || order.status !== "pending" || activeAccount()?.role !== "customer") return toast(t("acct_access_denied"));
-  if (Date.now() - new Date(order.created).getTime() >= 15 * 60 * 1000) return toast(t("booking_expired"));
+  if (order.method !== "cash" && Date.now() - new Date(order.created).getTime() >= 15 * 60 * 1000) return toast(t("booking_expired"));
   openBox(`<h2>${t("pm_t")}</h2>${paymentHtml(order)}<button class="btn ghost sm" onclick="closeBox();openInvoice('${esc(order.code)}')">${t("invoice")}</button>`);
-  renderQr("orderQr", Number(order.totalVnd), order.code);
+  if (order.method !== "cash") renderQr("orderQr", Number(order.totalVnd), order.raw.transfer_reference || order.code);
 };
 
 window.openInvoice = function(code) {
@@ -2014,9 +2062,9 @@ window.openInvoice = function(code) {
     `Người cho thuê: ${order.renterName}`,
     `Địa điểm: ${order.place}`,
     `Tổng tiền: ${Number(order.totalVnd).toLocaleString("vi-VN")} VND`,
-    `Trạng thái: ${order.status === "pending" && Date.now() - new Date(order.created).getTime() >= 15 * 60 * 1000
+    `Trạng thái: ${order.status === "pending" && order.method !== "cash" && Date.now() - new Date(order.created).getTime() >= 15 * 60 * 1000
       ? t("receipt_expired") : ["paid", "done"].includes(order.status) ? t("receipt_paid") : t("receipt_pending")}`,
-    `Nội dung chuyển khoản: ${order.code}`,
+    order.method === "cash" ? `Thanh toán: ${t("pay_cash_method")}` : `Nội dung chuyển khoản: ${order.raw.transfer_reference || order.code}`,
   ].join("\n");
   openBox(`<h2>${t("invoice")}</h2><div class="inv" id="invT">${esc(invoice)}</div>
     <div class="row" style="margin-top:12px"><button class="btn sm" onclick="downloadInvoice('${esc(order.code)}')">Tải biên nhận</button>

@@ -20,6 +20,11 @@ hosting location.
    notifications, per-user AI chat rate limits (10 requests/minute and 60/hour),
    and the admin dashboard, run
    `supabase/product-expansion.sql` after those migrations.
+   To enable customer choice between an Agribank QR transfer and cash at an
+   in-person meeting, run `supabase/payment-methods.sql` after
+   `supabase/product-expansion.sql`. Cash orders stay pending and chat remains
+   locked until an administrator confirms receipt of the cash. AI character
+   bookings are online-only and use QR.
    To let administrators add and remove published photos in AI character
    profiles, run `supabase/ai-character-gallery.sql` after
    `supabase/product-expansion.sql`. To let human renters add and remove
@@ -30,7 +35,8 @@ hosting location.
    For an existing project, run migrations in this order: `schema.sql` (only
    if the base schema has not been installed), `pricing-vnd.sql`,
    `admin-direct-chat.sql`, `manual-payment.sql`, `feature-upgrades.sql`,
-   `chat-backgrounds.sql`, then `product-expansion.sql`. The feature migration
+   `chat-backgrounds.sql`, then `product-expansion.sql`, then
+   `payment-methods.sql`. The feature migration
    assumes the admin chat tables already exist. Do not advertise these
    features as enabled until the SQL Editor reports that each migration
    succeeded. Run `ai-character-gallery.sql` after `product-expansion.sql`
