@@ -144,6 +144,11 @@ Object.assign(T, {
   push_denied: ["Quyền thông báo đang bị chặn trong cài đặt trình duyệt.", "Notifications are blocked in your browser settings.", "ブラウザー設定で通知がブロックされています。"],
   push_error: ["Không thể thiết lập thông báo đẩy. Vui lòng thử lại.", "Could not set up push notifications. Please try again.", "プッシュ通知を設定できませんでした。もう一度お試しください。"],
   push_ios_hint: ["iPhone/iPad: thêm website vào Màn hình chính, mở ứng dụng từ biểu tượng đó rồi bật thông báo.", "iPhone/iPad: add this website to the Home Screen, open it from its icon, then enable notifications.", "iPhone/iPadではWebサイトをホーム画面に追加し、そのアイコンから開いて通知を有効にしてください。"],
+  install_app: ["Thêm VELORA vào màn hình chính", "Add VELORA to Home Screen", "VELORAをホーム画面に追加"],
+  install_app_title: ["Cài VELORA", "Install VELORA", "VELORAをインストール"],
+  install_android_help: ["Trong Chrome, mở menu ⋮ rồi chọn “Cài đặt ứng dụng” hoặc “Thêm vào màn hình chính”.", "In Chrome, open the ⋮ menu and choose “Install app” or “Add to Home screen”.", "Chromeの⋮メニューを開き、「アプリをインストール」または「ホーム画面に追加」を選択してください。"],
+  install_ios_help: ["Trong Safari, chạm nút Chia sẻ, chọn “Thêm vào Màn hình chính”, rồi chạm “Thêm”. Biểu tượng VELORA sẽ xuất hiện trên màn hình chính.", "In Safari, tap Share, choose “Add to Home Screen”, then tap “Add”. The VELORA icon will appear on your Home Screen.", "Safariで共有ボタンをタップし、「ホーム画面に追加」を選んでから「追加」をタップしてください。VELORAのアイコンが表示されます。"],
+  install_desktop_help: ["Hãy mở trang này trên iPhone hoặc Android để thêm VELORA vào màn hình chính.", "Open this website on an iPhone or Android device to add VELORA to its Home Screen.", "iPhoneまたはAndroidでこのサイトを開くと、ホーム画面に追加できます。"],
   acct_export: ["Tải dữ liệu tài khoản", "Export account data", "アカウントデータをエクスポート"],
   acct_delete: ["Xóa tài khoản và dữ liệu", "Delete account and data", "アカウントとデータを削除"],
   acct_delete_confirm: ["Xóa vĩnh viễn tài khoản và dữ liệu liên quan? Thao tác này không thể hoàn tác.", "Permanently delete your account and related data? This cannot be undone.", "アカウントと関連データを完全に削除しますか？この操作は取り消せません。"],
@@ -195,6 +200,11 @@ let notificationsChannel = null;
 let bookingsChannel = null;
 let unreadMessages = 0;
 let pushNotificationsEnabled = false;
+let deferredInstallPrompt = null;
+let appInstalled = false;
+const installIsIos = /iphone|ipad|ipod/i.test(navigator.userAgent)
+  || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+const installIsAndroid = /android/i.test(navigator.userAgent);
 const localSave = window.save;
 const localOpenProfile = window.openProfile;
 
@@ -1477,6 +1487,7 @@ window.renderChrome = function() {
   const badge = unreadMessages ? ` <span class="badge-n" aria-label="${esc(t("unread_count"))}">${unreadMessages}</span>` : "";
   $("nav").insertAdjacentHTML("beforeend", `<button class="${view === "account" ? "on" : ""}" onclick="go('account')">${t("tab_account")}${badge}</button>`);
   $("ctl").insertAdjacentHTML("beforeend", `<button class="btn ghost sm" onclick="go('account')">${account ? esc(account.name) : t("tab_account")}${badge}</button>`);
+  renderInstallButton();
 };
 
 window.renderAll = function() {
@@ -1778,6 +1789,52 @@ window.confirmCashPayment = async function(index) {
   toast(t("pay_cash_admin"));
   await renderAdminPaymentReview();
 };
+
+function appIsInstalled() {
+  return appInstalled || window.matchMedia("(display-mode: standalone)").matches
+    || window.navigator.standalone === true;
+}
+
+function renderInstallButton() {
+  const controls = $("ctl");
+  if (!controls) return;
+  controls.querySelector("#installAppButton")?.remove();
+  if (appIsInstalled() || (!installIsIos && !installIsAndroid && !deferredInstallPrompt)) return;
+  controls.insertAdjacentHTML("afterbegin", `<button id="installAppButton" class="btn ghost sm" onclick="installApp()">${t("install_app")}</button>`);
+}
+
+window.installApp = async function() {
+  if (appIsInstalled()) return;
+  if (installIsAndroid && deferredInstallPrompt) {
+    const prompt = deferredInstallPrompt;
+    deferredInstallPrompt = null;
+    try {
+      await prompt.prompt();
+      const choice = await prompt.userChoice;
+      if (choice.outcome === "accepted") appInstalled = true;
+    } catch (error) {
+      console.error("Could not show the app install prompt", error.message);
+      toast(t("push_error"));
+    }
+    renderInstallButton();
+    return;
+  }
+  const help = installIsIos ? t("install_ios_help")
+    : installIsAndroid ? t("install_android_help") : t("install_desktop_help");
+  openBox(`<h2>${t("install_app_title")}</h2><p class="notice">${esc(help)}</p>
+    <p class="muted">${esc(t("install_app"))} · VELORA</p>`);
+};
+
+window.addEventListener("beforeinstallprompt", (event) => {
+  event.preventDefault();
+  deferredInstallPrompt = event;
+  renderInstallButton();
+});
+window.addEventListener("appinstalled", () => {
+  appInstalled = true;
+  deferredInstallPrompt = null;
+  renderInstallButton();
+});
 
 window.openProfile = function(id, index) {
   localOpenProfile(id, index);
@@ -2667,6 +2724,13 @@ window.sendChat = async function() {
 };
 
 async function initializeSupabaseApp() {
+  if ("serviceWorker" in navigator) {
+    try {
+      await navigator.serviceWorker.register(new URL("./sw.js", window.location.href), { scope: "./" });
+    } catch (error) {
+      console.error("Could not register the app service worker", error.message);
+    }
+  }
   if (!sb) {
     remoteAccount = null;
     return renderAll();

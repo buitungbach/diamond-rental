@@ -192,6 +192,15 @@ scheduled dispatcher, and the VAPID secrets below.
    permission separately. Turning notifications off removes that device's
    subscription; deleting an account removes all its subscriptions.
 
+## Add VELORA to a phone's Home Screen
+
+The site publishes a web app manifest and uses the VELORA logo for its app
+icon. Android users can use the in-page **Add VELORA to Home Screen** button
+to open the browser's install prompt, or use Chrome's menu if no prompt appears.
+On iPhone/iPad, open the site in Safari, tap **Share → Add to Home Screen →
+Add**. The button displays the matching instructions, and is hidden when the
+site is already installed.
+
 After `feature-upgrades.sql` is applied, renter accounts can configure weekly
 availability in **Account**; customers see available time slots during
 checkout, and the database checks for conflicts again when creating a booking.
