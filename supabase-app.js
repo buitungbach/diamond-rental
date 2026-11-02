@@ -135,6 +135,15 @@ Object.assign(T, {
   admin_load_failed: ["Không tải được dữ liệu quản trị.", "Could not load admin data.", "管理データを読み込めませんでした。"],
   acct_privacy: ["Quyền riêng tư và dữ liệu", "Privacy and data", "プライバシーとデータ"],
   acct_email_notifications: ["Nhận thông báo qua email", "Receive email notifications", "メール通知を受け取る"],
+  push_enable: ["Bật thông báo trên thiết bị này", "Enable notifications on this device", "この端末で通知を有効にする"],
+  push_disable: ["Tắt thông báo trên thiết bị này", "Disable notifications on this device", "この端末で通知を無効にする"],
+  push_enabled: ["Đã bật thông báo đơn thuê và tin nhắn trên thiết bị này.", "Booking and message notifications are enabled on this device.", "この端末で予約とメッセージの通知を有効にしました。"],
+  push_disabled: ["Đã tắt thông báo trên thiết bị này.", "Notifications are disabled on this device.", "この端末の通知を無効にしました。"],
+  push_missing_key: ["Thông báo đẩy chưa được cấu hình. Quản trị viên cần thêm khóa VAPID công khai vào supabase-config.js.", "Push notifications are not configured. The administrator must add the public VAPID key to supabase-config.js.", "プッシュ通知が未設定です。管理者がsupabase-config.jsに公開VAPIDキーを設定する必要があります。"],
+  push_unsupported: ["Trình duyệt này chưa hỗ trợ thông báo đẩy. Trên iPhone/iPad, hãy thêm website vào Màn hình chính và mở từ đó.", "This browser does not support push notifications. On iPhone/iPad, add the website to the Home Screen and open it from there.", "このブラウザーはプッシュ通知に対応していません。iPhone/iPadではWebサイトをホーム画面に追加して開いてください。"],
+  push_denied: ["Quyền thông báo đang bị chặn trong cài đặt trình duyệt.", "Notifications are blocked in your browser settings.", "ブラウザー設定で通知がブロックされています。"],
+  push_error: ["Không thể thiết lập thông báo đẩy. Vui lòng thử lại.", "Could not set up push notifications. Please try again.", "プッシュ通知を設定できませんでした。もう一度お試しください。"],
+  push_ios_hint: ["iPhone/iPad: thêm website vào Màn hình chính, mở ứng dụng từ biểu tượng đó rồi bật thông báo.", "iPhone/iPad: add this website to the Home Screen, open it from its icon, then enable notifications.", "iPhone/iPadではWebサイトをホーム画面に追加し、そのアイコンから開いて通知を有効にしてください。"],
   acct_export: ["Tải dữ liệu tài khoản", "Export account data", "アカウントデータをエクスポート"],
   acct_delete: ["Xóa tài khoản và dữ liệu", "Delete account and data", "アカウントとデータを削除"],
   acct_delete_confirm: ["Xóa vĩnh viễn tài khoản và dữ liệu liên quan? Thao tác này không thể hoàn tác.", "Permanently delete your account and related data? This cannot be undone.", "アカウントと関連データを完全に削除しますか？この操作は取り消せません。"],
@@ -185,6 +194,7 @@ let chatChannel = null;
 let notificationsChannel = null;
 let bookingsChannel = null;
 let unreadMessages = 0;
+let pushNotificationsEnabled = false;
 const localSave = window.save;
 const localOpenProfile = window.openProfile;
 
@@ -328,6 +338,7 @@ async function hydrateSession(user) {
   if (!sb || !user) {
     S.orders = [];
     unreadMessages = 0;
+    pushNotificationsEnabled = false;
     S.activeAccountId = null;
     currentChat = "";
     chatBookingId = "";
@@ -417,13 +428,13 @@ function subscribeToNotifications() {
   if (!sb || !remoteAccount) return;
   if (notificationsChannel) sb.removeChannel(notificationsChannel);
   notificationsChannel = sb.channel(`messages:${remoteAccount.id}`)
-    .on("postgres_changes", { event: "INSERT", schema: "public", table: "app_notifications", filter: `user_id=eq.${remoteAccount.id}` }, () => {
+    .on("postgres_changes", { event: "INSERT", schema: "public", table: "app_notifications", filter: `user_id=eq.${remoteAccount.id}` }, (event) => {
       if (view === "account") loadAccountNotifications();
+      notifyAccountNotification(event.new);
     })
     .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" }, (event) => {
       if (event.new.sender_id !== remoteAccount.id) {
         toast("Tin nhắn mới trong cuộc trò chuyện đã thanh toán.");
-        notifyIncomingMessage();
         loadUnreadMessageCount().then(renderChrome);
         if (view === "orders") renderAll();
         if (view === "chat" && chatBookingId === event.new.booking_id) loadChatMessages();
@@ -432,7 +443,6 @@ function subscribeToNotifications() {
     .on("postgres_changes", { event: "INSERT", schema: "public", table: "admin_chat_messages" }, (event) => {
       if (event.new.sender_id !== remoteAccount.id) {
         toast("Tin nhắn mới trong chat quản trị.");
-        notifyIncomingMessage();
         loadUnreadMessageCount().then(renderChrome);
         if (view === "account" && remoteAccount.role === "renter") loadRenterAdminChats();
         if (view === "chat" && chatThreadMode === "admin" && chatThreadId === event.new.thread_id) loadAdminChatMessages();
@@ -452,18 +462,104 @@ function subscribeToNotifications() {
     .subscribe();
 }
 
-window.enableMessageNotifications = async function() {
-  if (!("Notification" in window)) return toast("Trình duyệt này không hỗ trợ thông báo.");
-  const permission = await Notification.requestPermission();
-  toast(permission === "granted" ? "Đã bật thông báo tin nhắn." : "Bạn chưa cấp quyền thông báo cho website.");
+function pushIsSupported() {
+  return "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
+}
+
+function decodePushKey(key) {
+  const padded = key.replace(/-/g, "+").replace(/_/g, "/").padEnd(Math.ceil(key.length / 4) * 4, "=");
+  return Uint8Array.from(atob(padded), (character) => character.charCodeAt(0));
+}
+
+function updatePushControls() {
+  const button = $("pushNotificationButton");
+  if (!button) return;
+  button.textContent = t(pushNotificationsEnabled ? "push_disable" : "push_enable");
+  button.setAttribute("aria-pressed", String(pushNotificationsEnabled));
+  button.disabled = !pushIsSupported() || (!sbConfig.vapidPublicKey && !pushNotificationsEnabled);
+  const status = $("pushNotificationStatus");
+  if (status) {
+    status.textContent = !pushIsSupported() ? t("push_unsupported")
+      : !sbConfig.vapidPublicKey ? t("push_missing_key") : t("push_ios_hint");
+  }
+}
+
+async function loadPushSubscriptionStatus() {
+  pushNotificationsEnabled = false;
+  if (!pushIsSupported()) return updatePushControls();
+  try {
+    const registration = await navigator.serviceWorker.getRegistration();
+    const subscription = await registration?.pushManager.getSubscription();
+    if (subscription && remoteAccount) {
+      const { data, error } = await sb.from("push_subscriptions").select("endpoint")
+        .eq("endpoint", subscription.endpoint).eq("user_id", remoteAccount.id).maybeSingle();
+      if (error) throw error;
+      pushNotificationsEnabled = Boolean(data);
+    }
+  } catch (error) {
+    console.error("Could not check push subscription", error.message);
+  }
+  updatePushControls();
+}
+
+window.togglePushNotifications = async function() {
+  if (!sb || !remoteAccount) return toast(t("acct_login_to_book"));
+  if (!pushIsSupported()) return toast(t("push_unsupported"));
+  if (!sbConfig.vapidPublicKey && !pushNotificationsEnabled) return toast(t("push_missing_key"));
+  const button = $("pushNotificationButton");
+  if (button) button.disabled = true;
+  try {
+    const registration = await navigator.serviceWorker.register(new URL("./sw.js", window.location.href), { scope: "./" });
+    let subscription = await registration.pushManager.getSubscription();
+    if (subscription && pushNotificationsEnabled) {
+      const { error } = await sb.from("push_subscriptions").delete()
+        .eq("endpoint", subscription.endpoint).eq("user_id", remoteAccount.id);
+      if (error) throw error;
+      await subscription.unsubscribe();
+      pushNotificationsEnabled = false;
+      toast(t("push_disabled"));
+    } else {
+      if (Notification.permission === "denied") throw new Error(t("push_denied"));
+      if (Notification.permission !== "granted" && await Notification.requestPermission() !== "granted") {
+        throw new Error(t("push_denied"));
+      }
+      if (!subscription) {
+        subscription = await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: decodePushKey(sbConfig.vapidPublicKey),
+        });
+      }
+      const keys = subscription.toJSON().keys;
+      if (!keys?.p256dh || !keys.auth) throw new Error(t("push_error"));
+      const { error } = await sb.from("push_subscriptions").upsert({
+        endpoint: subscription.endpoint,
+        user_id: remoteAccount.id,
+        p256dh: keys.p256dh,
+        auth: keys.auth,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: "endpoint" });
+      if (error) throw error;
+      pushNotificationsEnabled = true;
+      toast(t("push_enabled"));
+    }
+  } catch (error) {
+    console.error("Could not update push subscription", error.message);
+    toast(error.message || t("push_error"));
+  } finally {
+    updatePushControls();
+  }
 };
 
-function notifyIncomingMessage() {
-  if (!("Notification" in window) || Notification.permission !== "granted" || !document.hidden) return;
-  new Notification("VELORA", {
-    body: "Bạn có tin nhắn mới. Đăng nhập để xem.",
-    icon: "velora-logo.png",
-  });
+function notifyAccountNotification(notification) {
+  if (pushNotificationsEnabled || !("Notification" in window)
+    || Notification.permission !== "granted" || !document.hidden) return;
+  const isMessage = notification.notification_type === "new_message";
+  const title = isMessage ? "VELORA · Tin nhắn mới" : "VELORA · Cập nhật đơn thuê";
+  const body = isMessage ? "Bạn có tin nhắn mới. Đăng nhập để xem."
+    : notification.notification_type === "booking_paid" ? "Thanh toán đơn thuê đã được xác nhận."
+      : notification.notification_type === "booking_created" ? "Bạn có đơn thuê mới."
+        : "Đơn thuê của bạn vừa được cập nhật.";
+  new Notification(title, { body, icon: "velora-logo.png" });
 }
 
 function renderRemoteAccountForm(mode) {
@@ -610,7 +706,7 @@ function renderAccount() {
     : t(locked ? "acct_readonly" : "acct_renter_note");
   $("app").innerHTML = `<h2>${t("acct_title")}</h2>
     <div class="panel"><div class="row" style="justify-content:space-between"><h3>${t(account.role === "customer" ? "acct_customer" : "acct_girl")}</h3>
-      <div class="row">${"Notification" in window ? `<button class="btn ghost sm" onclick="enableMessageNotifications()">Bật thông báo</button>` : ""}
+      <div class="row"><button id="pushNotificationButton" class="btn ghost sm" onclick="togglePushNotifications()">${t("push_enable")}</button>
       <button class="btn ghost sm" onclick="logoutAccount()">${t("acct_logout")}</button></div></div>
       <p class="muted">${esc(accountType)} · ${accountNote}</p>
       <div class="r2">
@@ -659,6 +755,7 @@ function renderAccount() {
     ${account.role === "renter" ? `<div id="adminChatInbox"></div>` : ""}
     <div class="panel"><h3>${t("acct_privacy")}</h3>
       <label class="row"><input id="emailNotificationsEnabled" type="checkbox" ${account.emailNotificationsEnabled ? "checked" : ""} onchange="updateEmailNotifications(this.checked)"> ${t("acct_email_notifications")}</label>
+      <p id="pushNotificationStatus" class="muted"></p>
       ${account.role !== "admin" ? `<div class="row" style="margin-top:10px">
         <button class="btn ghost sm" onclick="exportAccountData()">${t("acct_export")}</button>
         <button class="btn ghost sm" onclick="deleteAccountData()">${t("acct_delete")}</button>
@@ -668,6 +765,7 @@ function renderAccount() {
   if (account.role === "renter") loadRenterAdminChats();
   if (account.role === "renter" && S.custom.some((profile) => profile.ownerId === account.id)) loadRenterGallery();
   if (account.role === "admin") { loadChatReports(); loadAdminExpansionData(); }
+  loadPushSubscriptionStatus();
   loadAccountNotifications();
 }
 
@@ -1264,17 +1362,18 @@ async function updateAccount() {
   toast(t("acct_profile_saved"));
 }
 
-function logoutAccount() {
+async function logoutAccount() {
   if (!sb) return;
-  sb.auth.signOut().then(({ error }) => {
-    if (error) {
-      console.error("Sign out failed", error.message);
-      return toast(error.message);
-    }
+  try {
+    const { error } = await sb.auth.signOut();
+    if (error) throw error;
     remoteAccount = null;
     S.activeAccountId = null;
     go("account");
-  });
+  } catch (error) {
+    console.error("Sign out failed", error.message);
+    toast(error.message);
+  }
 }
 
 function openAdd() {

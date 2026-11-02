@@ -25,6 +25,10 @@ hosting location.
    `supabase/product-expansion.sql`. Cash orders stay pending and chat remains
    locked until an administrator confirms receipt of the cash. AI character
    bookings are online-only and use QR.
+   To enable browser push notifications for booking updates and new messages,
+   run `supabase/web-push.sql` after `supabase/product-expansion.sql`. Then
+   configure and deploy the `dispatch-web-push` Edge Function as described in
+   **Web push notifications** below, and run `supabase/web-push-schedule.sql`.
    To let administrators add and remove published photos in AI character
    profiles, run `supabase/ai-character-gallery.sql` after
    `supabase/product-expansion.sql`. To let human renters add and remove
@@ -36,7 +40,7 @@ hosting location.
    if the base schema has not been installed), `pricing-vnd.sql`,
    `admin-direct-chat.sql`, `manual-payment.sql`, `feature-upgrades.sql`,
    `chat-backgrounds.sql`, then `product-expansion.sql`, then
-   `payment-methods.sql`. The feature migration
+   `payment-methods.sql` and `web-push.sql`. The feature migration
    assumes the admin chat tables already exist. Do not advertise these
    features as enabled until the SQL Editor reports that each migration
    succeeded. Run `ai-character-gallery.sql` after `product-expansion.sql`
@@ -142,6 +146,52 @@ does not confirm payment. The database records the admin account, bank
 reference, booking, and amount. Chat opens only after this confirmation. The
 site's downloadable or printable receipt is not a VAT invoice.
 
+## Web push notifications
+
+Web push sends booking-created/paid/changed and new-message alerts to devices
+that explicitly enable notifications while signed in. Notifications contain
+only a short event description and booking code; chat text is never included.
+Push is sent by the `dispatch-web-push` Edge Function using VAPID, not by the
+open browser tab. It requires the `web-push.sql` database migration, the
+scheduled dispatcher, and the VAPID secrets below.
+
+1. Generate one VAPID key pair locally:
+
+   ```powershell
+   npx.cmd web-push generate-vapid-keys --json
+   ```
+
+   Keep the private key secret. Set `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`,
+   `VAPID_SUBJECT` (for example `mailto:admin@example.com`), and a randomly
+   generated `WEB_PUSH_SCHEDULER_SECRET` in Supabase Edge Function Secrets.
+   Use the same scheduler secret in the Vault setup in step 3. For example:
+
+   ```powershell
+   npx.cmd supabase secrets set VAPID_PUBLIC_KEY="..." VAPID_PRIVATE_KEY="..." VAPID_SUBJECT="mailto:admin@example.com" WEB_PUSH_SCHEDULER_SECRET="..." --project-ref tsojexeevcsizazservy
+   ```
+
+   Do not commit the private key or scheduler secret.
+
+2. Put only the generated public key in `supabase-config.js` as
+   `vapidPublicKey`, then deploy the dispatcher:
+
+   ```powershell
+   npx.cmd supabase functions deploy dispatch-web-push --project-ref tsojexeevcsizazservy
+   ```
+
+3. Enable `pg_cron`, `pg_net`, and Vault in Supabase **Database → Extensions**.
+   In `supabase/web-push-schedule.sql`, replace
+   `REPLACE_WITH_WEB_PUSH_SCHEDULER_SECRET` with the same scheduler secret
+   from step 1, then run the SQL in the Supabase SQL Editor. The dispatcher
+   checks the secret and sends queued notifications once per minute.
+
+4. Publish the site files. Customers and renters can then sign in, open
+   **Account**, and select **Enable notifications on this device**. On iPhone
+   or iPad, first add the site to the Home Screen and open it from there;
+   notifications require iOS/iPadOS 16.4 or later. Each device must grant
+   permission separately. Turning notifications off removes that device's
+   subscription; deleting an account removes all its subscriptions.
+
 After `feature-upgrades.sql` is applied, renter accounts can configure weekly
 availability in **Account**; customers see available time slots during
 checkout, and the database checks for conflicts again when creating a booking.
@@ -149,8 +199,9 @@ Pending bookings expire for availability purposes after 15 minutes. After the
 last session ends, both participants confirm completion for human bookings;
 the customer confirms AI bookings. Only then can that customer submit one
 verified review. Participants can block or report a chat; administrators can
-review and resolve reports from **Account**. Browser notifications require
-the user to enable them and are best-effort while the site is open.
+review and resolve reports from **Account**. In-app notifications remain in
+the account history; device push alerts require opting in on each device and
+the Web Push setup above.
 
 The SQL editor migration `supabase/admin-direct-chat.sql` installs a separate,
 admin-only direct chat with active AI and human renter profiles. It does not

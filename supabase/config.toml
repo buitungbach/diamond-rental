@@ -7,5 +7,8 @@ verify_jwt = true
 [functions.dispatch-email-notifications]
 verify_jwt = false
 
+[functions.dispatch-web-push]
+verify_jwt = false
+
 [functions.account-privacy]
 verify_jwt = true

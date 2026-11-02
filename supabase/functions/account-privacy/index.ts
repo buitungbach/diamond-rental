@@ -177,18 +177,19 @@ Deno.serve(async (request) => {
     : { data: [], error: null };
   if (adminMessagesResult.error) return reply({ error: "Could not export admin chat messages" }, 500);
 
-  const [galleryResult, postResult, commentResult, likeResult, notificationResult, socialReportsResult, chatReportsResult] = await Promise.all([
+  const [galleryResult, postResult, commentResult, likeResult, notificationResult, pushSubscriptionsResult, socialReportsResult, chatReportsResult] = await Promise.all([
     renterIds.length ? admin.from("renter_gallery").select("renter_profile_id,media_url,media_type,caption,source_url,source_credit,status,created_at").in("renter_profile_id", renterIds) : Promise.resolve({ data: [], error: null }),
     renterIds.length ? admin.from("social_posts").select("renter_profile_id,caption,media_url,media_type,source_url,source_credit,status,created_at,published_at").in("renter_profile_id", renterIds) : Promise.resolve({ data: [], error: null }),
     admin.from("social_comments").select("post_id,body,created_at").eq("author_id", userId),
     admin.from("social_likes").select("post_id,created_at").eq("user_id", userId),
     admin.from("app_notifications").select("notification_type,title,body,reference_code,read_at,created_at").eq("user_id", userId),
+    admin.from("push_subscriptions").select("endpoint,p256dh,auth,created_at,updated_at").eq("user_id", userId),
     admin.from("social_reports").select("post_id,reason,status,created_at,resolved_at").eq("reporter_id", userId),
     admin.from("chat_reports").select("booking_id,reason,status,created_at,resolved_at").eq("reporter_id", userId),
   ]);
   const errors = [
     galleryResult.error, postResult.error, commentResult.error, likeResult.error,
-    notificationResult.error, socialReportsResult.error, chatReportsResult.error,
+    notificationResult.error, pushSubscriptionsResult.error, socialReportsResult.error, chatReportsResult.error,
   ];
   if (errors.some(Boolean)) return reply({ error: "Could not export all account data" }, 500);
 
@@ -206,6 +207,7 @@ Deno.serve(async (request) => {
     comments: commentResult.data ?? [],
     likes: likeResult.data ?? [],
     notifications: notificationResult.data ?? [],
+    push_subscriptions: pushSubscriptionsResult.data ?? [],
     social_reports: socialReportsResult.data ?? [],
     chat_reports: chatReportsResult.data ?? [],
   });
