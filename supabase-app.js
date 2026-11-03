@@ -2323,14 +2323,32 @@ window.renderRemoteOrders = async function() {
   try {
     await loadBookingRows();
     if (view !== "orders") return;
-    if (activeAccount().role === "customer") {
+    const account = activeAccount();
+    let customerProfiles = new Map();
+    if (account.role === "renter") {
+      const customerIds = [...new Set(S.orders.map((order) => order.raw.customer_id).filter(Boolean))];
+      if (customerIds.length) {
+        const { data, error } = await sb.from("customer_public_profiles")
+          .select("user_id,display_name,avatar_path").in("user_id", customerIds);
+        if (error) throw error;
+        customerProfiles = new Map((data || []).map((profile) => [profile.user_id, profile]));
+      }
+      if (view !== "orders" || activeAccount()?.id !== account.id) return;
+    } else if (account.role === "customer") {
       const { data: reviewedCodes, error: reviewFlagsError } = await sb.rpc("list_my_reviewed_booking_codes");
       if (reviewFlagsError) console.error("Could not load review eligibility", reviewFlagsError.message);
       const reviewed = new Set(reviewedCodes || []);
       S.orders.forEach((order) => { order.reviewed = reviewed.has(order.code); });
     }
     app.innerHTML = `<h2>${t("ord_t")}</h2>${S.orders.length ? S.orders.map((order) => {
-      const customer = activeAccount().role === "customer";
+      const customer = account.role === "customer";
+      const customerProfile = customerProfiles.get(order.raw.customer_id);
+      const displayName = customer
+        ? order.renterName
+        : customerProfile?.display_name || t("renter_chat_customer");
+      const displayAvatar = customer
+        ? getG(order.id) ? bg(getG(order.id)) : ""
+        : customerAvatarPublicUrl(customerProfile?.avatar_path);
       const expired = order.status === "pending" && order.method !== "cash"
         && Date.now() - new Date(order.created).getTime() >= 15 * 60 * 1000;
       const label = expired ? t("booking_expired_short") : order.status === "paid" ? t("paid")
@@ -2341,8 +2359,10 @@ window.renderRemoteOrders = async function() {
         && ["pending", "paid"].includes(order.status);
       const canCancel = account?.role === "customer" && order.raw.customer_id === account.id
         && ["pending", "paid"].includes(order.status);
-      return `<div class="ord"><div class="top"><div class="av" style="${getG(order.id) ? bg(getG(order.id)) : ""}"></div>
-        <div style="flex:1;min-width:0"><b>${esc(order.renterName)}</b><div class="muted">${esc(order.code)} · ${order.hours} ${t("hrs")}</div></div>
+      return `<div class="ord"><div class="top">${customer
+          ? `<div class="av" style="${displayAvatar}"></div>`
+          : avatarMarkup(displayName, displayAvatar, "av")}
+        <div style="flex:1;min-width:0"><b>${esc(displayName)}</b><div class="muted">${esc(order.code)} · ${order.hours} ${t("hrs")}</div></div>
         <div style="text-align:right"><b>${Number(order.totalVnd).toLocaleString("vi-VN")} ₫</b><div class="st-b ${order.status === "paid" || order.status === "done" ? "ok" : expired ? "bad" : "wait"}">${esc(label)}</div></div></div>
         <p class="muted">${esc(order.method === "cash" ? t("pay_cash_method") : t("pm_qr"))} · ${esc(order.place)}</p>
         <p class="muted">${(order.sessions || []).map((session) => `${esc(session.d)} ${esc(session.t)}`).join(" · ")}</p>
