@@ -14,12 +14,8 @@ create table if not exists public.customer_public_profiles (
 );
 alter table public.customer_public_profiles enable row level security;
 revoke all on public.customer_public_profiles from public, anon, authenticated;
-grant select (user_id, display_name, avatar_path, updated_at)
-  on public.customer_public_profiles to anon, authenticated;
-grant insert (user_id, display_name, avatar_path)
-  on public.customer_public_profiles to authenticated;
-grant update (display_name, avatar_path)
-  on public.customer_public_profiles to authenticated;
+grant select on public.customer_public_profiles to anon, authenticated;
+grant insert, update on public.customer_public_profiles to authenticated;
 drop policy if exists "Public can read customer display profiles" on public.customer_public_profiles;
 create policy "Public can read customer display profiles"
   on public.customer_public_profiles for select to anon, authenticated

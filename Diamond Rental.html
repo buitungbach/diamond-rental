@@ -871,7 +871,7 @@ window.renderChrome=function(){
   $("ctl").insertAdjacentHTML("beforeend",`<button class="btn ghost sm" onclick="go('account')">${a?esc(a.name):t("tab_account")}</button>`);
 };
 window.go=function(v){
-  if(!["list","social","rank","orders","vip","account","chat","checkout"].includes(v))return;
+  if(!["list","social","rank","orders","vip","account","chat","chat-inbox","checkout"].includes(v))return;
   if(v===view){if(v==="social"&&(!socialFeedCache||Date.now()-socialFeedCache.createdAt>=60000))renderAll();return}
   view=v;
   if(v!=="checkout")ck=null;
@@ -881,12 +881,13 @@ window.go=function(v){
 window.renderAll=function(){
   if(view==="account"){renderChrome();renderAccount()}
   else if(view==="chat"){renderChrome();renderChatPage()}
+  else if(view==="chat-inbox"){renderChrome();if(activeAccount()?.role==="renter")renderRenterChatInbox();else go("account")}
   else coreRenderAll();
   guardProfileEditControls();
 };
 window.addEventListener("hashchange",()=>{
   const h=location.hash.slice(1);
-  if(["list","social","rank","orders","vip","account","chat"].includes(h)&&h!==view){view=h;ck=null;renderAll()}
+  if(["list","social","rank","orders","vip","account","chat","chat-inbox"].includes(h)&&h!==view){view=h;ck=null;renderAll()}
 });
 function accountForm(mode){
   $("app").innerHTML=`<h2>${t("acct_title")}</h2><p class="notice">${t("acct_demo")}</p>
@@ -1096,7 +1097,7 @@ window.invText=function(o){
   const g=getG(o.id);
   return ["VELORA - "+t("invoice").toUpperCase(),"----------------------------","#"+o.code+"  "+o.created,"",g?g.name:"","svc: "+o.svcName+" · "+o.hours+" "+t("hrs"),...o.sessions.map((s,i)=>t("ck_sn",{i:i+1})+": "+s.d.split("-").reverse().join("/")+" "+s.t),"@ "+o.place,"",o.cust.name+" · "+o.cust.phone+" · "+o.cust.email,"",t("q_tot")+": "+fmt(o.total),t("booking_request"),t("pay_pending"),"",t("demo")].join("\n");
 };
-if(["list","rank","orders","vip","account","chat"].includes((location.hash||"").slice(1)))view=location.hash.slice(1);
+if(["list","rank","orders","vip","account","chat","chat-inbox"].includes((location.hash||"").slice(1)))view=location.hash.slice(1);
 renderAll();
 </script>
 <script src="supabase-app.js"></script>

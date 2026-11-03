@@ -163,6 +163,8 @@ Object.assign(T, {
   customer_profile_error: ["Không tải được hồ sơ công khai. Hãy kiểm tra migration customer-public-profiles.sql.", "Could not load the public profile. Check the customer-public-profiles.sql migration.", "公開プロフィールを読み込めません。customer-public-profiles.sqlの適用を確認してください。"],
   renter_paid_bookings: ["Đơn thuê đã thanh toán", "Paid bookings", "支払い済みの予約"],
   renter_paid_bookings_empty: ["Chưa có đơn thuê đã thanh toán.", "No paid bookings yet.", "支払い済みの予約はありません。"],
+  renter_chat_inbox: ["Chat với khách", "Customer chats", "お客様とのチャット"],
+  renter_chat_customer: ["Khách hàng", "Customer", "お客様"],
   chat_identity_error: ["Không tải được tên và ảnh đại diện trong chat. Hãy kiểm tra migration customer-public-profiles.sql.", "Could not load chat names and avatars. Check the customer-public-profiles.sql migration.", "チャットの名前とアバターを読み込めません。customer-public-profiles.sqlの適用を確認してください。"],
   chat_booking_new_message: ["Có tin nhắn mới trong đơn thuê này.", "There is a new message in this booking.", "この予約に新しいメッセージがあります。"],
   acct_email_notifications: ["Nhận thông báo qua email", "Receive email notifications", "メール通知を受け取る"],
@@ -635,6 +637,7 @@ function subscribeToNotifications() {
         toast("Tin nhắn mới trong cuộc trò chuyện đã thanh toán.");
         loadUnreadMessageCount().then(renderChrome);
         if (view === "orders") renderAll();
+        if (view === "chat-inbox" && remoteAccount.role === "renter") renderRenterChatInbox();
         if (view === "chat" && chatBookingId === event.new.booking_id) loadChatMessages();
       }
     })
@@ -653,6 +656,7 @@ function subscribeToNotifications() {
       try {
         await loadBookingRows();
         if (view === "orders" || view === "account") renderAll();
+        if (view === "chat-inbox" && remoteAccount.role === "renter") renderRenterChatInbox();
       } catch (error) {
         console.error("Could not refresh bookings", error.message);
       }
@@ -956,7 +960,7 @@ function renderAccount() {
       </section>
       <section id="adminExpansionSection" class="admin-tool-content" hidden><div id="adminExpansion"><p class="muted">${t("processing")}</p></div></section>
     </div>` : ""}
-    ${account.role === "renter" ? `<div id="renterBookingInbox"></div><div id="adminChatInbox"></div>` : ""}
+    ${account.role === "renter" ? `<div id="adminChatInbox"></div>` : ""}
     <div class="panel"><h3>${t("acct_privacy")}</h3>
       <label class="row"><input id="emailNotificationsEnabled" type="checkbox" ${account.emailNotificationsEnabled ? "checked" : ""} onchange="updateEmailNotifications(this.checked)"> ${t("acct_email_notifications")}</label>
       <p id="pushNotificationStatus" class="muted"></p>
@@ -967,7 +971,6 @@ function renderAccount() {
     <div class="panel" id="appNotifications"><h3>Thông báo</h3><p class="muted">${t("processing")}</p></div>
     <div class="panel"><h3>${t("ord_t")}</h3><button class="btn ghost sm" onclick="go('orders')">${t("chat_inbox")}</button></div>`;
   if (account.role === "renter") {
-    loadRenterBookingInbox();
     loadRenterAdminChats();
   }
   if (account.role === "renter" && S.custom.some((profile) => profile.ownerId === account.id)) loadRenterGallery();
@@ -1723,6 +1726,9 @@ window.renderChrome = function() {
   coreRenderChrome();
   const account = activeAccount();
   const badge = unreadMessages ? ` <span class="badge-n" aria-label="${esc(t("unread_count"))}">${unreadMessages}</span>` : "";
+  if (account?.role === "renter") {
+    $("nav").insertAdjacentHTML("beforeend", `<button class="${view === "chat-inbox" ? "on" : ""}" onclick="go('chat-inbox')">${t("renter_chat_inbox")}${badge}</button>`);
+  }
   $("nav").insertAdjacentHTML("beforeend", `<button class="${view === "account" ? "on" : ""}" onclick="go('account')">${t("tab_account")}${badge}</button>`);
   $("ctl").insertAdjacentHTML("beforeend", `<button class="btn ghost sm" onclick="go('account')">${account ? esc(account.name) : t("tab_account")}${badge}</button>`);
   renderInstallButton();
@@ -1732,6 +1738,10 @@ window.renderAll = function() {
   renderChrome();
   if (view === "account") renderAccount();
   else if (view === "chat") renderChatPage();
+  else if (view === "chat-inbox") {
+    if (activeAccount()?.role === "renter") renderRenterChatInbox();
+    else go("account");
+  }
   else if (view === "orders") renderRemoteOrders();
   else if (view === "social") renderSocialFeed();
   else if (view === "list") {
@@ -2318,6 +2328,8 @@ window.renderRemoteOrders = async function() {
       const isParticipant = account?.role === "customer"
         || (account?.role === "renter" && order.renterOwnerId === account.id);
       const canChange = isParticipant && ["pending", "paid"].includes(order.status);
+      const canCancel = account?.role === "customer" && order.raw.customer_id === account.id
+        && ["pending", "paid"].includes(order.status);
       return `<div class="ord"><div class="top"><div class="av" style="${getG(order.id) ? bg(getG(order.id)) : ""}"></div>
         <div style="flex:1;min-width:0"><b>${esc(order.renterName)}</b><div class="muted">${esc(order.code)} · ${order.hours} ${t("hrs")}</div></div>
         <div style="text-align:right"><b>${Number(order.totalVnd).toLocaleString("vi-VN")} ₫</b><div class="st-b ${order.status === "paid" || order.status === "done" ? "ok" : expired ? "bad" : "wait"}">${esc(label)}</div></div></div>
@@ -2326,7 +2338,7 @@ window.renderRemoteOrders = async function() {
         <div class="acts"><button class="btn ghost sm" onclick="openInvoice('${esc(order.code)}')">${t("invoice")}</button>
         ${["paid", "done"].includes(order.status) ? `<button class="btn sm" onclick="openChat('${esc(order.code)}')">${t("chat_open")}</button>` : ""}
         ${canChange && Number(order.raw.change_count || 0) < 1 ? `<button class="btn ghost sm" onclick="openRescheduleBooking('${esc(order.code)}')">${t("booking_reschedule")}</button>` : ""}
-        ${canChange ? `<button class="btn ghost sm" onclick="cancelRemoteBooking('${esc(order.code)}')">${t("booking_cancel")}</button>` : ""}
+        ${canCancel ? `<button class="btn ghost sm" onclick="cancelRemoteBooking('${esc(order.code)}')">${t("booking_cancel")}</button>` : ""}
         ${order.status === "paid" && bookingEndPassed(order) ? `<button class="btn ghost sm" onclick="confirmBookingComplete('${esc(order.code)}')">${t("booking_complete_confirm")}</button>` : ""}
         ${customer && order.status === "done" && !order.reviewed ? `<button class="btn ghost sm" onclick="openReview('${esc(order.code)}')">${t("rv_send")}</button>` : ""}
         ${customer && order.status === "pending" && !expired ? `<button class="btn sm" onclick="openPayForBooking('${esc(order.code)}')">${t("pay")}</button>` : ""}</div>
@@ -2378,9 +2390,8 @@ window.submitBookingReschedule = async function(code, count) {
 window.cancelRemoteBooking = async function(code) {
   const order = mapRemoteOrder(code);
   const account = activeAccount();
-  const participant = account?.role === "customer"
-    || (account?.role === "renter" && order?.renterOwnerId === account.id);
-  if (!sb || !order || !participant || !["pending", "paid"].includes(order.status)) return toast(t("booking_change_failed"));
+  if (!sb || account?.role !== "customer" || !order || order.raw.customer_id !== account.id
+    || !["pending", "paid"].includes(order.status)) return toast(t("booking_change_failed"));
   if (!confirm(t("booking_cancel_confirm"))) return;
   const { error } = await sb.rpc("cancel_booking", { p_code: code });
   if (error) {
@@ -2605,29 +2616,42 @@ async function loadRenterAdminChats() {
   }).join("")}</div>`;
 }
 
-async function loadRenterBookingInbox() {
+window.renderRenterChatInbox = async function() {
   const account = activeAccount();
-  const container = $("renterBookingInbox");
-  if (!container || account?.role !== "renter") return;
-  container.innerHTML = `<div class="panel"><h3>${t("renter_paid_bookings")}</h3><p class="muted">${t("processing")}</p></div>`;
+  const app = $("app");
+  if (!app || account?.role !== "renter") return;
+  app.innerHTML = `<h2>${t("renter_chat_inbox")}</h2><p class="muted">${t("processing")}</p>`;
   try {
     await loadBookingRows();
+    const orders = S.orders.filter((order) => order.renterOwnerId === account.id
+      && ["paid", "done"].includes(order.status));
+    if (!orders.length) {
+      app.innerHTML = `<h2>${t("renter_chat_inbox")}</h2><div class="panel"><p class="muted">${t("renter_paid_bookings_empty")}</p></div>`;
+      return;
+    }
+    const customerIds = [...new Set(orders.map((order) => order.raw.customer_id).filter(Boolean))];
+    const { data: customerProfiles, error: profileError } = await sb.from("customer_public_profiles")
+      .select("user_id,display_name,avatar_path").in("user_id", customerIds);
+    if (profileError) throw profileError;
+    const publicProfiles = new Map((customerProfiles || []).map((profile) => [profile.user_id, profile]));
+    if (!app.isConnected || activeAccount()?.id !== account.id || view !== "chat-inbox") return;
+    app.innerHTML = `<h2>${t("renter_chat_inbox")}</h2><p class="muted">${t("renter_paid_bookings")}</p>
+      <div class="renter-chat-list">${orders.map((order) => {
+        const customer = publicProfiles.get(order.raw.customer_id);
+        const name = customer?.display_name || t("renter_chat_customer");
+        const avatar = customerAvatarPublicUrl(customer?.avatar_path);
+        return `<article class="panel row" style="justify-content:space-between;margin:10px 0">
+          <div class="row" style="min-width:0">${avatarMarkup(name, avatar)}
+            <div style="min-width:0"><b>${esc(name)}</b><div class="muted">${esc(order.code)} · ${order.hours} ${t("hrs")}</div>
+              <small class="muted">${(order.sessions || []).map((session) => `${esc(session.d)} ${esc(session.t)}`).join(" · ")}</small></div>
+          </div><button class="btn sm" onclick="openChat('${esc(order.code)}')">${t("chat_open")}</button>
+        </article>`;
+      }).join("")}</div>`;
   } catch (error) {
     console.error("Could not load renter paid bookings", error.message);
-    if (container.isConnected) container.innerHTML = `<div class="panel"><h3>${t("renter_paid_bookings")}</h3><p class="err">${esc(error.message || t("chat_failed"))}</p></div>`;
-    return;
+    if (app.isConnected) app.innerHTML = `<h2>${t("renter_chat_inbox")}</h2><div class="panel"><p class="err">${esc(error.message || t("chat_failed"))}</p></div>`;
   }
-  if (!container.isConnected || activeAccount()?.id !== account.id) return;
-  const orders = S.orders.filter((order) => order.renterOwnerId === account.id
-    && ["paid", "done"].includes(order.status));
-  container.innerHTML = `<div class="panel"><h3>${t("renter_paid_bookings")}</h3>
-    ${orders.length ? orders.map((order) => `<div class="row" style="justify-content:space-between;margin:8px 0;padding:8px 0;border-top:1px solid var(--line)">
-      <div><b>${esc(order.code)}</b><div class="muted">${(order.sessions || []).map((session) => `${esc(session.d)} ${esc(session.t)}`).join(" · ")}</div>
-        <small class="muted">${order.status === "done" ? esc(t("st_done")) : esc(t("paid"))} · ${Number(order.totalVnd).toLocaleString("vi-VN")} ₫</small></div>
-      <button class="btn sm" onclick="openChat('${esc(order.code)}')">${t("chat_open")}</button>
-    </div>`).join("") : `<p class="muted">${t("renter_paid_bookings_empty")}</p>`}
-  </div>`;
-}
+};
 
 async function loadChatMessages() {
   if (!sb || !chatBookingId) return [];
