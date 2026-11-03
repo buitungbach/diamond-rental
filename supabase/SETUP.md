@@ -28,7 +28,8 @@ hosting location.
    To enable browser push notifications for booking updates and new messages,
    run `supabase/web-push.sql` after `supabase/product-expansion.sql`. Then
    configure and deploy the `dispatch-web-push` Edge Function as described in
-   **Web push notifications** below, and run `supabase/web-push-schedule.sql`.
+   **Web push notifications** below, then run
+   `supabase/web-push-schedule.sql` and `supabase/web-push-immediate.sql`.
    To let administrators add and remove published photos in AI character
    profiles, run `supabase/ai-character-gallery.sql` after
    `supabase/product-expansion.sql`. To let human renters add and remove
@@ -182,8 +183,10 @@ scheduled dispatcher, and the VAPID secrets below.
 3. Enable `pg_cron`, `pg_net`, and Vault in Supabase **Database → Extensions**.
    In `supabase/web-push-schedule.sql`, replace
    `REPLACE_WITH_WEB_PUSH_SCHEDULER_SECRET` with the same scheduler secret
-   from step 1, then run the SQL in the Supabase SQL Editor. The dispatcher
-   checks the secret and sends queued notifications once per minute.
+   from step 1, then run the SQL in the Supabase SQL Editor. Run
+   `supabase/web-push-immediate.sql` in the SQL Editor as well. This trigger
+   asks `pg_net` to invoke the dispatcher as soon as a notification is queued;
+   the once-per-minute cron remains as a retry/fallback.
 
 4. Publish the site files. Customers and renters can then sign in, open
    **Account**, and select **Enable notifications on this device**. On iPhone
@@ -191,6 +194,9 @@ scheduled dispatcher, and the VAPID secrets below.
    notifications require iOS/iPadOS 16.4 or later. Each device must grant
    permission separately. Turning notifications off removes that device's
    subscription; deleting an account removes all its subscriptions.
+   Push is sent promptly after an event is queued, but mobile operating systems
+   and browser push services can still delay delivery while a device is offline,
+   in battery-saver mode, or has restricted background activity.
 
 ## Add VELORA to a phone's Home Screen
 
