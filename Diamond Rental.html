@@ -1,7 +1,7 @@
 <!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style>
 <title>VELORA</title>
-<link rel="icon" type="image/png" href="velora-logo.png">
-<link rel="apple-touch-icon" href="velora-icon-180.png">
+<link rel="icon" type="image/png" href="velora-logo-v2.png">
+<link rel="apple-touch-icon" href="velora-icon-180-v2.png">
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="VELORA">
@@ -45,7 +45,7 @@ button{cursor:pointer;transition:transform .18s ease,box-shadow .18s ease}
 .hd{background:color-mix(in srgb,var(--surface) 88%,#ffe4cf);border-bottom:1px solid var(--line);box-shadow:0 6px 24px rgba(181,112,86,.07)}
 .hd-in{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding-block:14px}
 .logo{display:flex;align-items:center;gap:10px;min-width:0}
-.logo img{flex:none;width:48px;height:48px;object-fit:cover;border-radius:12px}
+.logo img{flex:none;width:48px;height:48px;object-fit:contain}
 .logo b{font-family:var(--f-display);font-size:1.55rem;letter-spacing:.14em}
 .logo small{display:block;color:var(--muted);font-size:.72rem;letter-spacing:.04em}
 .ctl{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
@@ -225,7 +225,7 @@ button:not(:disabled):active{transform:scale(.98)}
 
 <header class="hd"><div class="wrap hd-in">
   <div class="logo">
-    <img src="velora-logo.png" alt="VELORA">
+    <img src="velora-logo-v2.png" alt="VELORA">
     <div><b>VELORA</b><small id="tag"></small></div>
   </div>
   <div class="ctl" id="ctl"></div>

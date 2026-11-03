@@ -7,8 +7,8 @@ self.addEventListener("push", (event) => {
   }
   event.waitUntil(self.registration.showNotification(payload.title || "VELORA", {
     body: payload.body || "Bạn có thông báo mới.",
-    icon: "velora-logo.png",
-    badge: "velora-logo.png",
+    icon: "velora-logo-v2.png",
+    badge: "velora-logo-v2.png",
     tag: payload.tag || "velora-notification",
     data: { url: payload.url || "./#account" },
   }));

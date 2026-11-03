@@ -569,7 +569,7 @@ function notifyAccountNotification(notification) {
     : notification.notification_type === "booking_paid" ? "Thanh toán đơn thuê đã được xác nhận."
       : notification.notification_type === "booking_created" ? "Bạn có đơn thuê mới."
         : "Đơn thuê của bạn vừa được cập nhật.";
-  new Notification(title, { body, icon: "velora-logo.png" });
+  new Notification(title, { body, icon: "velora-logo-v2.png" });
 }
 
 function renderRemoteAccountForm(mode) {
