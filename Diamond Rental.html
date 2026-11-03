@@ -69,6 +69,9 @@ h3{font-size:1.1rem;margin:0 0 10px}
 .sub{color:var(--muted);font-size:.9rem;margin-bottom:14px}
 .muted{color:var(--muted)}
 .notice{background:var(--ice-soft);color:var(--fg);border-radius:12px;padding:10px 14px;font-size:.85rem;margin-bottom:16px}
+.policy-box>summary{cursor:pointer;font-weight:700;color:var(--accent)}
+.policy-box[open]>summary{margin-bottom:10px}
+.policy-box p:last-child{margin-bottom:0}
 .remind{background:var(--gold-soft);border-radius:12px;padding:10px 14px;margin-bottom:16px;font-size:.9rem}
 
 /* toolbar */
@@ -471,6 +474,14 @@ function renderList(){
   const tags=[...new Set(girls().flatMap(g=>g.tags))];
   $("app").innerHTML=`
     <div class="notice">${t("notice")}</div>${remindHtml()}
+    <details class="panel policy-box">
+      <summary>${t("policy_safety_title")}</summary>
+      <p>${t("policy_profile_identity")}</p>
+      <p>${t("policy_booking_price")}</p>
+      <p>${t("policy_cancel_refund")}</p>
+      <p>${t("policy_meeting_safety")}</p>
+      <p>${t("policy_privacy")}</p>
+    </details>
     <div class="tb">
       <div class="tb-row"><input class="inp" id="fq" type="search" placeholder="${esc(t("search_ph"))}" value="${esc(F.q)}" oninput="F.q=this.value;renderResults()">
         ${window.profileAddButtonHtml ? window.profileAddButtonHtml() : ""}</div>
@@ -496,7 +507,7 @@ function card(g){
     </div>
     <div class="cb">
       <button class="nm" onclick="openProfile('${g.id}',0)">${esc(g.name)}</button>
-      ${g.profileType==="ai"?`<span class="pill">${t("ai_badge")}</span>`:""}
+      ${g.profileType==="ai"?`<span class="pill">${t("ai_badge")}</span>`:g.custom?`<span class="pill">${g.isVerified?t("verified_badge"):t("renter_self_reported")}</span>`:""}
       <div class="row"><span class="st">${stars(avg(g.id))}</span><span class="muted">${avg(g.id).toFixed(1)} (${n} ${t("revn")})</span></div>
       <div>${g.tags.map(x=>`<span class="pill tag">${esc(x)}</span>`).join("")}</div>
       <div class="free">${nf?t("nextfree")+": "+nf:t("nofree")}</div>
@@ -563,6 +574,7 @@ function openProfile(id,idx){
     <p class="muted" style="font-size:.85rem;margin:6px 0 16px">${g.avail.windows?.length?g.avail.windows.slice().sort((a,b)=>a.day-b.day).map(w=>`${dayN[w.day]} ${p2(w.from)}:00–${p2(w.to)}:00`).join(" · "):`${p2(g.avail.from)}:00 – ${p2(g.avail.to)}:00`}</p>
     <h3>${t("reviews")}</h3>
     ${rv.length?rv.map(r=>`<div class="rev"><span class="st">${stars(r.r)}</span> <b>${esc(r.w)}</b>${r.w==="Khách mẫu"?` <span class="muted">(${t("sample")})</span>`:""}<div>${esc(r.x)}</div></div>`).join(""):`<p class="muted">${t("noreview")}</p>`}
+    ${g.profileType==="real"&&g.custom&&activeAccount()?.role!=="admin"&&activeAccount()?.id!==g.ownerId?`<div style="margin-top:16px"><button class="btn bad sm" onclick="reportRenterProfile('${esc(g.id)}')">${t("profile_report")}</button></div>`:""}
     ${g.custom?`<div style="margin-top:16px"><button class="btn bad sm" id="delc" onclick="delChar('${id}')">${t("delchar")}</button></div>`:""}`);
 }
 let curP="";
@@ -714,7 +726,8 @@ function renderCk(){
       <div class="panel" id="ckTimePanel"><h3>${t("ck_time")}</h3>${ck.sessions.map((s,i)=>sessHtml(g,i)).join("")}</div>
       ${g.profileType==="ai"?`<div class="notice">${t("ai_booking_notice")}</div>`:`<div class="panel"><h3>${t("ck_place")}</h3>
         <label class="field">${t("ck_pname")}<input id="ckp" value="${esc(ck.place)}" oninput="ck.place=this.value"></label>
-        <label class="field">${t("ck_addr")}<input id="cka" value="${esc(ck.addr)}" oninput="ck.addr=this.value"></label></div>`}
+        <label class="field">${t("ck_addr")}<input id="cka" value="${esc(ck.addr)}" oninput="ck.addr=this.value"></label>
+        <p class="muted">${t("booking_location_privacy")}</p><p class="notice">${t("policy_meeting_safety")}</p></div>`}
       <div class="panel"><h3>${t("ck_cust")}</h3>
         <label class="field">${t("ck_name")}<input id="ckn" autocomplete="name" value="${esc(ck.name)}" oninput="ck.name=this.value"></label>
         <div class="r2"><label class="field">${t("ck_phone")}<input id="ckph" type="tel" autocomplete="tel" value="${esc(ck.phone)}" oninput="ck.phone=this.value"></label>

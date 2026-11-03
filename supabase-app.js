@@ -22,6 +22,26 @@ Object.assign(T, {
   ai_persona_prompt_hint: ["Ví dụ: tính cách, cách xưng hô, sở thích, bối cảnh, cách phản hồi; luôn nói rõ đây là AI hư cấu và không hẹn gặp ngoài đời.", "Example: personality, speaking style, interests, background, response style; always disclose this is fictional AI and never arrange in-person meetings.", "例：性格、話し方、好み、背景、応答方法。架空のAIであることを明示し、対面を約束しないでください。"],
   profile_preview: ["Hồ sơ mẫu · chưa nhận đặt lịch", "Sample profile · not available to book", "サンプルプロフィール・予約不可"],
   ai_badge: ["Nhân vật AI · hư cấu", "Fictional AI character", "架空のAIキャラクター"],
+  renter_self_reported: ["Người thật · tự khai", "Human · self-reported", "実在の利用者・自己申告"],
+  renter_verified_detail: ["Hồ sơ người thật đã được quản trị viên đánh dấu xác minh. Điều này không bảo đảm an toàn hoặc thay thế việc tự kiểm tra trước khi gặp.", "This human profile has been marked as verified by an administrator. This is not a safety guarantee; use your own judgment before meeting.", "このプロフィールは管理者が確認済みとしていますが、安全を保証するものではありません。会う前にご自身でも確認してください。"],
+  renter_self_reported_detail: ["Thông tin hồ sơ người thật do chủ tài khoản tự khai và chưa được xác minh. Hãy xác nhận các chi tiết cần thiết trước khi đặt lịch.", "This human profile is self-reported and has not been verified. Confirm the details you need before booking.", "このプロフィール情報は本人の申告で、未確認です。予約前に必要な情報を確認してください。"],
+  policy_safety_title: ["Thông tin đặt lịch, quyền riêng tư & an toàn", "Booking, privacy & safety information", "予約・プライバシー・安全について"],
+  policy_profile_identity: ["Hồ sơ AI được ghi rõ là nhân vật hư cấu và chỉ chat trực tuyến. Hồ sơ người thật là tự khai; nhãn xác minh chỉ cho biết quản trị viên đã đánh dấu hồ sơ, không bảo đảm danh tính hay an toàn.", "AI profiles are fictional and online-chat only. Human profiles are self-reported; a verification badge means an administrator marked the profile as verified, not a guarantee of identity or safety.", "AIプロフィールは架空で、オンラインチャット専用です。人間のプロフィールは自己申告です。確認済み表示は管理者が確認済みにしたことを示すだけで、本人確認や安全を保証しません。"],
+  policy_booking_price: ["Hồ sơ hiển thị giá theo 2 giờ và lịch nhận đặt. Trước khi tạo đơn, kiểm tra ngày, giờ và tổng tiền cuối cùng trong bảng tóm tắt; QR chỉ dành cho đúng mã đơn và số tiền đó.", "Profiles show the price per 2 hours and booking availability. Before creating an order, check the date, time, and final total in the summary; use the QR only for that booking code and amount.", "プロフィールには2時間あたりの料金と予約可能時間が表示されます。注文前に日付、時間、最終金額を確認し、QRはその予約コードと金額にのみ使用してください。"],
+  policy_cancel_refund: ["Có thể hủy đơn đang chờ thanh toán; đơn đã thanh toán chỉ có thể hủy trước buổi đầu ít nhất 24 giờ. Website không tự hoàn tiền: quản trị viên xử lý riêng và xác nhận điều kiện, số tiền, thời gian hoàn.", "Pending unpaid bookings can be cancelled; paid bookings can only be cancelled at least 24 hours before the first session. Refunds are not automatic: an administrator handles them separately and confirms eligibility, amount, and timing.", "未払いの予約はキャンセルできます。支払い済みの予約は最初の予定時刻の24時間前までキャンセルできます。返金は自動ではなく、管理者が個別に対応し、可否・金額・時期を確認します。"],
+  policy_meeting_safety: ["Khi gặp trực tiếp, ưu tiên địa điểm công cộng, báo cho người bạn tin tưởng biết lịch trình, tự chủ phương tiện di chuyển và rời đi nếu cảm thấy không an toàn. Không chuyển thêm tiền ngoài thông tin đơn.", "For in-person meetings, choose a public place, tell someone you trust your plans, arrange your own transport, and leave if you feel unsafe. Do not send extra money outside the booking details.", "対面時は公共の場所を選び、信頼できる人に予定を伝え、自分で移動手段を確保し、不安を感じたらその場を離れてください。予約内容以外の追加送金はしないでください。"],
+  policy_privacy: ["Không đăng số điện thoại, địa chỉ nhà, giấy tờ tùy thân hoặc thông tin nhạy cảm lên hồ sơ công khai hay trong chat. Địa điểm đặt lịch được lưu cùng đơn, không hiển thị trên hồ sơ công khai.", "Do not post phone numbers, home addresses, identity documents, or sensitive information on public profiles or in chat. Meeting locations are stored with the booking and are not shown on public profiles.", "電話番号、自宅住所、身分証明書、機密情報を公開プロフィールやチャットに投稿しないでください。待ち合わせ場所は予約情報に保存され、公開プロフィールには表示されません。"],
+  booking_location_privacy: ["Địa điểm này được lưu trong đơn đặt lịch, không hiển thị trên hồ sơ công khai. Chỉ nhập thông tin cần thiết để thống nhất điểm gặp.", "This location is saved with the booking and is not shown on public profiles. Enter only the details needed to agree on a meeting place.", "この場所は予約情報に保存され、公開プロフィールには表示されません。待ち合わせに必要な情報のみ入力してください。"],
+  profile_report: ["Báo cáo hồ sơ", "Report profile", "プロフィールを報告"],
+  profile_report_signin: ["Đăng nhập để báo cáo hồ sơ.", "Sign in to report a profile.", "プロフィールを報告するにはログインしてください。"],
+  profile_report_prompt: ["Mô tả vấn đề với hồ sơ này (10–1000 ký tự):", "Describe the issue with this profile (10–1000 characters):", "このプロフィールの問題を入力してください（10～1000文字）："],
+  profile_report_length: ["Nội dung báo cáo phải dài từ 10 đến 1000 ký tự.", "A report must be between 10 and 1000 characters.", "報告は10～1000文字で入力してください。"],
+  profile_report_sent: ["Đã gửi báo cáo hồ sơ để quản trị viên xem xét.", "Profile report submitted for administrator review.", "管理者確認のためプロフィール報告を送信しました。"],
+  profile_report_error: ["Không thể gửi báo cáo hồ sơ.", "Could not submit the profile report.", "プロフィール報告を送信できませんでした。"],
+  profile_reports_title: ["Báo cáo hồ sơ", "Profile reports", "プロフィール報告"],
+  profile_reports_empty: ["Chưa có báo cáo hồ sơ cần xử lý.", "No profile reports to review.", "確認が必要なプロフィール報告はありません。"],
+  profile_reports_load_error: ["Không tải được báo cáo hồ sơ.", "Could not load profile reports.", "プロフィール報告を読み込めませんでした。"],
+  profile_report_resolved: ["Đã cập nhật trạng thái báo cáo hồ sơ.", "Profile report status updated.", "プロフィール報告の状態を更新しました。"],
   ai_book: ["Thuê ngay", "Book now", "今すぐ予約"],
   ck_agree: ["Tôi đủ 18 tuổi và hiểu đây là trải nghiệm chat với nhân vật AI, không có gặp mặt trực tiếp.", "I am 18 or older and understand this is an AI chat experience with no in-person meeting.", "私は18歳以上で、対面のないAIチャット体験であることを理解しています。"],
   pay_transfer_note: ["Nội dung chuyển khoản", "Transfer description", "振込内容"],
@@ -166,9 +186,9 @@ Object.assign(T, {
   gallery_human_help: ["Bạn có thể tự thêm hoặc xóa ảnh trong hồ sơ của mình. Ảnh sẽ hiển thị ngay.", "You can add or remove photos on your own profile. Photos appear immediately.", "自分のプロフィール写真を追加・削除できます。写真はすぐに表示されます。"],
   booking_reschedule: ["Đổi lịch", "Reschedule", "予約を変更"],
   booking_cancel: ["Hủy lịch", "Cancel booking", "予約をキャンセル"],
-  booking_cancel_confirm: ["Bạn có chắc chắn muốn hủy lịch này? Hoàn tiền cho đơn đã thanh toán do quản trị viên xử lý riêng.", "Cancel this booking? Refunds for paid bookings are handled separately by the administrator.", "この予約をキャンセルしますか？支払い済み予約の返金は管理者が別途処理します。"],
+  booking_cancel_confirm: ["Bạn có chắc chắn muốn hủy lịch này? Đơn đã thanh toán chỉ được hủy trước buổi đầu ít nhất 24 giờ. Website không tự hoàn tiền; quản trị viên xử lý hoàn tiền riêng.", "Cancel this booking? Paid bookings can only be cancelled at least 24 hours before the first session. Refunds are not automatic and are handled separately by the administrator.", "この予約をキャンセルしますか？支払い済み予約は最初の予定時刻の24時間前までキャンセルできます。返金は自動ではなく、管理者が個別に対応します。"],
   booking_rescheduled: ["Đã gửi yêu cầu đổi lịch.", "Booking rescheduled.", "予約を変更しました。"],
-  booking_cancelled: ["Đã hủy lịch. Nếu đã thanh toán, hãy liên hệ quản trị viên để đối soát hoàn tiền.", "Booking cancelled. If paid, contact the administrator about the refund.", "予約をキャンセルしました。支払い済みの場合は返金について管理者にお問い合わせください。"],
+  booking_cancelled: ["Đã hủy lịch. Nếu đơn đã thanh toán, quản trị viên sẽ xử lý việc hoàn tiền riêng và xác nhận điều kiện, số tiền, thời gian.", "Booking cancelled. If it was paid, an administrator will handle the refund separately and confirm eligibility, amount, and timing.", "予約をキャンセルしました。支払い済みの場合、返金は管理者が個別に対応し、可否・金額・時期を確認します。"],
   booking_change_failed: ["Không thể thay đổi lịch. Kiểm tra thời hạn và khung giờ còn trống.", "Could not change the booking. Check the deadline and availability.", "予約を変更できません。期限と空き状況を確認してください。"],
 });
 
@@ -759,7 +779,11 @@ function renderAccount() {
           <button class="btn sm" onclick="openAdminChat('${esc(profile.id)}')">${t("admin_chat_open")}</button>
         </div>`).join("") || `<p class="muted">${t("admin_chat_empty")}</p>`}
       </section>
-      <section id="adminChatReportsSection" class="admin-tool-content" hidden><div id="chatReports"><p class="muted">${t("processing")}</p></div></section>
+      <section id="adminChatReportsSection" class="admin-tool-content" hidden>
+        <div id="chatReports"><p class="muted">${t("processing")}</p></div>
+        <h4>${t("profile_reports_title")}</h4>
+        <div id="renterProfileReports"><p class="muted">${t("processing")}</p></div>
+      </section>
       <section id="adminExpansionSection" class="admin-tool-content" hidden><div id="adminExpansion"><p class="muted">${t("processing")}</p></div></section>
     </div>` : ""}
     ${account.role === "renter" ? `<div id="adminChatInbox"></div>` : ""}
@@ -774,7 +798,7 @@ function renderAccount() {
     <div class="panel"><h3>${t("ord_t")}</h3><button class="btn ghost sm" onclick="go('orders')">${t("chat_inbox")}</button></div>`;
   if (account.role === "renter") loadRenterAdminChats();
   if (account.role === "renter" && S.custom.some((profile) => profile.ownerId === account.id)) loadRenterGallery();
-  if (account.role === "admin") { loadChatReports(); loadAdminExpansionData(); }
+  if (account.role === "admin") { loadChatReports(); loadRenterProfileReports(); loadAdminExpansionData(); }
   loadPushSubscriptionStatus();
   loadAccountNotifications();
 }
@@ -1076,7 +1100,10 @@ function appendProfileNotice(id) {
   const real = profile.profileType === "real";
   const canEditGallery = real && account?.role === "renter" && account.id === profile.ownerId;
   const verification = profile.isVerified ? `<span class="st-b ok">${t("verified_badge")}</span>` : "";
-  $("box").insertAdjacentHTML("beforeend", `${verification}${real ? `<p class="notice">${t("acct_renter_note")}</p>` : ""}${canEditGallery ? `<div class="row"><button class="btn ghost sm" onclick="chooseGalleryUpload()">${t("addphoto")}</button><button class="btn ghost sm" onclick="openAdd()">${t("acct_edit_profile")}</button></div>` : ""}`);
+  const identityNotice = real
+    ? t(profile.isVerified ? "renter_verified_detail" : "renter_self_reported_detail")
+    : "";
+  $("box").insertAdjacentHTML("beforeend", `${verification}${real ? `<p class="notice">${identityNotice}</p>` : ""}${canEditGallery ? `<div class="row"><button class="btn ghost sm" onclick="chooseGalleryUpload()">${t("addphoto")}</button><button class="btn ghost sm" onclick="openAdd()">${t("acct_edit_profile")}</button></div>` : ""}`);
   guardProfileEditControls();
 }
 
@@ -1275,6 +1302,42 @@ window.loadChatReports = async function() {
         <button class="btn ghost sm" onclick="resolveChatReport('${esc(report.id)}','dismissed')">${t("chat_report_dismiss")}</button>
       </div>` : ""}
     </article>`).join("") : `<p class="muted">${t("chat_report_empty")}</p>`}`;
+};
+
+window.loadRenterProfileReports = async function() {
+  const panel = $("renterProfileReports");
+  if (!panel || !sb || activeAccount()?.role !== "admin") return;
+  const { data, error } = await sb.rpc("list_renter_profile_reports");
+  if (error) {
+    console.error("Could not load renter profile reports", error.message);
+    panel.innerHTML = `<p class="err">${t("profile_reports_load_error")}</p><p class="muted">${esc(error.message)}</p>`;
+    return;
+  }
+  panel.innerHTML = `${data?.length ? data.map((report) => `
+    <article class="report-card">
+      <div class="row" style="justify-content:space-between"><b>${esc(report.profile_name || "")}</b>
+        <span class="st-b ${report.status === "open" ? "wait" : "ok"}">${esc(report.status)}</span></div>
+      <p class="muted">${esc(report.reporter_name || "")} · ${new Date(report.created_at).toLocaleString()}</p>
+      <p>${esc(report.reason)}</p>
+      ${report.status === "open" ? `<div class="row">
+        <button class="btn sm" onclick="resolveRenterProfileReport('${esc(report.id)}','resolved')">${t("chat_report_resolve")}</button>
+        <button class="btn ghost sm" onclick="resolveRenterProfileReport('${esc(report.id)}','dismissed')">${t("chat_report_dismiss")}</button>
+      </div>` : ""}
+    </article>`).join("") : `<p class="muted">${t("profile_reports_empty")}</p>`}`;
+};
+
+window.resolveRenterProfileReport = async function(reportId, status) {
+  if (!sb || activeAccount()?.role !== "admin") return toast(t("acct_access_denied"));
+  const { data, error } = await sb.rpc("resolve_renter_profile_report", {
+    p_report_id: reportId, p_status: status,
+  });
+  if (error) {
+    console.error("Could not resolve renter profile report", error.message);
+    return toast(error.message);
+  }
+  if (data !== true) return toast(t("profile_report_error"));
+  await loadRenterProfileReports();
+  toast(t("profile_report_resolved"));
 };
 
 window.resolveChatReport = async function(id, status) {
@@ -2576,6 +2639,28 @@ window.reportChat = async function() {
     return toast(error.message);
   }
   toast(t("chat_report_sent"));
+};
+
+window.reportRenterProfile = async function(profileId) {
+  const account = activeAccount();
+  const profile = S.custom.find((item) => item.id === profileId && item.profileType === "real");
+  if (!sb) return toast(t("acct_config_required"));
+  if (!account || account.role === "admin") return toast(t("profile_report_signin"));
+  if (!profile || profile.ownerId === account.id) return toast(t("acct_access_denied"));
+  const reason = window.prompt(t("profile_report_prompt"));
+  if (reason === null) return;
+  const trimmedReason = reason.trim();
+  if (trimmedReason.length < 10 || trimmedReason.length > 1000) {
+    return toast(t("profile_report_length"));
+  }
+  const { error } = await sb.rpc("report_renter_profile", {
+    p_profile_id: profileId, p_reason: trimmedReason,
+  });
+  if (error) {
+    console.error("Could not submit renter profile report", error.message);
+    return toast(error.message || t("profile_report_error"));
+  }
+  toast(t("profile_report_sent"));
 };
 
 function trustedImageUrl(value) {

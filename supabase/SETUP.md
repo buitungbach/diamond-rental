@@ -25,6 +25,9 @@ hosting location.
    `supabase/product-expansion.sql`. Cash orders stay pending and chat remains
    locked until an administrator confirms receipt of the cash. AI character
    bookings are online-only and use QR.
+   To let customers report human renter profiles and let administrators review
+   those reports, run `supabase/profile-reports.sql` after
+   `supabase/product-expansion.sql`.
    To enable browser push notifications for booking updates and new messages,
    run `supabase/web-push.sql` after `supabase/product-expansion.sql`. Then
    configure and deploy the `dispatch-web-push` Edge Function as described in
@@ -44,7 +47,7 @@ hosting location.
    if the base schema has not been installed), `pricing-vnd.sql`,
    `admin-direct-chat.sql`, `manual-payment.sql`, `feature-upgrades.sql`,
    `chat-backgrounds.sql`, then `product-expansion.sql`, then
-   `payment-methods.sql` and `web-push.sql`. The feature migration
+   `payment-methods.sql`, `profile-reports.sql`, and `web-push.sql`. The feature migration
    assumes the admin chat tables already exist. Do not advertise these
    features as enabled until the SQL Editor reports that each migration
    succeeded. Run `ai-character-gallery.sql` after `product-expansion.sql`
