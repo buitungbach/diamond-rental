@@ -2325,9 +2325,8 @@ window.renderRemoteOrders = async function() {
         : order.status === "done" ? t("st_done")
           : order.status === "cancelled" ? t("st_can") : t("pay_pending");
       const account = activeAccount();
-      const isParticipant = account?.role === "customer"
-        || (account?.role === "renter" && order.renterOwnerId === account.id);
-      const canChange = isParticipant && ["pending", "paid"].includes(order.status);
+      const canChange = account?.role === "customer" && order.raw.customer_id === account.id
+        && ["pending", "paid"].includes(order.status);
       const canCancel = account?.role === "customer" && order.raw.customer_id === account.id
         && ["pending", "paid"].includes(order.status);
       return `<div class="ord"><div class="top"><div class="av" style="${getG(order.id) ? bg(getG(order.id)) : ""}"></div>
@@ -2353,9 +2352,8 @@ window.renderRemoteOrders = async function() {
 window.openRescheduleBooking = function(code) {
   const order = mapRemoteOrder(code);
   const account = activeAccount();
-  const participant = account?.role === "customer"
-    || (account?.role === "renter" && order?.renterOwnerId === account.id);
-  if (!order || !participant || !["pending", "paid"].includes(order.status)
+  if (!order || account?.role !== "customer" || order.raw.customer_id !== account.id
+    || !["pending", "paid"].includes(order.status)
     || Number(order.raw.change_count || 0) >= 1) return toast(t("booking_change_failed"));
   openBox(`<h2>${t("booking_reschedule")}</h2><p class="muted">${esc(order.code)} · ${t("booking_change_failed")}</p>
     ${(order.sessions || []).map((session, index) => `<div class="r2">
@@ -2368,7 +2366,9 @@ window.openRescheduleBooking = function(code) {
 
 window.submitBookingReschedule = async function(code, count) {
   const order = mapRemoteOrder(code);
-  if (!sb || !order || !Number.isInteger(count) || count !== order.sessions.length) return toast(t("booking_change_failed"));
+  const account = activeAccount();
+  if (!sb || account?.role !== "customer" || !order || order.raw.customer_id !== account.id
+    || !Number.isInteger(count) || count !== order.sessions.length) return toast(t("booking_change_failed"));
   const sessions = [];
   for (let index = 0; index < count; index++) {
     const date = $(`rescheduleDate${index}`)?.value;

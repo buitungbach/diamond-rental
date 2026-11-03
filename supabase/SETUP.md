@@ -35,8 +35,9 @@ hosting location.
    `supabase/web-push-sender-name.sql` is installed, run this migration after
    it so customer chat notifications use the public display name instead of
    private registration details.
-   To restrict booking cancellation to the customer who created the booking
-   or an administrator (renters can still view bookings and chat), run
+   To restrict rescheduling to the customer who created the booking and
+   cancellation to the customer or an administrator (renters can still view
+   bookings and chat), run
    `supabase/renter-booking-controls.sql` after
    `supabase/product-expansion.sql`.
    To enable browser push notifications for booking updates and new messages,
@@ -62,7 +63,9 @@ hosting location.
    `web-push-sender-name.sql` before `customer-public-profiles.sql` when using
    sender-name push notifications; otherwise apply
    `customer-public-profiles.sql` after `product-expansion.sql`. Apply
-   `renter-booking-controls.sql` after `product-expansion.sql` as well. The feature migration
+   `renter-booking-controls.sql` after `product-expansion.sql` as well. If you
+   already ran it, run it again after this update to apply the rescheduling
+   restriction. The feature migration
    assumes the admin chat tables already exist. Do not advertise these
    features as enabled until the SQL Editor reports that each migration
    succeeded. Run `ai-character-gallery.sql` after `product-expansion.sql`
