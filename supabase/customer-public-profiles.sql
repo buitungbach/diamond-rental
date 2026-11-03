@@ -125,8 +125,7 @@ alter table public.social_comments
   add column if not exists author_avatar_path text,
   add column if not exists author_avatar_url text;
 revoke all on public.social_comments from public, anon, authenticated;
-grant select (id, post_id, author_label, author_avatar_path, author_avatar_url, body, created_at)
-  on public.social_comments to anon, authenticated;
+grant select on public.social_comments to anon, authenticated;
 grant insert (post_id, author_id, body) on public.social_comments to authenticated;
 grant delete on public.social_comments to authenticated;
 

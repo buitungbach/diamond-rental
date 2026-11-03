@@ -1771,11 +1771,9 @@ window.renderSocialFeed = async function() {
     return;
   }
   const canPost = account?.role === "renter" && S.custom.some((profile) => profile.ownerId === account.id);
-  const composer = canPost ? `<section class="panel"><h3>${t("social_compose")}</h3>
-    <p class="muted">${t("social_upload_rights")}</p>
-    <label class="field">${t("social_caption")}<textarea id="socialCaption" maxlength="2000"></textarea></label>
-    <label class="field">${t("social_media")}<input id="socialFile" type="file" accept="image/jpeg,image/png,image/webp,video/mp4,video/webm"></label>
-    <button class="btn sm" onclick="submitSocialPost()">${t("social_send")}</button><span id="socialUploadStatus" class="muted"></span></section>` : "";
+  const composer = canPost
+    ? `<button class="btn" onclick="openSocialComposer()">+ ${t("social_compose")}</button>`
+    : "";
   app.innerHTML = `<h2>${t("social_title")}</h2><p class="muted">${t("social_subtitle")}</p>${composer}<p class="muted">${t("processing")}</p>`;
   const { data: posts, error } = await sb.from("social_posts")
     .select("id,renter_profile_id,caption,media_url,media_type,source_url,source_credit,is_ai_generated,published_at,renter_profiles(display_name,is_verified)")
@@ -1851,6 +1849,19 @@ window.renderSocialFeed = async function() {
   socialFeedCache = { key: cacheKey, html: app.innerHTML, createdAt: Date.now() };
 };
 
+window.openSocialComposer = function() {
+  const account = activeAccount();
+  if (account?.role !== "renter" || !S.custom.some((profile) => profile.ownerId === account.id)) {
+    return toast(t("acct_access_denied"));
+  }
+  openBox(`<h2>${t("social_compose")}</h2>
+    <p class="muted">${t("social_upload_rights")}</p>
+    <label class="field">${t("social_caption")}<textarea id="socialCaption" maxlength="2000"></textarea></label>
+    <label class="field">${t("social_media")}<input id="socialFile" type="file" accept="image/jpeg,image/png,image/webp,video/mp4,video/webm"></label>
+    <button class="btn sm" id="socialSubmitButton" onclick="submitSocialPost()">${t("social_send")}</button>
+    <span id="socialUploadStatus" class="muted"></span>`);
+};
+
 window.submitSocialPost = async function() {
   const account = activeAccount();
   const profile = S.custom.find((item) => item.ownerId === account?.id && item.profileType === "real");
@@ -1862,7 +1873,7 @@ window.submitSocialPost = async function() {
   if (!["image/jpeg", "image/png", "image/webp", "video/mp4", "video/webm"].includes(file.type) || file.size > 50 * 1024 * 1024) {
     return toast(t("social_upload_failed"));
   }
-  const button = $("socialFile")?.closest(".panel")?.querySelector("button");
+  const button = $("socialSubmitButton");
   if (button) button.disabled = true;
   if (status) status.textContent = t("processing");
   try {
@@ -1883,6 +1894,7 @@ window.submitSocialPost = async function() {
     }
     socialFeedCache = null;
     toast(t("social_posted"));
+    closeBox();
     await renderSocialFeed();
   } catch (error) {
     console.error("Could not submit social post", error.message);
