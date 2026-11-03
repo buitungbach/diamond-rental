@@ -22,12 +22,13 @@ function sameSecret(a: string, b: string) {
   return mismatch === 0;
 }
 
-function notificationContent(type: string, code: string) {
+function notificationContent(type: string, code: string, storedTitle: string, storedBody: string) {
   const siteUrl = "https://buitungbach.github.io/diamond-rental/";
   const detail = code ? ` · ${code}` : "";
   if (type === "new_message") return {
-    title: "VELORA · Tin nhắn mới",
-    body: "Bạn có tin nhắn mới. Chạm để mở tài khoản.",
+    title: storedTitle.startsWith("Tin nhắn từ ")
+      ? `VELORA · ${storedTitle}` : "VELORA · Tin nhắn mới",
+    body: storedBody || "Bạn có tin nhắn mới. Chạm để mở tài khoản.",
     url: `${siteUrl}#account`,
   };
   const messages: Record<string, string> = {
@@ -97,7 +98,12 @@ Deno.serve(async (request) => {
       deliveryError = "Could not load push subscriptions";
       console.error(deliveryError, subscriptionError.message);
     } else {
-      const notice = notificationContent(job.notification_type, job.reference_code || "");
+      const notice = notificationContent(
+        job.notification_type,
+        job.reference_code || "",
+        job.title || "",
+        job.body || "",
+      );
       const payload = JSON.stringify({
         ...notice,
         tag: `velora-${job.id}`,

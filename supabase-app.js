@@ -564,8 +564,8 @@ function notifyAccountNotification(notification) {
   if (pushNotificationsEnabled || !("Notification" in window)
     || Notification.permission !== "granted" || !document.hidden) return;
   const isMessage = notification.notification_type === "new_message";
-  const title = isMessage ? "VELORA · Tin nhắn mới" : "VELORA · Cập nhật đơn thuê";
-  const body = isMessage ? "Bạn có tin nhắn mới. Đăng nhập để xem."
+  const title = isMessage ? `VELORA · ${notification.title || "Tin nhắn mới"}` : "VELORA · Cập nhật đơn thuê";
+  const body = isMessage ? notification.body || "Bạn có tin nhắn mới. Đăng nhập để xem."
     : notification.notification_type === "booking_paid" ? "Thanh toán đơn thuê đã được xác nhận."
       : notification.notification_type === "booking_created" ? "Bạn có đơn thuê mới."
         : "Đơn thuê của bạn vừa được cập nhật.";

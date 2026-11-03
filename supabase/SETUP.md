@@ -30,6 +30,9 @@ hosting location.
    configure and deploy the `dispatch-web-push` Edge Function as described in
    **Web push notifications** below, then run
    `supabase/web-push-schedule.sql` and `supabase/web-push-immediate.sql`.
+   To show the sender's name in new-message push notifications, apply
+   `supabase/web-push-sender-name.sql` after those Web Push SQL files and
+   redeploy `dispatch-web-push`.
    To let administrators add and remove published photos in AI character
    profiles, run `supabase/ai-character-gallery.sql` after
    `supabase/product-expansion.sql`. To let human renters add and remove
