@@ -1772,7 +1772,7 @@ window.renderSocialFeed = async function() {
   }
   const canPost = account?.role === "renter" && S.custom.some((profile) => profile.ownerId === account.id);
   const composer = canPost
-    ? `<button class="btn" onclick="openSocialComposer()">+ ${t("social_compose")}</button>`
+    ? `<button class="btn sm" onclick="openSocialComposer()">+ ${t("social_compose")}</button>`
     : "";
   app.innerHTML = `<h2>${t("social_title")}</h2><p class="muted">${t("social_subtitle")}</p>${composer}<p class="muted">${t("processing")}</p>`;
   const { data: posts, error } = await sb.from("social_posts")
