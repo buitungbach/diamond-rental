@@ -251,10 +251,11 @@ begin
   return query
   select booking.customer_id,
     'customer'::text,
-    coalesce(nullif(trim(customer_profile.display_name), ''), 'Khách hàng'),
+    coalesce(nullif(trim(customer_profile.display_name), ''), customer.full_name),
     customer_profile.avatar_path,
     null::text
   from public.bookings booking
+  join public.profiles customer on customer.id = booking.customer_id
   left join public.customer_public_profiles customer_profile
     on customer_profile.user_id = booking.customer_id
   where booking.id = p_booking_id
@@ -274,6 +275,34 @@ end;
 $$;
 revoke all on function public.get_booking_chat_identities(uuid) from public, anon;
 grant execute on function public.get_booking_chat_identities(uuid) to authenticated;
+
+create or replace function public.list_renter_booking_customer_profiles()
+returns table (
+  booking_id uuid,
+  display_name text,
+  avatar_path text
+)
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select booking.id,
+    coalesce(nullif(trim(customer_profile.display_name), ''), customer.full_name),
+    customer_profile.avatar_path
+  from public.bookings booking
+  join public.renter_profiles renter on renter.id = booking.renter_profile_id
+  join public.profiles customer on customer.id = booking.customer_id and customer.role = 'customer'
+  left join public.customer_public_profiles customer_profile
+    on customer_profile.user_id = booking.customer_id
+  where renter.owner_id = (select auth.uid())
+    and exists (
+      select 1 from public.profiles actor
+      where actor.id = (select auth.uid()) and actor.role = 'renter'
+    );
+$$;
+revoke all on function public.list_renter_booking_customer_profiles() from public, anon;
+grant execute on function public.list_renter_booking_customer_profiles() to authenticated;
 
 create or replace function public.notify_booking_change()
 returns trigger

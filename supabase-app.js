@@ -2326,12 +2326,11 @@ window.renderRemoteOrders = async function() {
     const account = activeAccount();
     let customerProfiles = new Map();
     if (account.role === "renter") {
-      const customerIds = [...new Set(S.orders.map((order) => order.raw.customer_id).filter(Boolean))];
-      if (customerIds.length) {
-        const { data, error } = await sb.from("customer_public_profiles")
-          .select("user_id,display_name,avatar_path").in("user_id", customerIds);
-        if (error) throw error;
-        customerProfiles = new Map((data || []).map((profile) => [profile.user_id, profile]));
+      const { data, error } = await sb.rpc("list_renter_booking_customer_profiles");
+      if (error) throw error;
+      customerProfiles = new Map((data || []).map((profile) => [profile.booking_id, profile]));
+      if (S.orders.some((order) => !customerProfiles.has(order.raw.id))) {
+        throw new Error("Không tải được tên khách hàng của đơn. Hãy chạy lại migration customer-public-profiles.sql trong Supabase.");
       }
       if (view !== "orders" || activeAccount()?.id !== account.id) return;
     } else if (account.role === "customer") {
@@ -2342,10 +2341,10 @@ window.renderRemoteOrders = async function() {
     }
     app.innerHTML = `<h2>${t("ord_t")}</h2>${S.orders.length ? S.orders.map((order) => {
       const customer = account.role === "customer";
-      const customerProfile = customerProfiles.get(order.raw.customer_id);
+      const customerProfile = customerProfiles.get(order.raw.id);
       const displayName = customer
         ? order.renterName
-        : customerProfile?.display_name || t("renter_chat_customer");
+        : customerProfile.display_name;
       const displayAvatar = customer
         ? getG(order.id) ? bg(getG(order.id)) : ""
         : customerAvatarPublicUrl(customerProfile?.avatar_path);
@@ -2354,7 +2353,6 @@ window.renderRemoteOrders = async function() {
       const label = expired ? t("booking_expired_short") : order.status === "paid" ? t("paid")
         : order.status === "done" ? t("st_done")
           : order.status === "cancelled" ? t("st_can") : t("pay_pending");
-      const account = activeAccount();
       const canChange = account?.role === "customer" && order.raw.customer_id === account.id
         && ["pending", "paid"].includes(order.status);
       const canCancel = account?.role === "customer" && order.raw.customer_id === account.id

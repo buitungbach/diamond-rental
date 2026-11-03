@@ -34,8 +34,10 @@ hosting location.
    `supabase/product-expansion.sql`. If
    `supabase/web-push-sender-name.sql` is installed, run this migration after
    it so customer chat notifications use the public display name instead of
-   private registration details. If the Community page reports permission
-   denied for `social_comments`, rerun this migration to refresh its table
+   private registration details. The migration also lets renters see each
+   booking customer's name and avatar without exposing customer details to
+   other renters. Rerun it after updates. If the Community page reports
+   permission denied for `social_comments`, rerunning refreshes its table
    permissions.
    To restrict rescheduling to the customer who created the booking and
    cancellation to the customer or an administrator (renters can still view
