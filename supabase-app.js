@@ -2676,6 +2676,20 @@ async function loadChatMessages() {
         ? customerAvatarPublicUrl(identity.avatar_path)
         : trustedImageUrl(identity.avatar_url),
     }));
+    const account = activeAccount();
+    const otherParticipant = identities.find((identity) => identity.user_id !== account?.id);
+    if (account?.role === "renter" && otherParticipant?.account_role === "customer") {
+      const name = $("chatPeerName");
+      const avatar = $("chatPeerAvatar");
+      if (name) name.textContent = otherParticipant.display_name || t("renter_chat_customer");
+      if (avatar) {
+        const imageUrl = trustedImageUrl(otherParticipant.avatar);
+        avatar.style.backgroundImage = imageUrl
+          ? `url("${imageUrl.replace(/["\\\n\r]/g, "")}")`
+          : "linear-gradient(135deg,#7048e8,#2a2140)";
+        avatar.setAttribute("aria-label", otherParticipant.display_name || t("renter_chat_customer"));
+      }
+    }
   }
   const profile = getG(mapRemoteOrder(currentChat)?.id);
   renderChatMessages(data, profile || { name: "Nhân vật" }, identities);
@@ -2799,8 +2813,13 @@ function renderChatPage() {
   }
   const renter = getG(order.id);
   const account = activeAccount();
-  renderChatFrame(renter || { name: order.renterName, profileType: "real" }, "orders",
-    account?.role === "renter" && renter?.profileType === "real" && renter.ownerId === account.id);
+  const chatProfile = account?.role === "renter"
+    ? { name: t("renter_chat_customer"), profileType: "real", color: "#7048e8" }
+    : renter || { name: order.renterName, profileType: "real" };
+  renderChatFrame(renter || { name: order.renterName, profileType: "real" },
+    account?.role === "renter" ? "chat-inbox" : "orders",
+    account?.role === "renter" && renter?.profileType === "real" && renter.ownerId === account.id,
+    chatProfile);
   refreshChatBlockStatus();
   loadChatMessages();
   if (chatChannel) sb.removeChannel(chatChannel);
@@ -2814,12 +2833,12 @@ function renderChatPage() {
     .subscribe();
 }
 
-function renderChatFrame(profile, backView, canChangeBackground) {
+function renderChatFrame(profile, backView, canChangeBackground, headerProfile = profile) {
   const isAi = profile.profileType === "ai";
   $("app").innerHTML = `<section class="chat-shell">
     <div class="chat-wallpaper"><img id="chatWallpaper" alt="" aria-hidden="true"></div><div class="chat-shade"></div>
-    <header class="chat-head"><div class="av" style="${bg(profile)}"></div>
-      <div class="chat-head-copy"><b>${esc(profile.name)}</b><small>${esc(isAi ? t("ai_badge") : t("chat_human"))}</small></div>
+    <header class="chat-head"><div id="chatPeerAvatar" class="av" aria-label="${esc(headerProfile.name)}" style="${bg(headerProfile)}"></div>
+      <div class="chat-head-copy"><b id="chatPeerName">${esc(headerProfile.name)}</b><small>${esc(isAi ? t("ai_badge") : t("chat_human"))}</small></div>
       <button class="btn ghost sm" aria-label="${esc(t("ck_back"))}" onclick="go('${backView}')">←</button>
     </header>
     <div class="chat-body" id="chatBody"><div class="chat-empty">${esc(t("chat_empty"))}</div></div>
