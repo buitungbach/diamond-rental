@@ -28,6 +28,13 @@ hosting location.
    To let customers report human renter profiles and let administrators review
    those reports, run `supabase/profile-reports.sql` after
    `supabase/product-expansion.sql`.
+   To let customers set a separate public display name and avatar used in
+   comments and paid-booking chats, and to show renters paid bookings with a
+   direct chat button, run `supabase/customer-public-profiles.sql` after
+   `supabase/product-expansion.sql`. If
+   `supabase/web-push-sender-name.sql` is installed, run this migration after
+   it so customer chat notifications use the public display name instead of
+   private registration details.
    To enable browser push notifications for booking updates and new messages,
    run `supabase/web-push.sql` after `supabase/product-expansion.sql`. Then
    configure and deploy the `dispatch-web-push` Edge Function as described in
@@ -47,7 +54,10 @@ hosting location.
    if the base schema has not been installed), `pricing-vnd.sql`,
    `admin-direct-chat.sql`, `manual-payment.sql`, `feature-upgrades.sql`,
    `chat-backgrounds.sql`, then `product-expansion.sql`, then
-   `payment-methods.sql`, `profile-reports.sql`, and `web-push.sql`. The feature migration
+   `payment-methods.sql`, `profile-reports.sql`, and `web-push.sql`. Apply
+   `web-push-sender-name.sql` before `customer-public-profiles.sql` when using
+   sender-name push notifications; otherwise apply
+   `customer-public-profiles.sql` after `product-expansion.sql`. The feature migration
    assumes the admin chat tables already exist. Do not advertise these
    features as enabled until the SQL Editor reports that each migration
    succeeded. Run `ai-character-gallery.sql` after `product-expansion.sql`

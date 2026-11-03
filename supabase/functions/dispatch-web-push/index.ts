@@ -29,7 +29,7 @@ function notificationContent(type: string, code: string, storedTitle: string, st
     title: storedTitle.startsWith("Tin nhắn từ ")
       ? `VELORA · ${storedTitle}` : "VELORA · Tin nhắn mới",
     body: storedBody || "Bạn có tin nhắn mới. Chạm để mở tài khoản.",
-    url: `${siteUrl}#account`,
+    url: `${siteUrl}#orders`,
   };
   const messages: Record<string, string> = {
     booking_created: "Bạn có đơn thuê mới đang chờ thanh toán.",
@@ -39,8 +39,8 @@ function notificationContent(type: string, code: string, storedTitle: string, st
     booking_updated: "Đơn thuê của bạn vừa được cập nhật.",
   };
   return {
-    title: "VELORA · Cập nhật đơn thuê",
-    body: `${messages[type] ?? "Tài khoản của bạn có cập nhật mới."}${detail}`,
+    title: storedTitle ? `VELORA · ${storedTitle}` : "VELORA · Cập nhật đơn thuê",
+    body: storedBody || `${messages[type] ?? "Tài khoản của bạn có cập nhật mới."}${detail}`,
     url: `${siteUrl}#orders`,
   };
 }

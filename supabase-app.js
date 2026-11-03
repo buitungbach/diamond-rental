@@ -154,6 +154,17 @@ Object.assign(T, {
   admin_unverify: ["Bỏ xác minh", "Remove verification", "確認を解除"],
   admin_load_failed: ["Không tải được dữ liệu quản trị.", "Could not load admin data.", "管理データを読み込めませんでした。"],
   acct_privacy: ["Quyền riêng tư và dữ liệu", "Privacy and data", "プライバシーとデータ"],
+  customer_public_profile: ["Thông tin hiển thị công khai", "Public profile", "公開プロフィール"],
+  customer_public_profile_help: ["Tên hiển thị và ảnh đại diện này sẽ xuất hiện trong chat và bình luận. Thông tin cá nhân đăng ký vẫn được giữ riêng tư.", "This display name and avatar appear in chats and comments. Your registration details remain private.", "表示名とアバターはチャットとコメントに表示されます。登録時の個人情報は非公開です。"],
+  customer_display_name: ["Tên hiển thị", "Display name", "表示名"],
+  customer_avatar_change: ["Đổi ảnh đại diện", "Change avatar", "アバターを変更"],
+  customer_avatar_remove: ["Xóa ảnh đại diện", "Remove avatar", "アバターを削除"],
+  customer_profile_save: ["Lưu thông tin hiển thị", "Save public profile", "公開プロフィールを保存"],
+  customer_profile_error: ["Không tải được hồ sơ công khai. Hãy kiểm tra migration customer-public-profiles.sql.", "Could not load the public profile. Check the customer-public-profiles.sql migration.", "公開プロフィールを読み込めません。customer-public-profiles.sqlの適用を確認してください。"],
+  renter_paid_bookings: ["Đơn thuê đã thanh toán", "Paid bookings", "支払い済みの予約"],
+  renter_paid_bookings_empty: ["Chưa có đơn thuê đã thanh toán.", "No paid bookings yet.", "支払い済みの予約はありません。"],
+  chat_identity_error: ["Không tải được tên và ảnh đại diện trong chat. Hãy kiểm tra migration customer-public-profiles.sql.", "Could not load chat names and avatars. Check the customer-public-profiles.sql migration.", "チャットの名前とアバターを読み込めません。customer-public-profiles.sqlの適用を確認してください。"],
+  chat_booking_new_message: ["Có tin nhắn mới trong đơn thuê này.", "There is a new message in this booking.", "この予約に新しいメッセージがあります。"],
   acct_email_notifications: ["Nhận thông báo qua email", "Receive email notifications", "メール通知を受け取る"],
   push_enable: ["Bật thông báo trên thiết bị này", "Enable notifications on this device", "この端末で通知を有効にする"],
   push_disable: ["Tắt thông báo trên thiết bị này", "Disable notifications on this device", "この端末で通知を無効にする"],
@@ -247,6 +258,162 @@ function activeAccount() {
   return remoteAccount;
 }
 
+async function loadCustomerPublicProfile() {
+  const account = activeAccount();
+  if (!sb || account?.role !== "customer") return;
+  const { data, error } = await sb.from("customer_public_profiles")
+    .select("display_name,avatar_path").eq("user_id", account.id).maybeSingle();
+  if (error) {
+    console.error("Could not load customer public profile", error.message);
+    account.publicProfileError = true;
+    return;
+  }
+  account.publicProfileError = false;
+  account.publicName = data?.display_name || "";
+  account.avatarPath = data?.avatar_path || "";
+}
+
+function customerAvatarPublicUrl(path) {
+  if (!sb || !path) return "";
+  const { data } = sb.storage.from("customer-avatars").getPublicUrl(path);
+  return trustedImageUrl(data.publicUrl);
+}
+
+function avatarMarkup(label, url, className = "chat-avatar") {
+  const imageUrl = trustedImageUrl(url);
+  return imageUrl
+    ? `<img class="${className}" src="${esc(imageUrl)}" alt="${esc(label)}" loading="lazy">`
+    : `<span class="${className} avatar-placeholder" aria-hidden="true">${esc((label || "?").trim().charAt(0).toUpperCase())}</span>`;
+}
+
+function renderCustomerPublicProfile() {
+  const account = activeAccount();
+  if (account?.role !== "customer") return "";
+  if (account.publicProfileError) {
+    return `<div class="panel"><h3>${t("customer_public_profile")}</h3><p class="err">${t("customer_profile_error")}</p></div>`;
+  }
+  const avatarUrl = customerAvatarPublicUrl(account.avatarPath);
+  return `<div class="panel"><h3>${t("customer_public_profile")}</h3>
+    <p class="muted">${t("customer_public_profile_help")}</p>
+    <div class="row">${avatarMarkup(account.publicName || t("acct_customer"), avatarUrl, "customer-avatar")}
+      <label class="field" style="flex:1">${t("customer_display_name")}<input id="customerPublicName" maxlength="50" value="${esc(account.publicName || "")}" placeholder="${esc(account.name)}"></label>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <button class="btn sm" onclick="updateCustomerPublicProfile()">${t("customer_profile_save")}</button>
+      <button class="btn ghost sm" onclick="chooseCustomerAvatar()">${t("customer_avatar_change")}</button>
+      ${account.avatarPath ? `<button class="btn ghost sm" onclick="removeCustomerAvatar()">${t("customer_avatar_remove")}</button>` : ""}
+    </div><p id="customerPublicProfileStatus" class="muted" role="status"></p></div>`;
+}
+
+window.updateCustomerPublicProfile = async function() {
+  const account = activeAccount();
+  if (!sb || account?.role !== "customer") return toast(t("acct_access_denied"));
+  const displayName = $("customerPublicName")?.value.trim() || "";
+  if (displayName.length > 50) return toast(t("acct_missing"));
+  const { error } = await sb.from("customer_public_profiles").upsert({
+    user_id: account.id,
+    display_name: displayName || null,
+    avatar_path: account.avatarPath || null,
+  }, { onConflict: "user_id" });
+  if (error) {
+    console.error("Could not save customer public profile", error.message);
+    return toast(error.message || t("customer_profile_error"));
+  }
+  account.publicName = displayName;
+  account.publicProfileError = false;
+  socialFeedCache = null;
+  renderAccount();
+  toast(t("customer_profile_save"));
+};
+
+window.chooseCustomerAvatar = function() {
+  const account = activeAccount();
+  if (!sb || account?.role !== "customer") return toast(t("acct_access_denied"));
+  const picker = document.createElement("input");
+  picker.type = "file";
+  picker.accept = "image/jpeg,image/png,image/webp";
+  picker.onchange = async () => {
+    const file = picker.files?.[0];
+    if (!file) return;
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type) || file.size > 8 * 1024 * 1024) {
+      return toast(t("social_upload_failed"));
+    }
+    const status = $("customerPublicProfileStatus");
+    if (status) status.textContent = t("processing");
+    let objectUrl = "";
+    let uploadedPath = "";
+    try {
+      objectUrl = URL.createObjectURL(file);
+      const image = new Image();
+      const loaded = new Promise((resolve, reject) => {
+        image.onload = () => resolve();
+        image.onerror = () => reject(new Error("Could not read the selected image"));
+      });
+      image.src = objectUrl;
+      await loaded;
+      const scale = Math.min(1, 512 / Math.max(image.naturalWidth, image.naturalHeight));
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
+      canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
+      const context = canvas.getContext("2d");
+      if (!context) throw new Error("Image processing is unavailable");
+      context.drawImage(image, 0, 0, canvas.width, canvas.height);
+      const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.82));
+      if (!blob) throw new Error("Could not compress the selected image");
+      uploadedPath = `${account.id}/${crypto.randomUUID()}.jpg`;
+      const { error: uploadError } = await sb.storage.from("customer-avatars").upload(uploadedPath, blob, {
+        contentType: "image/jpeg", cacheControl: "3600", upsert: false,
+      });
+      if (uploadError) throw uploadError;
+      const oldPath = account.avatarPath;
+      const displayName = $("customerPublicName")?.value.trim() || account.publicName || "";
+      const { error: profileError } = await sb.from("customer_public_profiles").upsert({
+        user_id: account.id, display_name: displayName || null, avatar_path: uploadedPath,
+      }, { onConflict: "user_id" });
+      if (profileError) throw profileError;
+      account.publicName = displayName;
+      account.avatarPath = uploadedPath;
+      account.publicProfileError = false;
+      socialFeedCache = null;
+      if (oldPath) {
+        const { error: removeError } = await sb.storage.from("customer-avatars").remove([oldPath]);
+        if (removeError) console.error("Could not remove previous customer avatar", removeError.message);
+      }
+      renderAccount();
+    } catch (error) {
+      if (uploadedPath) {
+        const { error: removeError } = await sb.storage.from("customer-avatars").remove([uploadedPath]);
+        if (removeError) console.error("Could not clean up failed customer avatar upload", removeError.message);
+      }
+      console.error("Could not update customer avatar", error.message);
+      if (status) status.textContent = error.message || t("customer_profile_error");
+    } finally {
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    }
+  };
+  picker.click();
+};
+
+window.removeCustomerAvatar = async function() {
+  const account = activeAccount();
+  if (!sb || account?.role !== "customer" || !account.avatarPath) return toast(t("acct_access_denied"));
+  const oldPath = account.avatarPath;
+  const { error } = await sb.from("customer_public_profiles").upsert({
+    user_id: account.id,
+    display_name: account.publicName || null,
+    avatar_path: null,
+  }, { onConflict: "user_id" });
+  if (error) {
+    console.error("Could not remove customer avatar from profile", error.message);
+    return toast(error.message || t("customer_profile_error"));
+  }
+  account.avatarPath = "";
+  socialFeedCache = null;
+  const { error: removeError } = await sb.storage.from("customer-avatars").remove([oldPath]);
+  if (removeError) console.error("Could not remove previous customer avatar", removeError.message);
+  renderAccount();
+};
+
 window.profileAddButtonHtml = function() {
   const account = activeAccount();
   if (!account || !["admin", "renter"].includes(account.role)) return "";
@@ -321,7 +488,7 @@ async function loadRenterProfiles() {
 async function loadBookingRows() {
   if (!sb || !remoteAccount) return [];
   const { data, error } = await sb.from("bookings")
-    .select("*, renter_profiles(id,owner_id,display_name,section,persona_mode,catalog_key,chat_background_url,availability)")
+    .select("*, renter_profiles(id,owner_id,display_name,section,persona_mode,catalog_key,avatar_url,chat_background_url,availability)")
     .order("created_at", { ascending: false });
   if (error) throw error;
 
@@ -400,6 +567,7 @@ async function hydrateSession(user) {
     emailNotificationsEnabled: data.email_notifications_enabled !== false,
   };
   S.activeAccountId = remoteAccount.id;
+  if (remoteAccount.role === "customer") await loadCustomerPublicProfile();
   if (remoteAccount.role === "renter") {
     const { data: own, error: ownError } = await sb.from("renter_profiles")
       .select("*").eq("owner_id", remoteAccount.id).maybeSingle();
@@ -584,11 +752,12 @@ function notifyAccountNotification(notification) {
   if (pushNotificationsEnabled || !("Notification" in window)
     || Notification.permission !== "granted" || !document.hidden) return;
   const isMessage = notification.notification_type === "new_message";
-  const title = isMessage ? `VELORA · ${notification.title || "Tin nhắn mới"}` : "VELORA · Cập nhật đơn thuê";
+  const title = isMessage ? `VELORA · ${notification.title || "Tin nhắn mới"}`
+    : `VELORA · ${notification.title || "Cập nhật đơn thuê"}`;
   const body = isMessage ? notification.body || "Bạn có tin nhắn mới. Đăng nhập để xem."
-    : notification.notification_type === "booking_paid" ? "Thanh toán đơn thuê đã được xác nhận."
+    : notification.body || (notification.notification_type === "booking_paid" ? "Thanh toán đơn thuê đã được xác nhận."
       : notification.notification_type === "booking_created" ? "Bạn có đơn thuê mới."
-        : "Đơn thuê của bạn vừa được cập nhật.";
+        : "Đơn thuê của bạn vừa được cập nhật.");
   new Notification(title, { body, icon: "velora-logo-v2.png" });
 }
 
@@ -746,6 +915,7 @@ function renderAccount() {
         <label class="field">${t("acct_email")}<input id="accEmail" type="email" value="${esc(account.email)}" ${locked ? "readonly" : ""}></label>
       </div>${locked ? "" : `<button class="btn sm" onclick="updateAccount()">${t("acct_save")}</button>`}
     </div>
+    ${account.role === "customer" ? renderCustomerPublicProfile() : ""}
     ${account.role === "renter" ? `<div class="panel"><h3>${t("acct_girl")}</h3>
       <button class="btn sm" onclick="openAdd()">${t(S.custom.some((profile) => profile.ownerId === account.id) ? "acct_edit_profile" : "acct_add_profile")}</button>
       ${S.custom.some((profile) => profile.ownerId === account.id) ? `<button class="btn ghost sm" onclick="openAvailabilityEditor()">${t("renter_availability")}</button>
@@ -786,7 +956,7 @@ function renderAccount() {
       </section>
       <section id="adminExpansionSection" class="admin-tool-content" hidden><div id="adminExpansion"><p class="muted">${t("processing")}</p></div></section>
     </div>` : ""}
-    ${account.role === "renter" ? `<div id="adminChatInbox"></div>` : ""}
+    ${account.role === "renter" ? `<div id="renterBookingInbox"></div><div id="adminChatInbox"></div>` : ""}
     <div class="panel"><h3>${t("acct_privacy")}</h3>
       <label class="row"><input id="emailNotificationsEnabled" type="checkbox" ${account.emailNotificationsEnabled ? "checked" : ""} onchange="updateEmailNotifications(this.checked)"> ${t("acct_email_notifications")}</label>
       <p id="pushNotificationStatus" class="muted"></p>
@@ -796,7 +966,10 @@ function renderAccount() {
       </div>` : ""}<p id="privacyStatus" class="muted"></p></div>
     <div class="panel" id="appNotifications"><h3>Thông báo</h3><p class="muted">${t("processing")}</p></div>
     <div class="panel"><h3>${t("ord_t")}</h3><button class="btn ghost sm" onclick="go('orders')">${t("chat_inbox")}</button></div>`;
-  if (account.role === "renter") loadRenterAdminChats();
+  if (account.role === "renter") {
+    loadRenterBookingInbox();
+    loadRenterAdminChats();
+  }
   if (account.role === "renter" && S.custom.some((profile) => profile.ownerId === account.id)) loadRenterGallery();
   if (account.role === "admin") { loadChatReports(); loadRenterProfileReports(); loadAdminExpansionData(); }
   loadPushSubscriptionStatus();
@@ -1212,6 +1385,8 @@ window.loadAccountNotifications = async function() {
   panel.innerHTML = `<h3>Thông báo</h3>${data?.length ? data.map((item) => `<article class="report-card">
     <b>${esc(item.title)}</b> ${item.read_at ? "" : `<span class="st-b wait">Mới</span>`}
     <p>${esc(item.body)}${item.reference_code ? ` · ${esc(item.reference_code)}` : ""}</p>
+    ${item.notification_type === "new_message" || item.notification_type.startsWith("booking_")
+      ? `<button class="btn ghost sm" onclick="go('orders')">${item.notification_type === "new_message" ? t("chat_open") : t("ord_t")}</button>` : ""}
     <small class="muted">${new Date(item.created_at).toLocaleString()}</small>
   </article>`).join("") : `<p class="muted">Chưa có thông báo.</p>`}
     ${unreadIds.length ? `<button class="btn ghost sm" onclick="markNotificationsRead()">${t("chat_read")}</button>` : ""}`;
@@ -1621,7 +1796,7 @@ window.renderSocialFeed = async function() {
   }
   const [likesResult, commentsResult, myLikesResult] = await Promise.all([
     sb.from("social_likes").select("post_id").in("post_id", ids),
-    sb.from("social_comments").select("id,post_id,author_label,body,created_at").in("post_id", ids)
+    sb.from("social_comments").select("id,post_id,author_label,author_avatar_path,author_avatar_url,body,created_at").in("post_id", ids)
       .order("created_at", { ascending: true }).limit(300),
     account ? sb.rpc("get_my_social_likes", { p_post_ids: ids })
       : Promise.resolve({ data: [], error: null }),
@@ -1638,8 +1813,11 @@ window.renderSocialFeed = async function() {
   const myLikes = new Set((myLikesResult.data ?? []).map((like) => like.post_id));
   const commentsByPost = new Map();
   (commentsResult.data ?? []).forEach((comment) => {
+    const avatarUrl = comment.author_avatar_path
+      ? customerAvatarPublicUrl(comment.author_avatar_path)
+      : trustedImageUrl(comment.author_avatar_url);
     const list = commentsByPost.get(comment.post_id) || [];
-    list.push(comment);
+    list.push({ ...comment, avatarUrl });
     commentsByPost.set(comment.post_id, list);
   });
   app.innerHTML = `<h2>${t("social_title")}</h2><p class="muted">${t("social_subtitle")}</p>${composer}
@@ -1656,7 +1834,7 @@ window.renderSocialFeed = async function() {
           ${account ? `<button class="btn ${myLikes.has(post.id) ? "" : "ghost"} sm" data-social-like="${esc(post.id)}" data-liked="${myLikes.has(post.id)}" data-like-count="${likeCounts.get(post.id) || 0}" onclick="toggleSocialLike('${esc(post.id)}',this.dataset.liked==='true')">♥ ${t("social_like")} · ${likeCounts.get(post.id) || 0}</button>` : `<span class="muted">♥ ${likeCounts.get(post.id) || 0}</span>`}
           ${account ? `<button class="btn ghost sm" onclick="reportSocialPost('${esc(post.id)}')">${t("social_report")}</button>` : ""}
         </div>
-        <div class="social-comments" id="comments-${esc(post.id)}">${comments.length ? comments.map((comment) => `<p class="muted"><b>${esc(comment.author_label)}</b> ${esc(comment.body)}</p>`).join("") : `<p class="muted social-empty-comments">${t("social_comments_empty")}</p>`}
+        <div class="social-comments" id="comments-${esc(post.id)}">${comments.length ? comments.map((comment) => `<div class="social-comment">${avatarMarkup(comment.author_label, comment.avatarUrl)}<p class="muted"><b>${esc(comment.author_label)}</b> ${esc(comment.body)}</p></div>`).join("") : `<p class="muted social-empty-comments">${t("social_comments_empty")}</p>`}
           ${account ? `<div class="row"><input class="inp" id="comment-${esc(post.id)}" maxlength="500" placeholder="${esc(t("social_comment"))}" onkeydown="if(event.key==='Enter')submitSocialComment('${esc(post.id)}')"><button class="btn ghost sm" onclick="submitSocialComment('${esc(post.id)}')">${t("social_send")}</button></div>` : `<p class="muted">${t("social_signin")}</p>`}
         </div></article>`;
     }).join("")}</div>`;
@@ -1739,7 +1917,7 @@ window.submitSocialComment = async function(postId) {
   if (!body) return;
   const { data: comment, error } = await sb.from("social_comments").insert({
     post_id: postId, author_id: account.id, body,
-  }).select("author_label,body").single();
+  }).select("author_label,author_avatar_path,author_avatar_url,body").single();
   if (error) {
     console.error("Could not submit social comment", error.message);
     return toast(error.message);
@@ -1748,11 +1926,26 @@ window.submitSocialComment = async function(postId) {
   const inputAfterInsert = $(`comment-${postId}`);
   if (!comments || !comment) return;
   comments.querySelector(".social-empty-comments")?.remove();
-  const row = document.createElement("p");
-  row.className = "muted";
+  const row = document.createElement("div");
+  row.className = "social-comment";
+  const avatarUrl = comment.author_avatar_path
+    ? customerAvatarPublicUrl(comment.author_avatar_path)
+    : trustedImageUrl(comment.author_avatar_url);
+  const avatar = document.createElement(avatarUrl ? "img" : "span");
+  avatar.className = avatarUrl ? "chat-avatar" : "chat-avatar avatar-placeholder";
+  if (avatarUrl) {
+    avatar.src = avatarUrl;
+    avatar.alt = comment.author_label;
+  } else {
+    avatar.setAttribute("aria-hidden", "true");
+    avatar.textContent = (comment.author_label || "?").trim().charAt(0).toUpperCase();
+  }
+  const copy = document.createElement("p");
+  copy.className = "muted";
   const author = document.createElement("b");
   author.textContent = comment.author_label;
-  row.append(author, document.createTextNode(` ${comment.body}`));
+  copy.append(author, document.createTextNode(` ${comment.body}`));
+  row.append(avatar, copy);
   const composer = inputAfterInsert?.parentElement;
   comments.insertBefore(row, composer || null);
   if (inputAfterInsert) inputAfterInsert.value = "";
@@ -2412,23 +2605,62 @@ async function loadRenterAdminChats() {
   }).join("")}</div>`;
 }
 
+async function loadRenterBookingInbox() {
+  const account = activeAccount();
+  const container = $("renterBookingInbox");
+  if (!container || account?.role !== "renter") return;
+  container.innerHTML = `<div class="panel"><h3>${t("renter_paid_bookings")}</h3><p class="muted">${t("processing")}</p></div>`;
+  try {
+    await loadBookingRows();
+  } catch (error) {
+    console.error("Could not load renter paid bookings", error.message);
+    if (container.isConnected) container.innerHTML = `<div class="panel"><h3>${t("renter_paid_bookings")}</h3><p class="err">${esc(error.message || t("chat_failed"))}</p></div>`;
+    return;
+  }
+  if (!container.isConnected || activeAccount()?.id !== account.id) return;
+  const orders = S.orders.filter((order) => order.renterOwnerId === account.id
+    && ["paid", "done"].includes(order.status));
+  container.innerHTML = `<div class="panel"><h3>${t("renter_paid_bookings")}</h3>
+    ${orders.length ? orders.map((order) => `<div class="row" style="justify-content:space-between;margin:8px 0;padding:8px 0;border-top:1px solid var(--line)">
+      <div><b>${esc(order.code)}</b><div class="muted">${(order.sessions || []).map((session) => `${esc(session.d)} ${esc(session.t)}`).join(" · ")}</div>
+        <small class="muted">${order.status === "done" ? esc(t("st_done")) : esc(t("paid"))} · ${Number(order.totalVnd).toLocaleString("vi-VN")} ₫</small></div>
+      <button class="btn sm" onclick="openChat('${esc(order.code)}')">${t("chat_open")}</button>
+    </div>`).join("") : `<p class="muted">${t("renter_paid_bookings_empty")}</p>`}
+  </div>`;
+}
+
 async function loadChatMessages() {
   if (!sb || !chatBookingId) return [];
-  const { data, error } = await sb.from("messages").select("*")
-    .eq("booking_id", chatBookingId).order("created_at", { ascending: true });
-  if (error) {
-    console.error("Could not load chat messages", error.message);
+  const [messageResult, identityResult] = await Promise.all([
+    sb.from("messages").select("*").eq("booking_id", chatBookingId).order("created_at", { ascending: true }),
+    sb.rpc("get_booking_chat_identities", { p_booking_id: chatBookingId }),
+  ]);
+  if (messageResult.error) {
+    console.error("Could not load chat messages", messageResult.error.message);
     toast(t("chat_failed"));
     return [];
   }
+  const data = messageResult.data || [];
+  let identities = [];
+  if (identityResult.error) {
+    console.error("Could not load booking chat identities", identityResult.error.message);
+    toast(t("chat_identity_error"));
+  } else {
+    identities = (identityResult.data || []).map((identity) => ({
+      ...identity,
+      avatar: identity.avatar_path
+        ? customerAvatarPublicUrl(identity.avatar_path)
+        : trustedImageUrl(identity.avatar_url),
+    }));
+  }
   const profile = getG(mapRemoteOrder(currentChat)?.id);
-  renderChatMessages(data || [], profile || { name: "Nhân vật" });
-  await markChatMessagesRead("messages", "booking_id", chatBookingId, data || []);
-  if (pendingAiMessageId && data?.some((message) => message.reply_to_message_id === pendingAiMessageId)) {
+  renderChatMessages(data, profile || { name: "Nhân vật" }, identities);
+  await markChatMessagesRead("messages", "booking_id", chatBookingId, data);
+  if (pendingAiMessageId && data.some((message) => message.reply_to_message_id === pendingAiMessageId)) {
     pendingAiMessageId = "";
     setChatStatus("");
   }
-  return data || [];
+  return data;
 }
 
 async function loadAdminChatMessages() {
@@ -2672,7 +2904,7 @@ function trustedImageUrl(value) {
   }
 }
 
-function renderChatMessages(messages, profile) {
+function renderChatMessages(messages, profile, identities = []) {
   const body = $("chatBody");
   if (!body) return;
   if (!messages.length) {
@@ -2680,14 +2912,21 @@ function renderChatMessages(messages, profile) {
     return;
   }
   const account = activeAccount();
+  const identityByUser = new Map(identities.map((identity) => [identity.user_id, identity]));
   body.innerHTML = messages.map((message) => {
     const own = message.sender_id === account?.id;
+    const identity = identityByUser.get(message.sender_id);
     const label = message.sender_kind === "persona" ? profile.name
-      : own ? account.name
+      : identity?.display_name || (message.sender_kind === "admin" ? "Quản trị viên"
         : message.sender_kind === "customer" ? "Khách hàng"
-          : message.sender_kind === "admin" ? "Quản trị viên" : "Bạn gái thuê";
-    return `<article class="chat-message ${own ? "own" : ""}"><b>${esc(label)}</b>
-      <div>${esc(message.body)}</div><time>${esc(new Date(message.created_at).toLocaleString())}${own && message.read_at ? ` · ${esc(t("chat_read"))}` : ""}</time></article>`;
+          : own && account.role === "renter" ? profile.name
+            : own ? account.publicName || account.name : "Bạn gái thuê");
+    const avatar = message.sender_kind === "persona"
+      ? trustedImageUrl(imgOf(profile))
+      : identity?.avatar || "";
+    return `<article class="chat-message ${own ? "own" : ""}">${avatarMarkup(label, avatar)}
+      <div class="chat-message-copy"><b>${esc(label)}</b><div>${esc(message.body)}</div>
+        <time>${esc(new Date(message.created_at).toLocaleString())}${own && message.read_at ? ` · ${esc(t("chat_read"))}` : ""}</time></div></article>`;
   }).join("");
   body.scrollTop = body.scrollHeight;
 }

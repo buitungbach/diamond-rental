@@ -200,6 +200,13 @@ th{color:var(--muted);font-weight:600;font-size:.78rem}
 .chat-head-copy small{color:var(--muted)}
 .chat-body{display:flex;flex-direction:column;gap:8px;overflow:auto;padding:16px}
 .chat-message{max-width:min(78%,520px);padding:9px 13px;border:1px solid color-mix(in srgb,var(--line) 80%,transparent);border-radius:18px 18px 18px 5px;background:color-mix(in srgb,var(--surface) 88%,transparent);box-shadow:0 3px 12px rgba(0,0,0,.12);overflow-wrap:anywhere;backdrop-filter:blur(8px)}
+.chat-message{display:flex;align-items:flex-start;gap:8px}
+.chat-message-copy{min-width:0}
+.chat-avatar{width:30px;height:30px;flex:none;object-fit:cover;border-radius:50%;background:var(--surface2)}
+.customer-avatar{width:64px;height:64px;flex:none;object-fit:cover;border-radius:50%;background:var(--surface2)}
+.avatar-placeholder{display:grid;place-items:center;color:var(--muted);font-size:.8rem}
+.social-comment{display:flex;align-items:center;gap:8px}
+.social-comment .chat-avatar{width:26px;height:26px}
 .chat-message.own{align-self:flex-end;border-color:color-mix(in srgb,var(--accent) 45%,transparent);border-radius:18px 18px 5px 18px;background:color-mix(in srgb,var(--accent-soft) 92%,transparent)}
 .chat-message b{display:block;font-size:.75rem;color:var(--muted);margin-bottom:2px}
 .chat-message time{display:block;margin-top:4px;text-align:right;font-size:.68rem;color:var(--muted)}
